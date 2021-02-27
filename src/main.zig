@@ -23,9 +23,13 @@ pub fn main() !void {
     });
 }
 
+var tex: ?upaya.Texture = null;
+
 fn init() void {
     my_fonts.loadFonts() catch unreachable;
     // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
+    if (tex == null) tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch unreachable;
+    std.log.info("tex: {}", .{tex});
 }
 
 // .
@@ -79,7 +83,7 @@ fn update() void {
         // make the "window" fill the whole available area
         igSetWindowPosStr("hello", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
         igSetWindowSizeStr("hello", g_app_data.content_window_size, ImGuiCond_Always);
-
+        myImg();
         switch (g_app_data.app_state) {
             .mainmenu => showMainMenu(&g_app_data),
             else => {
@@ -92,6 +96,20 @@ fn update() void {
     }
 }
 
+fn myImg() void {
+    var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
+    var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
+    var tint_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
+    var border_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 0.5 }; // 50% opaque white
+    var imgsize = ImVec2{ .x = @intToFloat(f32, tex.?.width), .y = @intToFloat(f32, tex.?.height) };
+    var screen_size = g_app_data.content_window_size;
+    var render_size = ImVec2{ .x = screen_size.x, .y = screen_size.x * imgsize.y / imgsize.x };
+    var screen_pos = ImVec2{ .x = 0, .y = (screen_size.y - render_size.y) / 2 };
+
+    igSetCursorPos(screen_pos);
+    igImage(tex.?.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
+}
+
 fn showMainMenu(app_data: *AppData) void {
     // we don't want the button size to be scaled shittily. Hence we look for the nearest (lower bound) font size.
     my_fonts.pushFontScaled(my_fonts.getNearestFontSize(32));
@@ -101,12 +119,12 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("Load Presentation", bt_size, &bt_state_1) == .released) {
+        if (animatedButton("Load Slides...", bt_size, &bt_state_1) == .released) {
             std.log.info("clicked!", .{});
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Present", bt_size, &bt_state_2) == .released) {
+        if (animatedButton("Present!", bt_size, &bt_state_2) == .released) {
             std.log.info("clicked!", .{});
         }
 
