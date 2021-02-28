@@ -84,7 +84,9 @@ fn update() void {
         // make the "window" fill the whole available area
         igSetWindowPosStr("hello", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
         igSetWindowSizeStr("hello", g_app_data.content_window_size, ImGuiCond_Always);
-        myImg();
+
+        // background image: at top left of slide area, fill entire internal render size
+        slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?);
         switch (g_app_data.app_state) {
             .mainmenu => showMainMenu(&g_app_data),
             else => {
@@ -108,8 +110,6 @@ fn trxyIntoSlideArea(pos: ImVec2) ImVec2 {
         ret.y = max_content_window_y;
     }
 
-    std.log.info("pos: {} => ret scaled: {}", .{ pos, ret });
-
     // offset y by height of the cinema bar
     var max_y_translated = g_app_data.internal_render_size.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
     var offset_y = (g_app_data.content_window_size.y - max_y_translated) / 2.0;
@@ -127,22 +127,22 @@ fn slideAreaTL() ImVec2 {
     return screen_pos;
 }
 
-fn myImg() void {
+// render an image into the slide
+fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture) void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
     var tint_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
     var border_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 0.5 }; // 50% opaque white
 
     // unused but this is how you would get it
-    var imgsize = ImVec2{ .x = @intToFloat(f32, tex.?.width), .y = @intToFloat(f32, tex.?.height) };
+    var imgsize = ImVec2{ .x = @intToFloat(f32, texture.width), .y = @intToFloat(f32, texture.height) };
 
     // start in slide area top left
-    var screen_pos = slideAreaTL();
-    igSetCursorPos(screen_pos);
+    igSetCursorPos(pos);
 
     // set target image size to internal render size
-    var render_size = trxyIntoSlideArea(g_app_data.internal_render_size);
-    igImage(tex.?.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
+    var render_size = trxyIntoSlideArea(size);
+    igImage(texture.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
 }
 
 fn showMainMenu(app_data: *AppData) void {
@@ -159,7 +159,7 @@ fn showMainMenu(app_data: *AppData) void {
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Present!", bt_size, &bt_state_2) == .released) {
+        if (animatedButton("Help", bt_size, &bt_state_2) == .released) {
             std.log.info("clicked!", .{});
         }
 
