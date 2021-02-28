@@ -18,8 +18,8 @@ pub fn main() !void {
         .window_title = "Slides",
         .ini_file_storage = .none,
         .swap_interval = 1, // ca 16ms
-        .width = 1920,
-        .height = 1080,
+        .width = 1024,
+        .height = 768,
     });
 }
 
@@ -28,7 +28,11 @@ var tex: ?upaya.Texture = null;
 fn init() void {
     my_fonts.loadFonts() catch unreachable;
     // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
-    if (tex == null) tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch unreachable;
+    if (tex == null)
+        tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch |err| {
+            std.log.err("Error: png could not be loaded", .{});
+            return;
+        };
     std.log.info("tex: {}", .{tex});
     std.log.info("checking for undefined", .{});
 }
@@ -121,7 +125,7 @@ fn showSlide() !void {
 
     // render slide
     g_app_data.slide_render_width = g_app_data.internal_render_size.x - ed_anim.current_size.x;
-    slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?, g_app_data.img_tint_col, g_app_data.img_border_col);
+    slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex, g_app_data.img_tint_col, g_app_data.img_border_col);
 
     // button row
     igSetCursorPos(trxy(ImVec2{ .x = (300.0), .y = g_app_data.internal_render_size.y - 35.0 }));
@@ -179,7 +183,7 @@ fn slideAreaTL() ImVec2 {
 }
 
 // render an image into the slide
-fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4) void {
+fn slideImg(pos: ImVec2, size: ImVec2, texture: *?Texture, tint_color: ImVec4, border_color: ImVec4) void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
 
@@ -188,7 +192,8 @@ fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, bo
 
     var imgsize_translated = trxyIntoSlideArea(size);
 
-    igImage(texture.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
+    if (texture.* != null)
+        igImage(texture.*.?.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
 }
 
 fn showMainMenu(app_data: *AppData) void {
