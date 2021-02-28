@@ -67,6 +67,8 @@ const AppData = struct {
     app_state: AppState = .mainmenu,
     content_window_size: ImVec2 = ImVec2{},
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
+    img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
+    img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
 };
 
 var g_app_data = AppData{};
@@ -78,7 +80,6 @@ fn update() void {
     igGetWindowContentRegionMax(&g_app_data.content_window_size);
 
     var flags: c_int = 0;
-    flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoTitleBar;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
     if (igBegin("hello", null, flags)) {
         // make the "window" fill the whole available area
@@ -86,7 +87,7 @@ fn update() void {
         igSetWindowSizeStr("hello", g_app_data.content_window_size, ImGuiCond_Always);
 
         // background image: at top left of slide area, fill entire internal render size
-        slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?);
+        slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?, g_app_data.img_tint_col, g_app_data.img_border_col);
         switch (g_app_data.app_state) {
             .mainmenu => showMainMenu(&g_app_data),
             else => {
@@ -128,21 +129,14 @@ fn slideAreaTL() ImVec2 {
 }
 
 // render an image into the slide
-fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture) void {
+fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4) void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
-    var tint_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
-    var border_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 0.5 }; // 50% opaque white
 
-    // unused but this is how you would get it
-    var imgsize = ImVec2{ .x = @intToFloat(f32, texture.width), .y = @intToFloat(f32, texture.height) };
-
-    // start in slide area top left
+    // position the img
     igSetCursorPos(pos);
 
-    // set target image size to internal render size
-    var render_size = trxyIntoSlideArea(size);
-    igImage(texture.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
+    igImage(texture.imTextureID(), trxyIntoSlideArea(size), uv_min, uv_max, tint_color, border_color);
 }
 
 fn showMainMenu(app_data: *AppData) void {
