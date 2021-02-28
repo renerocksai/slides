@@ -50,13 +50,8 @@ fn scaleUI(new_scale: f32) void {
 }
 
 // .
-// Main Update Frame Loop
+// App State
 // .
-
-var bt_state_1 = ButtonAnim{};
-var bt_state_2 = ButtonAnim{};
-var bt_state_3 = ButtonAnim{};
-
 const AppState = enum {
     mainmenu,
     presenting,
@@ -67,11 +62,26 @@ const AppData = struct {
     app_state: AppState = .mainmenu,
     content_window_size: ImVec2 = ImVec2{},
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
+    slide_render_width: f32 = 1920.0,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
 };
 
 var g_app_data = AppData{};
+
+// .
+// Animation
+// .
+var bt_anim_1 = ButtonAnim{};
+var bt_anim_2 = ButtonAnim{};
+var bt_anim_3 = ButtonAnim{};
+
+var ed_anim = EditAnim{};
+var bt_toggle_ed_anim = ButtonAnim{};
+
+// .
+// Main Update Frame Loop
+// .
 
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
@@ -81,15 +91,14 @@ fn update() void {
 
     var flags: c_int = 0;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
-    if (igBegin("hello", null, flags)) {
+    if (igBegin("main", null, flags)) {
         // make the "window" fill the whole available area
-        igSetWindowPosStr("hello", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
-        igSetWindowSizeStr("hello", g_app_data.content_window_size, ImGuiCond_Always);
+        igSetWindowPosStr("main", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
+        igSetWindowSizeStr("main", g_app_data.content_window_size, ImGuiCond_Always);
 
-        // background image: at top left of slide area, fill entire internal render size
-        slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?, g_app_data.img_tint_col, g_app_data.img_border_col);
         switch (g_app_data.app_state) {
             .mainmenu => showMainMenu(&g_app_data),
+            .presenting => showSlide(),
             else => {
                 var b: bool = true;
                 igShowMetricsWindow(&b);
@@ -97,23 +106,48 @@ fn update() void {
         }
         // pop the default font
         my_fonts.popFontScaled();
+        igEnd();
     }
+}
+
+fn showSlide() void {
+    igSetCursorPos(trxy(ImVec2{ .x = g_app_data.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
+    animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y }, g_app_data.content_window_size, g_app_data.internal_render_size);
+    g_app_data.slide_render_width = g_app_data.internal_render_size.x - ed_anim.current_size.x;
+    std.log.info("slide_w: {d}, ed_x_tr: {d}", .{ g_app_data.slide_render_width, trx(ed_anim.current_size.x) });
+
+    slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?, g_app_data.img_tint_col, g_app_data.img_border_col);
+
+    igSetCursorPos(trxy(ImVec2{ .x = (1920.0 - 50.0) / 2.0, .y = g_app_data.internal_render_size.y - 50.0 }));
+    if (animatedButton("toggle editor", trxy(ImVec2{ .x = 100, .y = 30 }), &bt_toggle_ed_anim) == .released) {
+        ed_anim.visible = !ed_anim.visible;
+    }
+}
+fn trx(x: f32) f32 {
+    return x * g_app_data.internal_render_size.x / g_app_data.content_window_size.x;
+}
+
+fn trxy(pos: ImVec2) ImVec2 {
+    return ImVec2{ .x = pos.x * g_app_data.content_window_size.x / g_app_data.internal_render_size.x, .y = pos.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y };
 }
 
 // scale and fit coordinate in internal render coordinate system,
 fn trxyIntoSlideArea(pos: ImVec2) ImVec2 {
     var ret = ImVec2{};
-    ret.x = pos.x * g_app_data.content_window_size.x / g_app_data.internal_render_size.x;
+    var new_content_window_size = g_app_data.content_window_size;
+    new_content_window_size.x -= (g_app_data.internal_render_size.x - g_app_data.slide_render_width) / g_app_data.internal_render_size.x * g_app_data.content_window_size.x;
+
+    ret.x = pos.x * new_content_window_size.x / g_app_data.internal_render_size.x;
     // aspect ratio
-    var max_content_window_y = g_app_data.content_window_size.x * g_app_data.internal_render_size.y / g_app_data.internal_render_size.x;
-    ret.y = pos.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
+    var max_content_window_y = new_content_window_size.x * g_app_data.internal_render_size.y / g_app_data.internal_render_size.x;
+    ret.y = pos.y * new_content_window_size.y / g_app_data.internal_render_size.y;
     if (ret.y > max_content_window_y) {
         ret.y = max_content_window_y;
     }
 
     // offset y by height of the cinema bar
-    var max_y_translated = g_app_data.internal_render_size.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
-    var offset_y = (g_app_data.content_window_size.y - max_y_translated) / 2.0;
+    var max_y_translated = g_app_data.internal_render_size.y * new_content_window_size.y / g_app_data.internal_render_size.y;
+    var offset_y = (new_content_window_size.y - max_y_translated) / 2.0;
 
     ret.y += offset_y;
 
@@ -121,7 +155,9 @@ fn trxyIntoSlideArea(pos: ImVec2) ImVec2 {
 }
 
 fn slideAreaTL() ImVec2 {
-    var screen_size = g_app_data.content_window_size;
+    var new_content_window_size = g_app_data.content_window_size;
+    new_content_window_size.x -= (g_app_data.internal_render_size.x - g_app_data.slide_render_width) / g_app_data.internal_render_size.x * g_app_data.slide_render_width;
+    var screen_size = new_content_window_size;
     var internal_size = g_app_data.internal_render_size;
     var render_size = ImVec2{ .x = screen_size.x, .y = screen_size.x * internal_size.y / internal_size.x };
     var screen_pos = ImVec2{ .x = 0, .y = (screen_size.y - render_size.y) / 2 };
@@ -136,7 +172,10 @@ fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, bo
     // position the img
     igSetCursorPos(pos);
 
-    igImage(texture.imTextureID(), trxyIntoSlideArea(size), uv_min, uv_max, tint_color, border_color);
+    var imgsize_translated = trxyIntoSlideArea(size);
+
+    std.log.info("ImgWidth: {d} of {d}", .{ imgsize_translated.x, g_app_data.content_window_size.x });
+    igImage(texture.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
 }
 
 fn showMainMenu(app_data: *AppData) void {
@@ -148,20 +187,20 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("Load Slides...", bt_size, &bt_state_1) == .released) {
+        if (animatedButton("Load Slides...", bt_size, &bt_anim_1) == .released) {
             std.log.info("clicked!", .{});
+            g_app_data.app_state = .presenting;
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Help", bt_size, &bt_state_2) == .released) {
+        if (animatedButton("Help", bt_size, &bt_anim_2) == .released) {
             std.log.info("clicked!", .{});
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
-        if (animatedButton("Exit", bt_size, &bt_state_3) == .released) {
+        if (animatedButton("Exit", bt_size, &bt_anim_3) == .released) {
             std.process.exit(0);
         }
     }
     my_fonts.popFontScaled();
-    igEnd();
 }
