@@ -25,12 +25,7 @@ pub const ButtonAnim = struct {
 };
 
 pub const EditAnim = struct {
-    visible: bool = false,
-    visible_prev: bool = false,
-    current_size: ImVec2 = ImVec2{},
-    ticker_ms: u32 = 0,
-    fadein_duration: i32 = 200,
-    fadeout_duration: i32 = 200,
+    visible: bool = false, visible_prev: bool = false, current_size: ImVec2 = ImVec2{}, ticker_ms: u32 = 0, fadein_duration: i32 = 200, fadeout_duration: i32 = 200, textbuf: [*c]u8 = null
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
@@ -49,12 +44,18 @@ pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) I
     return ret;
 }
 
-pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) void {
+pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !void {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
     var show: bool = true;
 
+    if (anim.textbuf == null) {
+        var allocator = std.heap.page_allocator;
+        const memory = try allocator.alloc(u8, 1024 * 128);
+        anim.textbuf = memory.ptr;
+        anim.textbuf[0] = 0;
+    }
     // only animate when transitioning
     if (anim.visible != anim.visible_prev) {
         if (anim.visible) {
@@ -80,7 +81,9 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
     }
 
     if (show) {
-        _ = igButton("", trxy(anim.current_size, content_window_size, internal_render_size));
+        var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
+        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_AlwaysInsertMode;
+        _ = igInputTextMultiline("", anim.textbuf, 1024 * 128, s, flags, null, null);
     }
 }
 

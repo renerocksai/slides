@@ -30,6 +30,17 @@ fn init() void {
     // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
     if (tex == null) tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch unreachable;
     std.log.info("tex: {}", .{tex});
+    std.log.info("checking for undefined", .{});
+    if (ed_anim.textbuf == null) {
+        std.log.info("checked for undefined", .{});
+        var allocator = std.heap.page_allocator;
+        std.log.info("trying to allocate", .{});
+        const memory = allocator.alloc(u8, 1024 * 128) catch unreachable;
+        std.log.info("allocated {any}", .{memory});
+        ed_anim.textbuf = memory.ptr;
+        std.log.info("textbuf is now: {any}", .{ed_anim.textbuf});
+        ed_anim.textbuf[0] = 0;
+    }
 }
 
 // .
@@ -98,7 +109,7 @@ fn update() void {
 
         switch (g_app_data.app_state) {
             .mainmenu => showMainMenu(&g_app_data),
-            .presenting => showSlide(),
+            .presenting => showSlide() catch unreachable,
             else => {
                 var b: bool = true;
                 igShowMetricsWindow(&b);
@@ -110,9 +121,9 @@ fn update() void {
     }
 }
 
-fn showSlide() void {
+fn showSlide() !void {
     igSetCursorPos(trxy(ImVec2{ .x = g_app_data.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
-    animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y }, g_app_data.content_window_size, g_app_data.internal_render_size);
+    try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y }, g_app_data.content_window_size, g_app_data.internal_render_size);
     g_app_data.slide_render_width = g_app_data.internal_render_size.x - ed_anim.current_size.x;
     std.log.info("slide_w: {d}, ed_x_tr: {d}", .{ g_app_data.slide_render_width, trx(ed_anim.current_size.x) });
 
