@@ -44,6 +44,21 @@ pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) I
     return ret;
 }
 
+pub fn animateX(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
+    if (ticker_ms >= duration_ms) {
+        return to;
+    }
+    if (ticker_ms <= 1) {
+        return from;
+    }
+
+    var ret = from;
+    var fduration_ms = @intToFloat(f32, duration_ms);
+    var fticker_ms = @intToFloat(f32, ticker_ms);
+    ret.x += (to.x - from.x) / fduration_ms * fticker_ms;
+    return ret;
+}
+
 pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !void {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
@@ -61,14 +76,16 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
         if (anim.visible) {
             // fading in
             fromSize = ImVec2{};
+            fromSize.y = size.y;
             toSize = size;
             anim_duration = anim.fadein_duration;
         } else {
             fromSize = size;
             toSize = ImVec2{};
+            toSize.y = size.y;
             anim_duration = anim.fadeout_duration;
         }
-        anim.current_size = animateVec2(fromSize, toSize, anim_duration, anim.ticker_ms);
+        anim.current_size = animateX(fromSize, toSize, anim_duration, anim.ticker_ms);
         anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
         if (anim.ticker_ms >= anim_duration) {
             anim.visible_prev = anim.visible;

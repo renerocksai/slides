@@ -46,7 +46,6 @@ fn scaleUI(new_scale: f32) void {
     var new_relative_scale = relativeScaleForAbsoluteScale(new_scale);
     ImGuiStyle_ScaleAllSizes(igGetStyle(), new_relative_scale);
     igGetIO().*.FontGlobalScale = new_scale;
-    std.log.info("new global_scale: {}, new relative scale: {}", .{ global_scale * new_relative_scale, new_relative_scale });
     global_scale = new_scale;
 }
 
@@ -117,7 +116,7 @@ fn showSlide() !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = g_app_data.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(32);
-    try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y }, g_app_data.content_window_size, g_app_data.internal_render_size);
+    try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y - 35 }, g_app_data.content_window_size, g_app_data.internal_render_size);
     my_fonts.popFontScaled();
 
     // render slide
@@ -189,7 +188,6 @@ fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, bo
 
     var imgsize_translated = trxyIntoSlideArea(size);
 
-    std.log.info("ImgWidth: {d} of {d}", .{ imgsize_translated.x, g_app_data.content_window_size.x });
     igImage(texture.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
 }
 
@@ -197,8 +195,13 @@ fn showMainMenu(app_data: *AppData) void {
     // we don't want the button size to be scaled shittily. Hence we look for the nearest (lower bound) font size.
     my_fonts.pushFontScaled(my_fonts.getNearestFontSize(32));
     var line_height = app_data.content_window_size.y / 7;
+
     var bt_width = app_data.content_window_size.x / 3;
     var bt_size = ImVec2{ .x = bt_width, .y = line_height };
+
+    if (bt_size.y > 200.0) {
+        bt_size.y = 200;
+    }
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
