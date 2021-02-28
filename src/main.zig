@@ -66,6 +66,7 @@ const AppState = enum {
 const AppData = struct {
     app_state: AppState = .mainmenu,
     content_window_size: ImVec2 = ImVec2{},
+    internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
 };
 
 var g_app_data = AppData{};
@@ -96,6 +97,21 @@ fn update() void {
     }
 }
 
+// scale and fit coordinate in internal render coordinate system,
+fn trxy(pos: ImVec2) ImVec2 {
+    var ret = ImVec2{};
+    ret.x = pos.x * g_app_data.content_window_size.x / g_app_data.internal_render_size.x;
+    ret.y = pos.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
+
+    // offset y by height of the cinema bar
+    var max_y_translated = g_app_data.internal_render_size.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
+    var offset_y = (g_app_data.content_window_size.y - max_y_translated) / 2.0;
+
+    ret.y += offset_y;
+
+    return ret;
+}
+
 fn myImg() void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
@@ -107,6 +123,7 @@ fn myImg() void {
     var screen_pos = ImVec2{ .x = 0, .y = (screen_size.y - render_size.y) / 2 };
 
     igSetCursorPos(screen_pos);
+    render_size = trxy(g_app_data.internal_render_size);
     igImage(tex.?.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
 }
 
