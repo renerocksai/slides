@@ -98,10 +98,17 @@ fn update() void {
 }
 
 // scale and fit coordinate in internal render coordinate system,
-fn trxy(pos: ImVec2) ImVec2 {
+fn trxyIntoSlideArea(pos: ImVec2) ImVec2 {
     var ret = ImVec2{};
     ret.x = pos.x * g_app_data.content_window_size.x / g_app_data.internal_render_size.x;
+    // aspect ratio
+    var max_content_window_y = g_app_data.content_window_size.x * g_app_data.internal_render_size.y / g_app_data.internal_render_size.x;
     ret.y = pos.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
+    if (ret.y > max_content_window_y) {
+        ret.y = max_content_window_y;
+    }
+
+    std.log.info("pos: {} => ret scaled: {}", .{ pos, ret });
 
     // offset y by height of the cinema bar
     var max_y_translated = g_app_data.internal_render_size.y * g_app_data.content_window_size.y / g_app_data.internal_render_size.y;
@@ -112,18 +119,29 @@ fn trxy(pos: ImVec2) ImVec2 {
     return ret;
 }
 
+fn slideAreaTL() ImVec2 {
+    var screen_size = g_app_data.content_window_size;
+    var internal_size = g_app_data.internal_render_size;
+    var render_size = ImVec2{ .x = screen_size.x, .y = screen_size.x * internal_size.y / internal_size.x };
+    var screen_pos = ImVec2{ .x = 0, .y = (screen_size.y - render_size.y) / 2 };
+    return screen_pos;
+}
+
 fn myImg() void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
     var tint_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
     var border_col = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 0.5 }; // 50% opaque white
-    var imgsize = ImVec2{ .x = @intToFloat(f32, tex.?.width), .y = @intToFloat(f32, tex.?.height) };
-    var screen_size = g_app_data.content_window_size;
-    var render_size = ImVec2{ .x = screen_size.x, .y = screen_size.x * imgsize.y / imgsize.x };
-    var screen_pos = ImVec2{ .x = 0, .y = (screen_size.y - render_size.y) / 2 };
 
+    // unused but this is how you would get it
+    var imgsize = ImVec2{ .x = @intToFloat(f32, tex.?.width), .y = @intToFloat(f32, tex.?.height) };
+
+    // start in slide area top left
+    var screen_pos = slideAreaTL();
     igSetCursorPos(screen_pos);
-    render_size = trxy(g_app_data.internal_render_size);
+
+    // set target image size to internal render size
+    var render_size = trxyIntoSlideArea(g_app_data.internal_render_size);
     igImage(tex.?.imTextureID(), render_size, uv_min, uv_max, tint_col, border_col);
 }
 
