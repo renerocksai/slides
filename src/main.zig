@@ -31,16 +31,6 @@ fn init() void {
     if (tex == null) tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch unreachable;
     std.log.info("tex: {}", .{tex});
     std.log.info("checking for undefined", .{});
-    if (ed_anim.textbuf == null) {
-        std.log.info("checked for undefined", .{});
-        var allocator = std.heap.page_allocator;
-        std.log.info("trying to allocate", .{});
-        const memory = allocator.alloc(u8, 1024 * 128) catch unreachable;
-        std.log.info("allocated {any}", .{memory});
-        ed_anim.textbuf = memory.ptr;
-        std.log.info("textbuf is now: {any}", .{ed_anim.textbuf});
-        ed_anim.textbuf[0] = 0;
-    }
 }
 
 // .
@@ -89,6 +79,8 @@ var bt_anim_3 = ButtonAnim{};
 
 var ed_anim = EditAnim{};
 var bt_toggle_ed_anim = ButtonAnim{};
+var bt_toggle_fullscreen_anim = ButtonAnim{};
+var bt_backtomenu_anim = ButtonAnim{};
 
 // .
 // Main Update Frame Loop
@@ -122,15 +114,27 @@ fn update() void {
 }
 
 fn showSlide() !void {
+    // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = g_app_data.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
+    my_fonts.pushFontScaled(32);
     try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = g_app_data.internal_render_size.y }, g_app_data.content_window_size, g_app_data.internal_render_size);
-    g_app_data.slide_render_width = g_app_data.internal_render_size.x - ed_anim.current_size.x;
-    std.log.info("slide_w: {d}, ed_x_tr: {d}", .{ g_app_data.slide_render_width, trx(ed_anim.current_size.x) });
+    my_fonts.popFontScaled();
 
+    // render slide
+    g_app_data.slide_render_width = g_app_data.internal_render_size.x - ed_anim.current_size.x;
     slideImg(slideAreaTL(), g_app_data.internal_render_size, &tex.?, g_app_data.img_tint_col, g_app_data.img_border_col);
 
-    igSetCursorPos(trxy(ImVec2{ .x = (1920.0 - 50.0) / 2.0, .y = g_app_data.internal_render_size.y - 50.0 }));
-    if (animatedButton("toggle editor", trxy(ImVec2{ .x = 100, .y = 30 }), &bt_toggle_ed_anim) == .released) {
+    // button row
+    igSetCursorPos(trxy(ImVec2{ .x = (300.0), .y = g_app_data.internal_render_size.y - 35.0 }));
+    if (animatedButton("main menu", trxy(ImVec2{ .x = 100, .y = 20 }), &bt_backtomenu_anim) == .released) {
+        g_app_data.app_state = .mainmenu;
+    }
+    igSetCursorPos(trxy(ImVec2{ .x = (1920.0 - 100.0) / 2.0, .y = g_app_data.internal_render_size.y - 35.0 }));
+    if (animatedButton("fullscreen", trxy(ImVec2{ .x = 100, .y = 20 }), &bt_toggle_fullscreen_anim) == .released) {
+        sapp_toggle_fullscreen();
+    }
+    igSetCursorPos(trxy(ImVec2{ .x = (1920.0 - 300.0), .y = g_app_data.internal_render_size.y - 35.0 }));
+    if (animatedButton("toggle editor", trxy(ImVec2{ .x = 100, .y = 20 }), &bt_toggle_ed_anim) == .released) {
         ed_anim.visible = !ed_anim.visible;
     }
 }
