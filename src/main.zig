@@ -25,14 +25,26 @@ pub fn main() !void {
 
 var tex: ?upaya.Texture = null;
 
+fn assetPrefix() [*:0]const u8 {
+    if (std.builtin.os.tag == .windows) {
+        return "C:\\Projects\\github\\renerocksai\\slides\\assets\\";
+    } else {
+        return "./assets/";
+    }
+}
 fn init() void {
     my_fonts.loadFonts() catch unreachable;
     // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
     if (tex == null)
-        tex = upaya.Texture.initFromFile("./assets/nim/1.png", .nearest) catch |err| {
+        tex = upaya.Texture.initFromFile(assetPrefix() ++ "nim/1.png", .nearest) catch |err| {
             std.log.err("Error: png could not be loaded", .{});
             return;
         };
+    if (std.builtin.os.tag == .windows) {
+        std.log.info("on windows", .{});
+    } else {
+        std.log.info("on {}", .{std.builtin.os.tag});
+    }
 }
 
 // .
