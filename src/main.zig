@@ -27,7 +27,7 @@ var tex: ?upaya.Texture = null;
 
 fn assetPrefix() [*:0]const u8 {
     if (std.builtin.os.tag == .windows) {
-        return "C:\\Projects\\github\\renerocksai\\slides\\assets\\";
+        return "C:\\Projekte\\github\\renerocksai\\slides\\assets\\";
     } else {
         return "./assets/";
     }
