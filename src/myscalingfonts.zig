@@ -7,7 +7,7 @@ usingnamespace sokol;
 
 var my_fonts = std.AutoHashMap(i32, *ImFont).init(std.heap.page_allocator);
 
-const baked_font_sizes = [_]i32{ 14, 32, 64, 128, 256 };
+const baked_font_sizes = [_]i32{ 14, 16, 32, 64, 128, 256 };
 
 pub fn loadFonts() error{OutOfMemory}!void {
     var io = igGetIO();

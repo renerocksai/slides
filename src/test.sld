@@ -3,8 +3,8 @@
 #
 
 # the master defines fonts, bg imgs, colors, etc.
-@master "assets/masters/nim/master.sld"   
 # bg pngs and fonts will reside in the same folder as the master sld
+@master "assets/masters/nim/master.sld"   
 
 # global settings of the presentation
 @title Artificial Voices In Human Choices

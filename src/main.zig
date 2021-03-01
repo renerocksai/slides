@@ -122,8 +122,6 @@ var bt_backtomenu_anim = ButtonAnim{};
 
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
-    // replace the default font
-    my_fonts.pushFontScaled(14);
     igGetWindowContentRegionMax(&G.content_window_size);
 
     var flags: c_int = 0;
@@ -141,8 +139,6 @@ fn update() void {
                 igShowMetricsWindow(&b);
             },
         }
-        // pop the default font
-        my_fonts.popFontScaled();
         igEnd();
     }
 }
@@ -150,7 +146,7 @@ fn update() void {
 fn showSlide() !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
-    my_fonts.pushFontScaled(32);
+    my_fonts.pushFontScaled(16);
     try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = G.content_window_size.y - 28 }, G.content_window_size, G.internal_render_size);
     my_fonts.popFontScaled();
 
@@ -164,24 +160,45 @@ fn showSlide() !void {
     showBottomPanel();
 }
 
+const bottomPanelAnim = struct {
+    visible: bool = false
+};
+
+var anim_bottom_panel = bottomPanelAnim{};
+
 fn showBottomPanel() void {
-    // TODO: Animate: initially, fade it in. Then highlight it to drag attention to it. Auto-fade-out after 3 seconds.
-    //                default: From then on, fade-in and fade-out, but no attention-grabbing highlighting.
-    //
+    // TODO: show a (*) symbol to slide in and out the panel
+    my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 25 });
-    igColumns(3, null, false);
-    if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 20 }, &bt_backtomenu_anim) == .released) {
-        G.app_state = .mainmenu;
+    if (anim_bottom_panel.visible) {
+        igColumns(4, null, false);
+        if (igButton("<", ImVec2{ .x = 20, .y = 20 })) {
+            anim_bottom_panel.visible = false;
+        }
+        igNextColumn();
+        if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 20 }, &bt_backtomenu_anim) == .released) {
+            G.app_state = .mainmenu;
+        }
+        igNextColumn();
+        if (animatedButton("fullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 20 }, &bt_toggle_fullscreen_anim) == .released) {
+            sapp_toggle_fullscreen();
+        }
+        igNextColumn();
+        if (animatedButton("toggle editor", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_toggle_ed_anim) == .released) {
+            ed_anim.visible = !ed_anim.visible;
+        }
+        igEndColumns();
+    } else {
+        igColumns(4, null, false);
+        if (igButton(">", ImVec2{ .x = 20, .y = 20 })) {
+            anim_bottom_panel.visible = true;
+        }
+        igNextColumn();
+        igNextColumn();
+        igNextColumn();
+        igEndColumns();
     }
-    igNextColumn();
-    if (animatedButton("fullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 20 }, &bt_toggle_fullscreen_anim) == .released) {
-        sapp_toggle_fullscreen();
-    }
-    igNextColumn();
-    if (animatedButton("toggle editor", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_toggle_ed_anim) == .released) {
-        ed_anim.visible = !ed_anim.visible;
-    }
-    igEndColumns();
+    my_fonts.popFontScaled();
 }
 
 fn trx(x: f32) f32 {
