@@ -137,7 +137,12 @@ fn showSlide() !void {
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
     slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
 
+    // .
     // button row
+    // .
+    // TODO: Animate: initially, fade it in. Then highlight it to drag attention to it. Auto-fade-out after 3 seconds.
+    //                default: From then on, fade-in and fade-out, but no attention-grabbing highlighting.
+    //
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 25 });
     igColumns(3, null, false);
     if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 20 }, &bt_backtomenu_anim) == .released) {
