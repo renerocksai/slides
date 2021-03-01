@@ -6,6 +6,9 @@
 # bg pngs and fonts will reside in the same folder as the master sld
 @master "assets/masters/nim/master.sld"   
 
+# for slides without bg pngs:
+@bgcolor f0d020
+
 # global settings of the presentation
 @title Artificial Voices In Human Choices
 @subtitle AweSome

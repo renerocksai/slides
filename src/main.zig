@@ -113,9 +113,11 @@ var bt_anim_3 = ButtonAnim{};
 
 var ed_anim = EditAnim{};
 var bt_toggle_ed_anim = ButtonAnim{};
+var bt_overview_anim = ButtonAnim{};
 var bt_toggle_fullscreen_anim = ButtonAnim{};
 var bt_backtomenu_anim = ButtonAnim{};
 var bt_toggle_bottom_panel_anim = ButtonAnim{};
+var bt_save_anim = ButtonAnim{};
 var anim_bottom_panel = bottomPanelAnim{};
 
 // .
@@ -153,7 +155,8 @@ fn showSlide() !void {
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
-    try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
+    // TODO: react to save
+    _ = try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
     my_fonts.popFontScaled();
 
     // render slide
@@ -175,7 +178,7 @@ fn showBottomPanel() void {
     my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 25 });
     if (anim_bottom_panel.visible) {
-        igColumns(4, null, false);
+        igColumns(6, null, false);
         if (animatedButton("<", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = false;
         }
@@ -188,15 +191,23 @@ fn showBottomPanel() void {
             sapp_toggle_fullscreen();
         }
         igNextColumn();
-        if (animatedButton("toggle editor", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_toggle_ed_anim) == .released) {
+        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 20 }, &bt_overview_anim) == .released) {}
+        igNextColumn();
+        if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_toggle_ed_anim) == .released) {
             ed_anim.visible = !ed_anim.visible;
+        }
+        // dummy column for the editor save button
+        igNextColumn();
+        if (ed_anim.visible) {
+            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_save_anim) == .released) {}
         }
         igEndColumns();
     } else {
-        igColumns(4, null, false);
+        igColumns(5, null, false);
         if (animatedButton(">", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
+        igNextColumn();
         igNextColumn();
         igNextColumn();
         igNextColumn();
