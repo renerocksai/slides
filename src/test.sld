@@ -28,10 +28,8 @@ Here comes the left text.
 @leftbox 
 This box comes below the first one
 This makes a continuation
-@emptyline
-We make empty lines with @emptyline.
-@fontSize 24
-!!! Maybe we can shorten @emptyline !!!
+_
+We make empty lines with _.
 
 @rightbox
 this goes into the right box

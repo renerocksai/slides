@@ -45,6 +45,27 @@ fn init() void {
     } else {
         std.log.info("on {}", .{std.builtin.os.tag});
     }
+
+    // dummy fill editor with content
+    dummyInitEditorContent() catch |err| {
+        std.log.err("Not enough memory for editor!", .{});
+    };
+}
+
+fn dummyInitEditorContent() !void {
+    var data = @embedFile("test.sld");
+
+    //std.log.info("data: {}", data.len);
+    const l = data.len;
+    std.log.info("len = {}", .{l});
+
+    var allocator = std.heap.page_allocator;
+    const memory = try allocator.alloc(u8, ed_anim.textbuf_size);
+    ed_anim.textbuf = memory.ptr;
+
+    @memcpy(ed_anim.textbuf, data, l);
+
+    ed_anim.textbuf[l] = 0;
 }
 
 // .
@@ -140,6 +161,10 @@ fn showSlide() !void {
     // .
     // button row
     // .
+    showBottomPanel();
+}
+
+fn showBottomPanel() void {
     // TODO: Animate: initially, fade it in. Then highlight it to drag attention to it. Auto-fade-out after 3 seconds.
     //                default: From then on, fade-in and fade-out, but no attention-grabbing highlighting.
     //
@@ -158,6 +183,7 @@ fn showSlide() !void {
     }
     igEndColumns();
 }
+
 fn trx(x: f32) f32 {
     return x * G.internal_render_size.x / G.content_window_size.x;
 }
