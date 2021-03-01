@@ -115,6 +115,8 @@ var ed_anim = EditAnim{};
 var bt_toggle_ed_anim = ButtonAnim{};
 var bt_toggle_fullscreen_anim = ButtonAnim{};
 var bt_backtomenu_anim = ButtonAnim{};
+var bt_toggle_bottom_panel_anim = ButtonAnim{};
+var anim_bottom_panel = bottomPanelAnim{};
 
 // .
 // Main Update Frame Loop
@@ -147,7 +149,11 @@ fn showSlide() !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(16);
-    try animatedEditor(&ed_anim, ImVec2{ .x = 600.0, .y = G.content_window_size.y - 28 }, G.content_window_size, G.internal_render_size);
+    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 28 };
+    if (anim_bottom_panel.visible == false) {
+        editor_size.y += 20.0;
+    }
+    try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
     my_fonts.popFontScaled();
 
     // render slide
@@ -164,15 +170,13 @@ const bottomPanelAnim = struct {
     visible: bool = false
 };
 
-var anim_bottom_panel = bottomPanelAnim{};
-
 fn showBottomPanel() void {
     // TODO: show a (*) symbol to slide in and out the panel
     my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 25 });
     if (anim_bottom_panel.visible) {
         igColumns(4, null, false);
-        if (igButton("<", ImVec2{ .x = 20, .y = 20 })) {
+        if (animatedButton("<", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
@@ -190,7 +194,7 @@ fn showBottomPanel() void {
         igEndColumns();
     } else {
         igColumns(4, null, false);
-        if (igButton(">", ImVec2{ .x = 20, .y = 20 })) {
+        if (animatedButton(">", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
         igNextColumn();
