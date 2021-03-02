@@ -54,6 +54,7 @@ fn init() void {
 
 fn dummyInitEditorContent() !void {
     var data = @embedFile("test.sld");
+    G.slideshow_filp = "test.sld";
 
     //std.log.info("data: {}", data.len);
     const l = data.len;
@@ -100,6 +101,8 @@ const AppData = struct {
     slide_render_width: f32 = 1920.0,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
+    slideshow_filp: ?[]const u8 = null,
+    status_msg: [*c]const u8 = "",
 };
 
 var G = AppData{};
@@ -119,6 +122,7 @@ var bt_backtomenu_anim = ButtonAnim{};
 var bt_toggle_bottom_panel_anim = ButtonAnim{};
 var bt_save_anim = ButtonAnim{};
 var anim_bottom_panel = bottomPanelAnim{};
+var anim_status_msg = MsgAnim{};
 
 // .
 // Main Update Frame Loop
@@ -155,7 +159,6 @@ fn showSlide() !void {
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
-    // TODO: react to save
     _ = try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
     my_fonts.popFontScaled();
 
@@ -167,6 +170,8 @@ fn showSlide() !void {
     // button row
     // .
     showBottomPanel();
+
+    showStatusMsg(G.status_msg);
 }
 
 const bottomPanelAnim = struct {
@@ -199,7 +204,10 @@ fn showBottomPanel() void {
         // dummy column for the editor save button
         igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_save_anim) == .released) {}
+            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_save_anim) == .released) {
+                // save the shit
+                _ = try saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+            }
         }
         igEndColumns();
     } else {
@@ -214,6 +222,29 @@ fn showBottomPanel() void {
         igEndColumns();
     }
     my_fonts.popFontScaled();
+}
+
+fn showStatusMsg(msg: [*c]const u8) void {
+    igSetCursorPos(ImVec2{ .x = 10, .y = G.content_window_size.y - 44 });
+    my_fonts.pushFontScaled(16);
+    showMsg(msg.?, ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 }, &anim_status_msg);
+    my_fonts.popFontScaled();
+}
+
+fn setStatusMsg(msg: [*c]const u8) void {
+    G.status_msg = msg;
+    anim_status_msg.anim_state = .fadein;
+}
+
+fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) !bool {
+    if (filp == null) {
+        std.log.err("no filename!", .{});
+        return false;
+    }
+    std.log.debug("saving to: {s} ", .{filp.?});
+    igPopStyleColor(ImGuiCol_Text);
+    setStatusMsg("Slideshow saved!");
+    return true;
 }
 
 fn trx(x: f32) f32 {

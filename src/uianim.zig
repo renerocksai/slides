@@ -200,3 +200,64 @@ pub fn animatedButton(label: [*c]const u8, size: ImVec2, anim: *ButtonAnim) Butt
     anim.current_color = currentColor;
     return state;
 }
+
+pub const MsgAnimState = enum {
+    none,
+    fadein,
+    keep,
+    fadeout,
+};
+
+pub const MsgAnim = struct {
+    ticker_ms: u32 = 0,
+    fadein_duration: i32 = 100,
+    fadeout_duration: i32 = 300,
+    keep_duration: i32 = 800,
+    current_color: ImVec4 = ImVec4{},
+    anim_state: MsgAnimState = .none,
+};
+
+pub fn showMsg(msg: [*c]const u8, color: ImVec4, anim: *MsgAnim) void {
+    var from_color = ImVec4{};
+    var to_color = ImVec4{};
+    //const hide_color = ImVec4{ .x = color.x, .y = color.y, .z = color.z, .w = 0 };
+    const hide_color = ImVec4{};
+    var duration: i32 = 0;
+
+    switch (anim.anim_state) {
+        .none => return,
+        .fadein => {
+            from_color = hide_color;
+            to_color = color;
+            duration = anim.fadein_duration;
+            anim.current_color = animateColor(from_color, to_color, duration, anim.ticker_ms);
+            anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
+            if (anim.ticker_ms > anim.fadein_duration) {
+                anim.anim_state = .keep;
+                anim.ticker_ms = 0;
+            }
+        },
+        .fadeout => {
+            from_color = color;
+            to_color = hide_color;
+            duration = anim.fadeout_duration;
+            anim.current_color = animateColor(from_color, to_color, duration, anim.ticker_ms);
+            anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
+            if (anim.ticker_ms > anim.fadeout_duration) {
+                anim.anim_state = .none;
+                anim.ticker_ms = 0;
+            }
+        },
+        .keep => {
+            anim.current_color = color;
+            anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
+            if (anim.ticker_ms > anim.keep_duration) {
+                anim.anim_state = .fadeout;
+                anim.ticker_ms = 0;
+            }
+        },
+    }
+    igPushStyleColorVec4(ImGuiCol_Text, anim.current_color);
+    igText(msg);
+    igPopStyleColor(1);
+}
