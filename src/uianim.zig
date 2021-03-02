@@ -210,19 +210,20 @@ pub const MsgAnimState = enum {
 
 pub const MsgAnim = struct {
     ticker_ms: u32 = 0,
-    fadein_duration: i32 = 100,
+    fadein_duration: i32 = 300,
     fadeout_duration: i32 = 300,
     keep_duration: i32 = 800,
     current_color: ImVec4 = ImVec4{},
     anim_state: MsgAnimState = .none,
 };
 
-pub fn showMsg(msg: [*c]const u8, color: ImVec4, anim: *MsgAnim) void {
+pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4, anim: *MsgAnim) void {
     var from_color = ImVec4{};
     var to_color = ImVec4{};
     //const hide_color = ImVec4{ .x = color.x, .y = color.y, .z = color.z, .w = 0 };
     const hide_color = ImVec4{};
     var duration: i32 = 0;
+    var the_pos = pos;
 
     switch (anim.anim_state) {
         .none => return,
@@ -231,6 +232,7 @@ pub fn showMsg(msg: [*c]const u8, color: ImVec4, anim: *MsgAnim) void {
             to_color = color;
             duration = anim.fadein_duration;
             anim.current_color = animateColor(from_color, to_color, duration, anim.ticker_ms);
+            the_pos = animateVec2(flyin_pos, pos, duration, anim.ticker_ms);
             anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
             if (anim.ticker_ms > anim.fadein_duration) {
                 anim.anim_state = .keep;
@@ -257,6 +259,7 @@ pub fn showMsg(msg: [*c]const u8, color: ImVec4, anim: *MsgAnim) void {
             }
         },
     }
+    igSetCursorPos(the_pos);
     igPushStyleColorVec4(ImGuiCol_Text, anim.current_color);
     igText(msg);
     igPopStyleColor(1);

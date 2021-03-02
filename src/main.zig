@@ -225,9 +225,11 @@ fn showBottomPanel() void {
 }
 
 fn showStatusMsg(msg: [*c]const u8) void {
-    igSetCursorPos(ImVec2{ .x = 10, .y = G.content_window_size.y - 44 });
+    const pos = ImVec2{ .x = 10, .y = G.content_window_size.y - 44 };
+    const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = G.content_window_size.y - 44 };
+    const color = ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 };
     my_fonts.pushFontScaled(16);
-    showMsg(msg.?, ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 }, &anim_status_msg);
+    showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
     my_fonts.popFontScaled();
 }
 
