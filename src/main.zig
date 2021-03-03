@@ -155,7 +155,7 @@ fn showSlide() !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(16);
-    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 28 };
+    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 35 };
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
@@ -181,30 +181,31 @@ const bottomPanelAnim = struct {
 fn showBottomPanel() void {
     // TODO: show a (*) symbol to slide in and out the panel
     my_fonts.pushFontScaled(16);
-    igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 25 });
+    igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
     if (anim_bottom_panel.visible) {
         igColumns(6, null, false);
+        bt_toggle_bottom_panel_anim.arrow_dir = 0;
         if (animatedButton("<", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
-        if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 20 }, &bt_backtomenu_anim) == .released) {
+        if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
             G.app_state = .mainmenu;
         }
         igNextColumn();
-        if (animatedButton("fullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 20 }, &bt_toggle_fullscreen_anim) == .released) {
+        if (animatedButton("fullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
             sapp_toggle_fullscreen();
         }
         igNextColumn();
-        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 20 }, &bt_overview_anim) == .released) {}
+        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {}
         igNextColumn();
-        if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_toggle_ed_anim) == .released) {
+        if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
             ed_anim.visible = !ed_anim.visible;
         }
         // dummy column for the editor save button
         igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 20 }, &bt_save_anim) == .released) {
+            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
                 // save the shit
                 _ = try saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
             }
@@ -212,6 +213,7 @@ fn showBottomPanel() void {
         igEndColumns();
     } else {
         igColumns(5, null, false);
+        bt_toggle_bottom_panel_anim.arrow_dir = 1;
         if (animatedButton(">", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
@@ -225,7 +227,7 @@ fn showBottomPanel() void {
 }
 
 fn showStatusMsg(msg: [*c]const u8) void {
-    const pos = ImVec2{ .x = 10, .y = G.content_window_size.y - 44 };
+    const pos = ImVec2{ .x = 10, .y = G.content_window_size.y - 50 };
     const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = G.content_window_size.y - 44 };
     const color = ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 };
     my_fonts.pushFontScaled(16);

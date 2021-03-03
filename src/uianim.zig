@@ -22,6 +22,7 @@ pub const ButtonAnim = struct {
     press_duration: i32 = 100,
     release_duration: i32 = 100,
     current_color: ImVec4 = ImVec4{},
+    arrow_dir: i32 = -1,
 };
 
 pub const EditAnim = struct {
@@ -149,8 +150,16 @@ pub fn animateColor(from: ImVec4, to: ImVec4, duration_ms: i32, ticker_ms: u32) 
     return ret;
 }
 
-pub fn doButton(label: [*c]const u8, size: ImVec2) ButtonState {
-    var released = igButton(label, size);
+pub fn doButton(label: [*c]const u8, size: ImVec2, dir: i32) ButtonState {
+    var released: bool = false;
+
+    if (dir == -1) {
+        // normal button
+        released = igButton(label, size);
+    } else {
+        // arrow button
+        released = igArrowButton(label, dir);
+    }
 
     if (released) return .released;
     if (igIsItemActive() and igIsItemHovered(ImGuiHoveredFlags_RectOnly)) return .pressed;
@@ -188,7 +197,7 @@ pub fn animatedButton(label: [*c]const u8, size: ImVec2, anim: *ButtonAnim) Butt
     igPushStyleColorVec4(ImGuiCol_Button, currentColor);
     igPushStyleColorVec4(ImGuiCol_ButtonHovered, currentColor);
     igPushStyleColorVec4(ImGuiCol_ButtonActive, currentColor);
-    var state = doButton(label, size);
+    var state = doButton(label, size, anim.arrow_dir);
     igPopStyleColor(3);
 
     anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
@@ -262,7 +271,7 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
 
     // backdrop
     var bsize = ImVec2{};
-    var bcolor = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.3, .w = 0.3 };
+    var bcolor = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.4 };
     if (anim.anim_state == .fadeout) {
         //bcolor = animateColor(bcolor, ImVec4{}, duration, anim.ticker_ms);
     }
