@@ -155,7 +155,7 @@ fn showSlide() !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(16);
-    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 35 };
+    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 37 };
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
@@ -179,7 +179,6 @@ const bottomPanelAnim = struct {
 };
 
 fn showBottomPanel() void {
-    // TODO: show a (*) symbol to slide in and out the panel
     my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
     if (anim_bottom_panel.visible) {
