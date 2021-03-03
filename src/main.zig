@@ -196,7 +196,9 @@ fn showBottomPanel() void {
             sapp_toggle_fullscreen();
         }
         igNextColumn();
-        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {}
+        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
+            setStatusMsg("Overview is not implemented yet!");
+        }
         igNextColumn();
         if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
             ed_anim.visible = !ed_anim.visible;
@@ -329,18 +331,20 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("Load Slides...", bt_size, &bt_anim_1) == .released) {
+        if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
+            // TODO: file open dialog, ...
             G.app_state = .presenting;
             setStatusMsg("  Slideshow loaded!  ");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Help", bt_size, &bt_anim_2) == .released) {
-            std.log.info("clicked!", .{});
+        if (animatedButton("Presentation View", bt_size, &bt_anim_2) == .released) {
+            G.app_state = .presenting;
+            setStatusMsg("  Welcome back!  ");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
-        if (animatedButton("Exit", bt_size, &bt_anim_3) == .released) {
+        if (animatedButton("Quit", bt_size, &bt_anim_3) == .released) {
             std.process.exit(0);
         }
     }
