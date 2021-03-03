@@ -330,6 +330,7 @@ fn showMainMenu(app_data: *AppData) void {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("Load Slides...", bt_size, &bt_anim_1) == .released) {
             G.app_state = .presenting;
+            setStatusMsg("  Slideshow loaded!  ");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });

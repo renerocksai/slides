@@ -259,6 +259,21 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
             }
         },
     }
+
+    // backdrop
+    var bsize = ImVec2{};
+    var bcolor = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.3, .w = 0.3 };
+    if (anim.anim_state == .fadeout) {
+        //bcolor = animateColor(bcolor, ImVec4{}, duration, anim.ticker_ms);
+    }
+    igCalcTextSize(&bsize, msg, msg + std.mem.len(msg), false, 2000.0);
+    igPushStyleColorVec4(ImGuiCol_Button, bcolor);
+    igPushStyleColorVec4(ImGuiCol_ButtonHovered, bcolor);
+    igPushStyleColorVec4(ImGuiCol_ButtonActive, bcolor);
+    igSetCursorPos(the_pos);
+    _ = igButton("", bsize);
+    igPopStyleColor(3);
+
     igSetCursorPos(the_pos);
     igPushStyleColorVec4(ImGuiCol_Text, anim.current_color);
     igText(msg);
