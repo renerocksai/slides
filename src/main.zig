@@ -356,11 +356,11 @@ fn showMainMenu(app_data: *AppData) void {
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
+
             // TODO: file open dialog, ...
             // pub fn openFileDialog(title: [:0]const u8, path: [:0]const u8, filter: [:0]const u8) [*c]u8 {
-            const cwd = std.fs.cwd();
             var buf: [2048]u8 = undefined;
-            const my_path: []u8 = cwd.realpath(".", buf[0..]) catch |err| {
+            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| {
                 return;
             };
             std.log.info("{} : {any}", .{ my_path.len, my_path });
