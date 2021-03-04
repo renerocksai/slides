@@ -54,9 +54,9 @@ fn init() void {
 
 fn initEditorContent() !void {
     var allocator = std.heap.page_allocator;
-    const memory = try allocator.alloc(u8, ed_anim.textbuf_size);
-    ed_anim.textbuf = memory.ptr;
-    std.mem.set(u8, memory, 0);
+    G.editor_memory = try allocator.alloc(u8, ed_anim.textbuf_size);
+    ed_anim.textbuf = G.editor_memory.ptr;
+    std.mem.set(u8, G.editor_memory, 0);
 
     // set to dummy content
     var data = @embedFile("test.sld");
@@ -92,6 +92,7 @@ const AppState = enum {
 
 const AppData = struct {
     app_state: AppState = .mainmenu,
+    editor_memory: []u8 = undefined,
     content_window_size: ImVec2 = ImVec2{},
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
     slide_render_width: f32 = 1920.0,
@@ -352,9 +353,7 @@ fn showMainMenu(app_data: *AppData) void {
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("Load ...", bt_size, &bt_anim_1) == .released) {
-
-            // TODO: file open dialog, ...
-            // pub fn openFileDialog(title: [:0]const u8, path: [:0]const u8, filter: [:0]const u8) [*c]u8 {
+            // file dialog
             var buf: [2048]u8 = undefined;
             const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
             buf[my_path.len] = 0;
@@ -366,9 +365,17 @@ fn showMainMenu(app_data: *AppData) void {
                 setStatusMsg("canceled");
             } else {
                 // TODO: now load the file
-                G.app_state = .presenting;
-                setStatusMsg("Slideshow loaded!");
-                std.log.info("sel: {s}", .{sel});
+                if (std.fs.openFileAbsolute(std.mem.span(sel), .{ .read = true })) |f| {
+                    defer f.close();
+                    if (f.read(G.editor_memory)) |howmany| {
+                        G.app_state = .presenting;
+                        setStatusMsg("Slideshow loaded!");
+                    } else |err| {
+                        setStatusMsg("Loading failed!");
+                    }
+                } else |err| {
+                    setStatusMsg("Loading failed!");
+                }
             }
         }
 
