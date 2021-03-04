@@ -53,7 +53,7 @@ fn init() void {
 }
 
 fn dummyInitEditorContent() !void {
-    var data = @embedFile("test.sld");
+    var data = @embedFile("../test.sld");
     G.slideshow_filp = "test.sld";
 
     //std.log.info("data: {}", data.len);
@@ -357,7 +357,10 @@ fn showMainMenu(app_data: *AppData) void {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
             // TODO: file open dialog, ...
-            G.app_state = .presenting;
+            // pub fn openFileDialog(title: [:0]const u8, path: [:0]const u8, filter: [:0]const u8) [*c]u8 {
+            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", ".", "*.sld");
+            //std.log.info("file sel: {any}", .{sel});
+            //            G.app_state = .presenting;
             setStatusMsg("Slideshow loaded!");
         }
 
