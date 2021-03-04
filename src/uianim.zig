@@ -229,10 +229,12 @@ pub const MsgAnim = struct {
 pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4, anim: *MsgAnim) void {
     var from_color = ImVec4{};
     var to_color = ImVec4{};
-    //const hide_color = ImVec4{ .x = color.x, .y = color.y, .z = color.z, .w = 0 };
     const hide_color = ImVec4{};
     var duration: i32 = 0;
     var the_pos = pos;
+
+    const backdrop_color = ImVec4{ .x = 0x80 / 255.0, .y = 0x80 / 255.0, .z = 0x80 / 255.0, .w = 1 };
+    var current_backdrop_color = backdrop_color;
 
     switch (anim.anim_state) {
         .none => return,
@@ -241,6 +243,7 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
             to_color = color;
             duration = anim.fadein_duration;
             anim.current_color = animateColor(from_color, to_color, duration, anim.ticker_ms);
+            current_backdrop_color = animateColor(hide_color, backdrop_color, duration, anim.ticker_ms);
             the_pos = animateVec2(flyin_pos, pos, duration, anim.ticker_ms);
             anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
             if (anim.ticker_ms > anim.fadein_duration) {
@@ -253,6 +256,7 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
             to_color = hide_color;
             duration = anim.fadeout_duration;
             anim.current_color = animateColor(from_color, to_color, duration, anim.ticker_ms);
+            current_backdrop_color = animateColor(backdrop_color, hide_color, @divTrunc(duration, 2), anim.ticker_ms);
             anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
             if (anim.ticker_ms > anim.fadeout_duration) {
                 anim.anim_state = .none;
@@ -261,6 +265,7 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
         },
         .keep => {
             anim.current_color = color;
+            current_backdrop_color = backdrop_color;
             anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
             if (anim.ticker_ms > anim.keep_duration) {
                 anim.anim_state = .fadeout;
@@ -269,20 +274,16 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
         },
     }
 
-    // backdrop
-    var bsize = ImVec2{};
-    var bcolor = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.4 };
-    if (anim.anim_state == .fadeout) {
-        //bcolor = animateColor(bcolor, ImVec4{}, duration, anim.ticker_ms);
-    }
-    igCalcTextSize(&bsize, msg, msg + std.mem.len(msg), false, 2000.0);
-    igPushStyleColorVec4(ImGuiCol_Button, bcolor);
-    igPushStyleColorVec4(ImGuiCol_ButtonHovered, bcolor);
-    igPushStyleColorVec4(ImGuiCol_ButtonActive, bcolor);
-    igSetCursorPos(the_pos);
-    _ = igButton("", bsize);
-    igPopStyleColor(3);
+    // backdrop text
+    var offset_1 = the_pos;
+    the_pos.x -= 1;
+    the_pos.y -= 1;
+    igSetCursorPos(offset_1);
+    igPushStyleColorVec4(ImGuiCol_Text, current_backdrop_color);
+    igText(msg);
+    igPopStyleColor(1);
 
+    // the actual msg
     igSetCursorPos(the_pos);
     igPushStyleColorVec4(ImGuiCol_Text, anim.current_color);
     igText(msg);

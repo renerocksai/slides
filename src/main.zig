@@ -228,10 +228,13 @@ fn showBottomPanel() void {
 }
 
 fn showStatusMsg(msg: [*c]const u8) void {
-    const pos = ImVec2{ .x = 10, .y = G.content_window_size.y - 50 };
-    const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = G.content_window_size.y - 44 };
-    const color = ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 };
-    my_fonts.pushFontScaled(16);
+    const y = G.content_window_size.y - 50 - 64;
+    const pos = ImVec2{ .x = 10, .y = y };
+    const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = y };
+    // const color = ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 };
+    const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
+    // my_fonts.pushFontScaled(16);
+    my_fonts.pushFontScaled(64);
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
     my_fonts.popFontScaled();
 }
@@ -334,13 +337,13 @@ fn showMainMenu(app_data: *AppData) void {
         if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
             // TODO: file open dialog, ...
             G.app_state = .presenting;
-            setStatusMsg("  Slideshow loaded!  ");
+            setStatusMsg("Slideshow loaded!");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
         if (animatedButton("Presentation View", bt_size, &bt_anim_2) == .released) {
             G.app_state = .presenting;
-            setStatusMsg("  Welcome back!  ");
+            setStatusMsg("Welcome back!");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
