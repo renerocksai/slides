@@ -111,7 +111,7 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
     if (show) {
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
         s.y = size.y;
-        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_AllowTabInput;
+        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput;
         _ = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y - 0 }, flags, null, null);
 
         // get real editor size

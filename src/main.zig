@@ -47,26 +47,22 @@ fn init() void {
     }
 
     // dummy fill editor with content
-    dummyInitEditorContent() catch |err| {
+    initEditorContent() catch |err| {
         std.log.err("Not enough memory for editor!", .{});
     };
 }
 
-fn dummyInitEditorContent() !void {
-    var data = @embedFile("../test.sld");
-    G.slideshow_filp = "test.sld";
-
-    //std.log.info("data: {}", data.len);
-    const l = data.len;
-    std.log.info("len = {}", .{l});
-
+fn initEditorContent() !void {
     var allocator = std.heap.page_allocator;
     const memory = try allocator.alloc(u8, ed_anim.textbuf_size);
     ed_anim.textbuf = memory.ptr;
+    std.mem.set(u8, memory, 0);
 
+    // set to dummy content
+    var data = @embedFile("test.sld");
+    G.slideshow_filp = "test.sld";
+    const l = data.len;
     @memcpy(ed_anim.textbuf, data, l);
-
-    ed_anim.textbuf[l] = 0;
 }
 
 // .
@@ -171,7 +167,7 @@ fn showSlide() !void {
     // .
     showBottomPanel();
 
-    showStatusMsg(G.status_msg);
+    showStatusMsgV(G.status_msg);
 }
 
 const bottomPanelAnim = struct {
@@ -355,27 +351,29 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
+        if (animatedButton("Load ...", bt_size, &bt_anim_1) == .released) {
 
             // TODO: file open dialog, ...
             // pub fn openFileDialog(title: [:0]const u8, path: [:0]const u8, filter: [:0]const u8) [*c]u8 {
             var buf: [2048]u8 = undefined;
-            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| {
-                return;
-            };
-            std.log.info("{} : {any}", .{ my_path.len, my_path });
+            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
             buf[my_path.len] = 0;
             const x = buf[0 .. my_path.len + 1];
             const y = x[0..my_path.len :0];
-            std.log.info("y[0..{}] = {s}", .{ y.len, y });
             const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
-            //std.log.info("file sel: {any}", .{sel});
-            //            G.app_state = .presenting;
-            setStatusMsg("Slideshow loaded!");
+            if (sel == null) {
+                std.log.info("canceled", .{});
+                setStatusMsg("canceled");
+            } else {
+                // TODO: now load the file
+                G.app_state = .presenting;
+                setStatusMsg("Slideshow loaded!");
+                std.log.info("sel: {s}", .{sel});
+            }
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Presentation View", bt_size, &bt_anim_2) == .released) {
+        if (animatedButton("Present!", bt_size, &bt_anim_2) == .released) {
             G.app_state = .presenting;
             setStatusMsg("Welcome back!");
         }
@@ -386,20 +384,20 @@ fn showMainMenu(app_data: *AppData) void {
         }
     }
     my_fonts.popFontScaled();
+    showStatusMsgV(G.status_msg);
 }
 
-// fn toX0(x: []const u8) [:0]const u8 {
-//     return x ++ "\x00";
-//     std.fmt.bufPrintZ(buf: []u8, comptime fmt: []const u8, args: anytype)
-// }
-// pub fn bufPrint(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![]u8 {
-//     var fbs = std.io.fixedBufferStream(buf);
-//     try format(fbs.writer(), fmt, args);
-//     return fbs.getWritten();
-// }
-//
-// pub fn bufPrintZ(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![:0]u8 {
-//     const result = try bufPrint(buf, fmt ++ "\x00", args);
-//     return result[0 .. result.len - 1 :0];
-// }
-//
+fn showStatusMsgV(msg: [*c]const u8) void {
+    var tsize = ImVec2{};
+    my_fonts.pushFontScaled(64);
+    igCalcTextSize(&tsize, msg, msg + std.mem.lenZ(msg), false, 2000.0);
+
+    const x = (G.content_window_size.x - tsize.x) / 2.0;
+    const y = G.content_window_size.y / 4;
+
+    const pos = ImVec2{ .x = x, .y = y };
+    const flyin_pos = ImVec2{ .x = x, .y = G.content_window_size.y - tsize.y - 8 };
+    const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
+    showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
+    my_fonts.popFontScaled();
+}
