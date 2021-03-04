@@ -358,7 +358,17 @@ fn showMainMenu(app_data: *AppData) void {
         if (animatedButton("Load Slideshow...", bt_size, &bt_anim_1) == .released) {
             // TODO: file open dialog, ...
             // pub fn openFileDialog(title: [:0]const u8, path: [:0]const u8, filter: [:0]const u8) [*c]u8 {
-            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", ".", "*.sld");
+            const cwd = std.fs.cwd();
+            var buf: [2048]u8 = undefined;
+            const my_path: []u8 = cwd.realpath(".", buf[0..]) catch |err| {
+                return;
+            };
+            std.log.info("{} : {any}", .{ my_path.len, my_path });
+            buf[my_path.len] = 0;
+            const x = buf[0 .. my_path.len + 1];
+            const y = x[0..my_path.len :0];
+            std.log.info("y[0..{}] = {s}", .{ y.len, y });
+            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
             //std.log.info("file sel: {any}", .{sel});
             //            G.app_state = .presenting;
             setStatusMsg("Slideshow loaded!");
@@ -377,3 +387,19 @@ fn showMainMenu(app_data: *AppData) void {
     }
     my_fonts.popFontScaled();
 }
+
+// fn toX0(x: []const u8) [:0]const u8 {
+//     return x ++ "\x00";
+//     std.fmt.bufPrintZ(buf: []u8, comptime fmt: []const u8, args: anytype)
+// }
+// pub fn bufPrint(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![]u8 {
+//     var fbs = std.io.fixedBufferStream(buf);
+//     try format(fbs.writer(), fmt, args);
+//     return fbs.getWritten();
+// }
+//
+// pub fn bufPrintZ(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![:0]u8 {
+//     const result = try bufPrint(buf, fmt ++ "\x00", args);
+//     return result[0 .. result.len - 1 :0];
+// }
+//
