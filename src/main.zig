@@ -398,6 +398,10 @@ fn showStatusMsgV(msg: [*c]const u8) void {
     var tsize = ImVec2{};
     my_fonts.pushFontScaled(64);
     igCalcTextSize(&tsize, msg, msg + std.mem.lenZ(msg), false, 2000.0);
+    const maxw = G.content_window_size.x * 0.9;
+    if (tsize.x > maxw) {
+        tsize.x = maxw;
+    }
 
     const x = (G.content_window_size.x - tsize.x) / 2.0;
     const y = G.content_window_size.y / 4;
@@ -405,6 +409,8 @@ fn showStatusMsgV(msg: [*c]const u8) void {
     const pos = ImVec2{ .x = x, .y = y };
     const flyin_pos = ImVec2{ .x = x, .y = G.content_window_size.y - tsize.y - 8 };
     const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
+    igPushTextWrapPos(maxw + x);
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
+    igPopTextWrapPos();
     my_fonts.popFontScaled();
 }
