@@ -257,18 +257,23 @@ fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     };
     defer file.close();
 
-    const expected_written = std.mem.len(contents);
-
     const contents_slice: []u8 = std.mem.spanZ(contents);
     file.writeAll(contents_slice) catch |err| {
         setStatusMsg("ERROR saving slideshow");
         return false;
     };
-
-    // igPopStyleColor(ImGuiCol_Text);
     setStatusMsg("Slideshow saved!");
-
     return true;
+
+    // interesting snippet: null-check for c-style pointers expressed via optional slices
+    // const prompt = c"> ";
+    //
+    // fn readline() ?[]const u8 {
+    //     if (editline.readline(prompt)) |line| {
+    //             return std.mem.toSliceConst(u8, line);
+    //     }
+    //     return null;
+    // }
 }
 
 fn trx(x: f32) f32 {
