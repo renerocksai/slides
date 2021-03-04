@@ -237,6 +237,7 @@ fn showStatusMsg(msg: [*c]const u8) void {
 fn setStatusMsg(msg: [*c]const u8) void {
     G.status_msg = msg;
     anim_status_msg.anim_state = .fadein;
+    anim_status_msg.ticker_ms = 0;
 }
 
 fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
