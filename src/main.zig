@@ -208,7 +208,7 @@ fn showBottomPanel() void {
         if (ed_anim.visible) {
             if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
                 // save the shit
-                _ = try saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+                _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
             }
         }
         igEndColumns();
@@ -231,9 +231,7 @@ fn showStatusMsg(msg: [*c]const u8) void {
     const y = G.content_window_size.y - 50 - 64;
     const pos = ImVec2{ .x = 10, .y = y };
     const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = y };
-    // const color = ImVec4{ .x = 0.9, .y = 0.9, .z = 0, .w = 1 };
     const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
-    // my_fonts.pushFontScaled(16);
     my_fonts.pushFontScaled(64);
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
     my_fonts.popFontScaled();
@@ -244,14 +242,32 @@ fn setStatusMsg(msg: [*c]const u8) void {
     anim_status_msg.anim_state = .fadein;
 }
 
-fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) !bool {
+fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     if (filp == null) {
         std.log.err("no filename!", .{});
         return false;
     }
     std.log.debug("saving to: {s} ", .{filp.?});
-    igPopStyleColor(ImGuiCol_Text);
+    const file = std.fs.cwd().createFile(
+        filp.?,
+        .{},
+    ) catch |err| {
+        setStatusMsg("ERROR saving slideshow");
+        return false;
+    };
+    defer file.close();
+
+    const expected_written = std.mem.len(contents);
+
+    const contents_slice: []u8 = std.mem.spanZ(contents);
+    file.writeAll(contents_slice) catch |err| {
+        setStatusMsg("ERROR saving slideshow");
+        return false;
+    };
+
+    // igPopStyleColor(ImGuiCol_Text);
     setStatusMsg("Slideshow saved!");
+
     return true;
 }
 
