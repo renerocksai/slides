@@ -169,6 +169,7 @@ fn showSlide(slide: []const SlideItem) !void {
         switch (item.kind) {
             .background => {
                 if (item.img_path) |p| {
+                    // TODO: texture cache
                     std.log.info("{} img", .{i});
                     slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
                 } else {
@@ -193,14 +194,6 @@ fn showSlide(slide: []const SlideItem) !void {
         }
     }
 
-    // background color or background image
-    //    tex = null;
-    //    if (tex) |texture| {
-    //        slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
-    //    } else {
-    //        setSlideBgColor(igGetStyleColorVec4(ImGuiCol_Button).*);
-    //    }
-
     // .
     // button row
     // .
@@ -221,7 +214,6 @@ fn setSlideBgColor(color: ImVec4) void {
         br.x = tl.x + rsize.x;
         br.y = tl.y + rsize.y;
         const bgcol = igGetColorU32Vec4(color);
-        // ImDrawList_AddRectFilled(drawlist, slideAreaTL(), br, bgcol, 1.0, 0);
         igRenderFrame(slideAreaTL(), br, bgcol, true, 0.0);
     }
 }
