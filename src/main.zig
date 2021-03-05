@@ -181,13 +181,16 @@ fn showSlide(slide: []const SlideItem) !void {
                 if (item.text) |t| {
                     std.log.info("{} textbox", .{i});
                     var pos = trxyToSlideXY(item.position);
+                    igPushTextWrapPos(pos.x + item.size.x);
                     igSetCursorPos(pos);
                     const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * scaleToSlide(G.internal_render_size).y / G.content_window_size.y);
                     my_fonts.pushFontScaled(fsize);
                     igPushStyleColorVec4(ImGuiCol_Text, item.color);
+                    std.log.info("color: {any}", .{item.color});
                     igText(t);
                     my_fonts.popFontScaled();
                     igPopStyleColor(1);
+                    igPopTextWrapPos();
                 }
             },
             else => {},
@@ -516,15 +519,29 @@ const slidedata1 = [_]SlideItem{
         .size = ImVec2{ .x = 500, .y = 80 },
     },
 };
+
+// title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
+// subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
+// authors color #993366
 const slidedata = [_]SlideItem{
     // background
     SlideItem{ .kind = .background, .img_path = "nim/1.png" },
-    // some text
+    // title
     SlideItem{
         .kind = .textbox,
-        .text = "Hello, world!",
+        .fontSize = 96,
+        .text = "Artififial Voices in Human Choices",
         .color = ImVec4{ .w = 0.9 },
-        .position = ImVec2{ .x = 100, .y = 100 },
-        .size = ImVec2{ .x = 500, .y = 80 },
+        .position = ImVec2{ .x = 219, .y = 481 },
+        .size = ImVec2{ .x = 836, .y = 238 },
+    },
+    // subtitle etc
+    SlideItem{
+        .kind = .textbox,
+        .fontSize = 45,
+        .text = "SOMETHING SOMETHING REJECTIONS\n\nRene Schallner, Dr. Tobias Eismann",
+        .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
+        .position = ImVec2{ .x = 219, .y = 758 },
+        .size = ImVec2{ .x = 1149, .y = 246 },
     },
 };
