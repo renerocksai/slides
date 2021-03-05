@@ -164,27 +164,10 @@ fn showSlide() !void {
 
     // background color or background image
     tex = null;
-    igSetCursorPos(trxyToSlideXY(ImVec2{}));
-    var bgcolor = igGetStyleColorVec4(ImGuiCol_Button).*;
-    var drawlist = igGetForegroundDrawListNil();
-    if (drawlist == null) {
-        std.log.info("drawlist is null!", .{});
-    } else {
-        const tl = slideAreaTL();
-        var br = tl;
-        const rsize = scaleToSlide(G.internal_render_size);
-        br.x = tl.x + rsize.x;
-        br.y = tl.y + rsize.y;
-        const bgcol = igGetColorU32Vec4(bgcolor);
-        ImDrawList_AddRectFilled(drawlist, slideAreaTL(), br, bgcol, 1.0, 0);
-        //pub extern fn ImDrawList_AddRectFilled(self: [*c]ImDrawList, p_min: ImVec2, p_max: ImVec2, col: ImU32, rounding: f32, rounding_corners: ImDrawCornerFlags) void;
-    }
     if (tex) |texture| {
         slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
     } else {
-        igSetCursorPos(trxyToSlideXY(ImVec2{}));
-        _ = igBeginChildStr("", scaleToSlide(G.internal_render_size), true, 0);
-        igEndChild();
+        setSlideBgColor(igGetStyleColorVec4(ImGuiCol_Button).*);
     }
 
     // .
@@ -193,6 +176,22 @@ fn showSlide() !void {
     showBottomPanel();
 
     showStatusMsgV(G.status_msg);
+}
+
+fn setSlideBgColor(color: ImVec4) void {
+    igSetCursorPos(trxyToSlideXY(ImVec2{}));
+    var drawlist = igGetForegroundDrawListNil();
+    if (drawlist == null) {
+        std.log.warn("drawlist is null!", .{});
+    } else {
+        const tl = slideAreaTL();
+        var br = tl;
+        const rsize = scaleToSlide(G.internal_render_size);
+        br.x = tl.x + rsize.x;
+        br.y = tl.y + rsize.y;
+        const bgcol = igGetColorU32Vec4(color);
+        ImDrawList_AddRectFilled(drawlist, slideAreaTL(), br, bgcol, 1.0, 0);
+    }
 }
 
 const bottomPanelAnim = struct {
