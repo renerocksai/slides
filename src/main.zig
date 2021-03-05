@@ -222,7 +222,7 @@ fn setSlideBgColor(color: ImVec4) void {
         br.y = tl.y + rsize.y;
         const bgcol = igGetColorU32Vec4(color);
         // ImDrawList_AddRectFilled(drawlist, slideAreaTL(), br, bgcol, 1.0, 0);
-        igRenderFrame(slideAreaTL(), br, bgcol, false, 1.0);
+        igRenderFrame(slideAreaTL(), br, bgcol, true, 0.0);
     }
 }
 
@@ -511,7 +511,7 @@ const SlideItem = struct {
     size: ImVec2 = ImVec2{},
 };
 
-const slidedata = [_]SlideItem{
+const slidedata1 = [_]SlideItem{
     // background
     //    SlideItem{ .kind = .background, .img_path = "asdf.png" },
     SlideItem{ .kind = .background, .color = ImVec4{ .x = 1, .y = 0.5, .z = 0, .w = 1.0 } },
@@ -520,6 +520,18 @@ const slidedata = [_]SlideItem{
         .kind = .textbox,
         .text = "Hello, world!",
         .color = ImVec4{ .x = 1, .y = 0.1, .z = 0.1, .w = 0.9 },
+        .position = ImVec2{ .x = 100, .y = 100 },
+        .size = ImVec2{ .x = 500, .y = 80 },
+    },
+};
+const slidedata = [_]SlideItem{
+    // background
+    SlideItem{ .kind = .background, .img_path = "nim/1.png" },
+    // some text
+    SlideItem{
+        .kind = .textbox,
+        .text = "Hello, world!",
+        .color = ImVec4{ .w = 0.9 },
         .position = ImVec2{ .x = 100, .y = 100 },
         .size = ImVec2{ .x = 500, .y = 80 },
     },
