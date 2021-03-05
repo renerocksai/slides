@@ -96,10 +96,12 @@ const AppData = struct {
     content_window_size: ImVec2 = ImVec2{},
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
     slide_render_width: f32 = 1920.0,
+    slide_render_height: f32 = 1080.0,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = null,
     status_msg: [*c]const u8 = "",
+    slides: ?[][]SlideItem = undefined,
 };
 
 var G = AppData{};
@@ -138,7 +140,7 @@ fn update() void {
 
         switch (G.app_state) {
             .mainmenu => showMainMenu(&G),
-            .presenting => showSlide() catch unreachable,
+            .presenting => showSlide(slidedata[0..]) catch unreachable,
             else => {
                 var b: bool = true;
                 igShowMetricsWindow(&b);
@@ -148,10 +150,11 @@ fn update() void {
     }
 }
 
-fn showSlide() !void {
+fn showSlide(slide: []const SlideItem) !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(16);
+
     var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 37 };
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
@@ -162,13 +165,41 @@ fn showSlide() !void {
     // render slide
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
 
-    // background color or background image
-    tex = null;
-    if (tex) |texture| {
-        slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
-    } else {
-        setSlideBgColor(igGetStyleColorVec4(ImGuiCol_Button).*);
+    for (slide) |item, i| {
+        switch (item.kind) {
+            .background => {
+                if (item.img_path) |p| {
+                    std.log.info("{} img", .{i});
+                    slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
+                } else {
+                    std.log.info("{} color", .{i});
+                    setSlideBgColor(item.color);
+                }
+            },
+            .textbox => {
+                if (item.text) |t| {
+                    std.log.info("{} textbox", .{i});
+                    var pos = trxyToSlideXY(item.position);
+                    igSetCursorPos(pos);
+                    const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * scaleToSlide(G.internal_render_size).y / G.content_window_size.y);
+                    my_fonts.pushFontScaled(fsize);
+                    igPushStyleColorVec4(ImGuiCol_Text, item.color);
+                    igText(t);
+                    my_fonts.popFontScaled();
+                    igPopStyleColor(1);
+                }
+            },
+            else => {},
+        }
     }
+
+    // background color or background image
+    //    tex = null;
+    //    if (tex) |texture| {
+    //        slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
+    //    } else {
+    //        setSlideBgColor(igGetStyleColorVec4(ImGuiCol_Button).*);
+    //    }
 
     // .
     // button row
@@ -470,5 +501,26 @@ const SlideItemKind = enum {
 };
 
 const SlideItem = struct {
-    text: ?[]u8,
+    kind: SlideItemKind = .background,
+    text: ?[*:0]u8 = undefined,
+    fontSize: i32 = 128,
+    color: ImVec4 = ImVec4{},
+    img_path: ?[*:0]u8 = undefined,
+    position: ImVec2 = ImVec2{},
+    size: ImVec2 = ImVec2{},
+};
+
+const slidedata = [_]SlideItem{
+    // background
+    SlideItem{ .kind = .background, .img_path = "asdf.png" },
+    //SlideItem{ .kind = .background, .color = ImVec4{ .x = 1, .y = 0.5, .z = 0, .w = 0.5 } },
+    // some text
+    SlideItem{
+        .kind = .textbox,
+        .text = "Hello, world!",
+        //.color = ImVec4{ .x = 1, .y = 0.8, .z = 0.8, .w = 1 },
+        .color = ImVec4{ .w = 1 },
+        .position = ImVec2{ .x = 100, .y = 100 },
+        .size = ImVec2{ .x = 500, .y = 80 },
+    },
 };
