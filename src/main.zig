@@ -194,7 +194,7 @@ fn showBottomPanel() void {
         }
         igNextColumn();
         if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
-            setStatusMsg("Overview is not implemented yet!");
+            setStatusMsg("Not implemented!");
         }
         igNextColumn();
         if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
@@ -260,7 +260,7 @@ fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
         setStatusMsg("ERROR saving slideshow");
         return false;
     };
-    setStatusMsg("Slideshow saved!");
+    setStatusMsg("Saved!");
     return true;
 
     // interesting snippet: null-check for c-style pointers expressed via optional slices
@@ -366,11 +366,13 @@ fn showMainMenu(app_data: *AppData) void {
                 setStatusMsg("canceled");
             } else {
                 // TODO: now load the file
-                if (std.fs.openFileAbsolute(std.mem.span(sel), .{ .read = true })) |f| {
+                const filepath = std.mem.span(sel);
+                if (std.fs.openFileAbsolute(filepath, .{ .read = true })) |f| {
                     defer f.close();
                     if (f.read(G.editor_memory)) |howmany| {
                         G.app_state = .presenting;
-                        setStatusMsg("Slideshow loaded!");
+                        const input = std.fs.path.basename(filepath);
+                        setStatusMsg(sliceToC(input));
                     } else |err| {
                         setStatusMsg("Loading failed!");
                     }
@@ -383,7 +385,9 @@ fn showMainMenu(app_data: *AppData) void {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
         if (animatedButton("Present!", bt_size, &bt_anim_2) == .released) {
             G.app_state = .presenting;
-            setStatusMsg("Welcome back!");
+            const input = std.fs.path.basename(G.slideshow_filp.?);
+            setStatusMsg(sliceToC(input));
+            //            setStatusMsg("Welcome back!");
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
@@ -414,4 +418,17 @@ fn showStatusMsgV(msg: [*c]const u8) void {
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
     igPopTextWrapPos();
     my_fonts.popFontScaled();
+}
+
+var slicetocbuf: [1024]u8 = undefined;
+fn sliceToC(input: []const u8) [:0]u8 {
+    var input_cut = input;
+    if (input.len > slicetocbuf.len) {
+        input_cut = input[0 .. slicetocbuf.len - 1];
+    }
+    std.mem.copy(u8, slicetocbuf[0..], input_cut);
+    slicetocbuf[input_cut.len] = 0;
+    const xx = slicetocbuf[0 .. input_cut.len + 1];
+    const yy = xx[0..input_cut.len :0];
+    return yy;
 }
