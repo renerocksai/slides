@@ -180,10 +180,11 @@ fn showSlide(slide: []const SlideItem) !void {
             .textbox => {
                 if (item.text) |t| {
                     std.log.info("{} textbox", .{i});
-                    var pos = trxyToSlideXY(item.position);
-                    igPushTextWrapPos(pos.x + item.size.x);
-                    igSetCursorPos(pos);
-                    const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * scaleToSlide(G.internal_render_size).y / G.content_window_size.y);
+                    var pos = item.position;
+                    pos.x += item.size.x;
+                    igPushTextWrapPos(trxyToSlideXY(pos).x);
+                    igSetCursorPos(trxyToSlideXY(item.position));
+                    const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * slideSizeInWindow().y / G.internal_render_size.y);
                     my_fonts.pushFontScaled(fsize);
                     igPushStyleColorVec4(ImGuiCol_Text, item.color);
                     std.log.info("color: {any}", .{item.color});
@@ -415,7 +416,7 @@ fn showMainMenu(app_data: *AppData) void {
                 std.log.info("canceled", .{});
                 setStatusMsg("canceled");
             } else {
-                // TODO: now load the file
+                // now load the file
                 const filepath = std.mem.span(sel);
                 if (std.fs.openFileAbsolute(filepath, .{ .read = true })) |f| {
                     defer f.close();
