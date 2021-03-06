@@ -69,8 +69,8 @@ pub fn animateX(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVe
 
 var bt_save_anim = ButtonAnim{};
 
-// returns true if save button was clicked
-pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !ButtonState {
+// returns true if editor is active
+pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
@@ -112,7 +112,7 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
         s.y = size.y;
         var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput;
-        _ = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y - 0 }, flags, null, null);
+        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y - 0 }, flags, null, null);
 
         // get real editor size
         s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
@@ -122,10 +122,9 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
         s.x = content_window_size.x - real_ed_w;
         s.y = size.y - 22.0;
         igSetCursorPos(s);
-        //return animatedButton("Save", ImVec2{ .x = bt_width, .y = 20.0 }, &bt_save_anim);
-        return ButtonState.none;
+        return ret;
     }
-    return ButtonState.none;
+    return false;
 }
 
 fn trxy(pos: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) ImVec2 {

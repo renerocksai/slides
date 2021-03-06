@@ -34,7 +34,6 @@ fn init() void {
         std.log.info("on {}", .{std.builtin.os.tag});
     }
 
-    // dummy fill editor with content
     initEditorContent() catch |err| {
         std.log.err("Not enough memory for editor!", .{});
     };
@@ -47,6 +46,9 @@ fn initEditorContent() !void {
 
     G.slideshow_filp = "empty.sld";
     ed_anim.textbuf[0] = 0;
+
+    // dummy slides
+    makeDemoSlides(&G.slides);
 }
 
 // .
@@ -85,8 +87,8 @@ const AppData = struct {
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = null,
     status_msg: [*c]const u8 = "",
-    slides: std.ArrayList(Slide) = std.ArrayList(Slide).init(allocator),
-    current_slide: usize = 0,
+    slides: std.ArrayList(*Slide) = std.ArrayList(*Slide).init(allocator),
+    current_slide: i32 = 0,
 };
 
 var G = AppData{};
@@ -126,14 +128,12 @@ fn update() void {
         switch (G.app_state) {
             .mainmenu => showMainMenu(&G),
             .presenting => {
+                handleKeyboard();
                 if (G.slides.items.len > 0) {
-                    if (G.current_slide >= G.slides.items.len) {
-                        G.current_slide = G.slides.items.len - 1;
-                    }
-                    showSlide(slidedata[0..]) catch unreachable;
+                    showSlide(G.slides.items[@intCast(usize, G.current_slide)]) catch unreachable;
                 } else {
-                    const empty = [_]SlideItem{SlideItem{ .kind = .background, .color = igGetStyleColorVec4(ImGuiCol_Button).* }};
                     anim_bottom_panel.visible = true;
+                    const empty = Slide{};
                     showSlide(&empty) catch unreachable;
                 }
             },
@@ -146,7 +146,68 @@ fn update() void {
     }
 }
 
-fn showSlide(slide: []const SlideItem) !void {
+fn handleKeyboard() void {
+    // don't consume keys while the editor is visible
+    if (ed_anim.visible) {
+        return;
+    }
+    var deltaindex: i32 = 0;
+    if (igIsKeyReleased(' ')) {
+        std.log.debug("(SPACE)", .{});
+        deltaindex = 1;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_LEFT)) {
+        std.log.debug("(LEFT)", .{});
+        deltaindex = -1;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_RIGHT)) {
+        std.log.debug("(RIGHT)", .{});
+        deltaindex = 1;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_PAGE_UP)) {
+        std.log.debug("(PGUP)", .{});
+        deltaindex = -1;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_PAGE_DOWN)) {
+        std.log.debug("(PGDOWN)", .{});
+        deltaindex = 1;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_F)) {
+        sapp_toggle_fullscreen();
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_M)) {
+        if (igIsKeyDown(SAPP_KEYCODE_LEFT_SHIFT) or igIsKeyDown(SAPP_KEYCODE_RIGHT_SHIFT)) {
+            G.app_state = .mainmenu;
+        } else {
+            anim_bottom_panel.visible = !anim_bottom_panel.visible;
+        }
+    }
+
+    G.current_slide += deltaindex;
+
+    // clamp
+    if (G.slides.items.len > 0 and G.current_slide >= @intCast(i32, G.slides.items.len)) {
+        G.current_slide = @intCast(i32, G.slides.items.len - 1);
+    } else if (G.slides.items.len == 0 and G.current_slide > 0) {
+        G.current_slide = 0;
+    }
+    if (G.current_slide < 0) {
+        G.current_slide = 0;
+    }
+
+    // a key was pressed
+    if (deltaindex != 0) {
+        std.log.debug("slide index: {}", .{G.current_slide});
+    }
+}
+
+fn showSlide(slide: *const Slide) !void {
     // optionally show editor
     igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
     my_fonts.pushFontScaled(16);
@@ -155,13 +216,19 @@ fn showSlide(slide: []const SlideItem) !void {
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
-    _ = try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
+    const editor_active = try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
+    if (!editor_active) {
+        if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
+            ed_anim.visible = !ed_anim.visible;
+        }
+    }
+
     my_fonts.popFontScaled();
 
     // render slide
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
 
-    for (slide) |item, i| {
+    for (slide.items.items) |item, i| {
         switch (item.kind) {
             .background => {
                 if (item.img_path) |p| {
@@ -237,19 +304,19 @@ fn showBottomPanel() void {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
-        if (animatedButton("main menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
+        if (animatedButton("[m]ain menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
             G.app_state = .mainmenu;
         }
         igNextColumn();
-        if (animatedButton("fullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
+        if (animatedButton("[f]ullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
             sapp_toggle_fullscreen();
         }
         igNextColumn();
-        if (animatedButton("overview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
+        if (animatedButton("[o]verview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
             setStatusMsg("Not implemented!");
         }
         igNextColumn();
-        if (animatedButton("editor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
+        if (animatedButton("[e]ditor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
             ed_anim.visible = !ed_anim.visible;
         }
         // dummy column for the editor save button
@@ -404,7 +471,7 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("Load ...", bt_size, &bt_anim_1) == .released) {
+        if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {
             // file dialog
             var buf: [2048]u8 = undefined;
             const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
@@ -433,7 +500,7 @@ fn showMainMenu(app_data: *AppData) void {
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("Present!", bt_size, &bt_anim_2) == .released) {
+        if (animatedButton("[P]resent!", bt_size, &bt_anim_2) == .released or igIsKeyReleased(SAPP_KEYCODE_P)) {
             G.app_state = .presenting;
             const input = std.fs.path.basename(G.slideshow_filp.?);
             setStatusMsg(sliceToC(input));
@@ -441,7 +508,7 @@ fn showMainMenu(app_data: *AppData) void {
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
-        if (animatedButton("Quit", bt_size, &bt_anim_3) == .released) {
+        if (animatedButton("[Q]uit", bt_size, &bt_anim_3) == .released or igIsKeyReleased(SAPP_KEYCODE_Q)) {
             std.process.exit(0);
         }
     }
@@ -487,7 +554,17 @@ fn sliceToC(input: []const u8) [:0]u8 {
 // Slides
 // .
 const Slide = struct {
-    pos_in_editor: i32,
+    pos_in_editor: i32 = 0,
+    items: std.ArrayList(SlideItem) = undefined,
+    fn new(a: *std.mem.Allocator) *Slide {
+        var slide_buffer = a.alloc(Slide, 1) catch unreachable;
+        var slide: *Slide = &slide_buffer[0];
+        slide.items = std.ArrayList(SlideItem).init(a);
+        return slide;
+    }
+    fn deinit(self: *Slide) void {
+        self.items.deinit();
+    }
 };
 
 const SlideItemKind = enum {
@@ -510,36 +587,67 @@ const SlideItem = struct {
 // demo slides
 // .
 
-// title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
-// subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
-// authors color #993366
-const demoimgpath = "assets/nim/1.png";
+fn makeDemoSlides(slides: *std.ArrayList(*Slide)) void {
+    // title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
+    // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
+    // authors color #993366
+    const demoimgpath1 = "assets/nim/1.png";
+    const demoimgpath2 = "assets/nim/3.png";
 
-const slidedata = [_]SlideItem{
+    var slide_1: *Slide = Slide.new(allocator);
+    var slide_2: *Slide = Slide.new(allocator);
+    slide_1.pos_in_editor = 0;
+    slide_2.pos_in_editor = 0;
+
+    // Slide 1
     // background
-    SlideItem{ .kind = .background, .img_path = demoimgpath[0..demoimgpath.len] },
+    slide_1.items.append(SlideItem{ .kind = .background, .img_path = demoimgpath1[0..demoimgpath1.len] }) catch unreachable;
     // title
-    SlideItem{
+    slide_1.items.append(SlideItem{
         .kind = .textbox,
         .fontSize = 96,
         .text = "Artififial Voices in Human Choices",
         .color = ImVec4{ .w = 0.9 },
         .position = ImVec2{ .x = 219, .y = 481 },
         .size = ImVec2{ .x = 836, .y = 238 },
-    },
+    }) catch unreachable;
     // subtitle etc
-    SlideItem{
+    slide_1.items.append(SlideItem{
         .kind = .textbox,
         .fontSize = 45,
         .text = "SOMETHING SOMETHING REJECTIONS\n\nDr. Carolin Kaiser, Rene Schallner",
         .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
         .position = ImVec2{ .x = 219, .y = 758 },
         .size = ImVec2{ .x = 1149, .y = 246 },
-    },
-    SlideItem{
+    }) catch unreachable;
+    slides.append(slide_1) catch unreachable;
+
+    // Slide 2
+    // background
+    slide_2.items.append(SlideItem{ .kind = .background, .img_path = demoimgpath2[0..demoimgpath2.len] }) catch unreachable;
+    // title
+    slide_2.items.append(SlideItem{
+        .kind = .textbox,
+        .fontSize = 96,
+        .text = "Artififial Voices in Human Choices",
+        .color = ImVec4{ .w = 0.9 },
+        .position = ImVec2{ .x = 219, .y = 481 },
+        .size = ImVec2{ .x = 836, .y = 238 },
+    }) catch unreachable;
+    // subtitle etc
+    slide_2.items.append(SlideItem{
+        .kind = .textbox,
+        .fontSize = 45,
+        .text = "SOMETHING SOMETHING REJECTIONS\n\nDr. Carolin Kaiser, Rene Schallner",
+        .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
+        .position = ImVec2{ .x = 219, .y = 758 },
+        .size = ImVec2{ .x = 1149, .y = 246 },
+    }) catch unreachable;
+    slide_2.items.append(SlideItem{
         .kind = .img,
-        .img_path = demoimgpath[0..demoimgpath.len],
+        .img_path = demoimgpath1[0..demoimgpath1.len],
         .position = ImVec2{ .x = 1000, .y = 300 },
         .size = ImVec2{ .x = 512, .y = 384 },
-    },
-};
+    }) catch unreachable;
+    slides.append(slide_2) catch unreachable;
+}
