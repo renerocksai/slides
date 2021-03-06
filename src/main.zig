@@ -24,20 +24,8 @@ pub fn main() !void {
     });
 }
 
-fn assetPrefix() [*:0]const u8 {
-    if (std.builtin.os.tag == .windows) {
-        return "C:\\Projekte\\github\\renerocksai\\slides\\assets\\";
-    } else {
-        return "./assets/";
-    }
-}
 fn init() void {
     my_fonts.loadFonts() catch unreachable;
-    // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
-    // test img cache
-    _ = tcache.getImg("assets/nim/1.png") catch |err| {
-        std.log.err("{}", .{err});
-    };
     if (std.builtin.os.tag == .windows) {
         std.log.info("on windows", .{});
     } else {
