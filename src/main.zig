@@ -3,6 +3,7 @@ const sokol = @import("sokol");
 const Texture = @import("../zig-upaya/src/texture.zig").Texture;
 const std = @import("std");
 const uianim = @import("uianim.zig");
+const tcache = @import("texturecache.zig");
 
 usingnamespace upaya.imgui;
 usingnamespace sokol;
@@ -23,8 +24,6 @@ pub fn main() !void {
     });
 }
 
-var tex: ?upaya.Texture = null;
-
 fn assetPrefix() [*:0]const u8 {
     if (std.builtin.os.tag == .windows) {
         return "C:\\Projekte\\github\\renerocksai\\slides\\assets\\";
@@ -35,11 +34,10 @@ fn assetPrefix() [*:0]const u8 {
 fn init() void {
     my_fonts.loadFonts() catch unreachable;
     // upaya.colors.setTintColor(upaya.colors.rgbaToVec4(0xcd, 0x0f, 0x00, 0xff));
-    if (tex == null)
-        tex = upaya.Texture.initFromFile(assetPrefix() ++ "nim/1.png", .nearest) catch |err| {
-            std.log.err("Error: png could not be loaded", .{});
-            return;
-        };
+    // test img cache
+    _ = tcache.getImg("assets/nim/1.png") catch |err| {
+        std.log.err("{}", .{err});
+    };
     if (std.builtin.os.tag == .windows) {
         std.log.info("on windows", .{});
     } else {
@@ -171,7 +169,10 @@ fn showSlide(slide: []const SlideItem) !void {
                 if (item.img_path) |p| {
                     // TODO: texture cache
                     std.log.info("{} img", .{i});
-                    slideImg(ImVec2{}, G.internal_render_size, &tex, G.img_tint_col, G.img_border_col);
+                    var texptr = tcache.getImg(p) catch |err| null;
+                    if (texptr) |t| {
+                        slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
+                    }
                 } else {
                     std.log.info("{} color", .{i});
                     setSlideBgColor(item.color);
@@ -187,7 +188,6 @@ fn showSlide(slide: []const SlideItem) !void {
                     const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * slideSizeInWindow().y / G.internal_render_size.y);
                     my_fonts.pushFontScaled(fsize);
                     igPushStyleColorVec4(ImGuiCol_Text, item.color);
-                    std.log.info("color: {any}", .{item.color});
                     igText(t);
                     my_fonts.popFontScaled();
                     igPopStyleColor(1);
@@ -377,7 +377,7 @@ fn scaleToSlide(size: ImVec2) ImVec2 {
 }
 
 // render an image into the slide
-fn slideImg(pos: ImVec2, size: ImVec2, texture: *?Texture, tint_color: ImVec4, border_color: ImVec4) void {
+fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4) void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
 
@@ -386,8 +386,7 @@ fn slideImg(pos: ImVec2, size: ImVec2, texture: *?Texture, tint_color: ImVec4, b
 
     var imgsize_translated = scaleToSlide(size);
 
-    if (texture.* != null)
-        igImage(texture.*.?.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
+    igImage(texture.*.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
 }
 
 fn showMainMenu(app_data: *AppData) void {
@@ -413,7 +412,6 @@ fn showMainMenu(app_data: *AppData) void {
             const y = x[0..my_path.len :0];
             const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
             if (sel == null) {
-                std.log.info("canceled", .{});
                 setStatusMsg("canceled");
             } else {
                 // now load the file
@@ -502,31 +500,19 @@ const SlideItem = struct {
     text: ?[*:0]u8 = undefined,
     fontSize: i32 = 128,
     color: ImVec4 = ImVec4{},
-    img_path: ?[*:0]u8 = undefined,
+    img_path: ?[]const u8 = undefined,
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
-};
-
-const slidedata1 = [_]SlideItem{
-    // background
-    //    SlideItem{ .kind = .background, .img_path = "asdf.png" },
-    SlideItem{ .kind = .background, .color = ImVec4{ .x = 1, .y = 0.5, .z = 0, .w = 1.0 } },
-    // some text
-    SlideItem{
-        .kind = .textbox,
-        .text = "Hello, world!",
-        .color = ImVec4{ .x = 1, .y = 0.1, .z = 0.1, .w = 0.9 },
-        .position = ImVec2{ .x = 100, .y = 100 },
-        .size = ImVec2{ .x = 500, .y = 80 },
-    },
 };
 
 // title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
 // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
 // authors color #993366
+const demoimgpath = "assets/nim/1.png";
+
 const slidedata = [_]SlideItem{
     // background
-    SlideItem{ .kind = .background, .img_path = "nim/1.png" },
+    SlideItem{ .kind = .background, .img_path = demoimgpath[0..demoimgpath.len] },
     // title
     SlideItem{
         .kind = .textbox,
@@ -540,7 +526,7 @@ const slidedata = [_]SlideItem{
     SlideItem{
         .kind = .textbox,
         .fontSize = 45,
-        .text = "SOMETHING SOMETHING REJECTIONS\n\nRene Schallner, Dr. Tobias Eismann",
+        .text = "SOMETHING SOMETHING REJECTIONS\n\nDr. Carolin Kaiser, Rene Schallner",
         .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
         .position = ImVec2{ .x = 219, .y = 758 },
         .size = ImVec2{ .x = 1149, .y = 246 },
