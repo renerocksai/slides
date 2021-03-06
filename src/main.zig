@@ -188,7 +188,17 @@ fn handleKeyboard() void {
 
     G.current_slide += deltaindex;
 
-    // clamp
+    // special slide navigation: 1 and 0
+    // needs to be after applying deltaindex!!!!!
+    if (igIsKeyReleased(SAPP_KEYCODE_1)) {
+        G.current_slide = 0;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_0)) {
+        G.current_slide = @intCast(i32, G.slides.items.len - 1);
+    }
+
+    // clamp slide index
     if (G.slides.items.len > 0 and G.current_slide >= @intCast(i32, G.slides.items.len)) {
         G.current_slide = @intCast(i32, G.slides.items.len - 1);
     } else if (G.slides.items.len == 0 and G.current_slide > 0) {
