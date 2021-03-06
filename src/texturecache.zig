@@ -18,14 +18,14 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !*upaya.Texture {
         if (pwd == null) {
             absp = p;
         } else {
-            std.log.debug("pwd of: {s} is {any}", .{ rp, pwd });
+            // std.log.debug("pwd of: {s} is {any}", .{ rp, pwd });
             var buf: [1024]u8 = undefined;
             absp = try std.fmt.bufPrint(&buf, "{s}{c}{s}", .{ pwd, std.fs.path.sep, p });
         }
     } else {
         absp = p;
     }
-    std.log.debug("trying to load: {s} with refpath: {s} -> {s}", .{ p, refpath, absp });
+    // std.log.debug("trying to load: {s} with refpath: {s} -> {s}", .{ p, refpath, absp });
     var tex = try texFromFile(absp, .nearest);
     try path2tex.put(p, tex);
     return tex;

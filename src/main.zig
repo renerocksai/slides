@@ -5,6 +5,9 @@ const std = @import("std");
 const uianim = @import("uianim.zig");
 const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
+const parser = @import("parser.zig");
+
+const DEBUG = true;
 
 usingnamespace upaya.imgui;
 usingnamespace sokol;
@@ -489,7 +492,6 @@ fn showMainMenu(app_data: *AppData) void {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {
             // file dialog
-            const DEBUG = true;
             var selected_file: []const u8 = undefined;
             if (!DEBUG) {
                 var buf: [2048]u8 = undefined;
@@ -520,6 +522,9 @@ fn showMainMenu(app_data: *AppData) void {
                         G.app_state = .presenting;
                         const input = std.fs.path.basename(selected_file);
                         setStatusMsg(sliceToC(input));
+
+                        // parse the shit
+                        _ = parser.constructSlidesFromBuf(G.editor_memory, &G.slides, G.allocator) catch |err| {};
                     } else |err| {
                         setStatusMsg("Loading failed!");
                     }

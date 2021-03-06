@@ -9,11 +9,10 @@ const mem = std.mem;
 //       @pop "default slide"
 //       @text .....
 
-const slides = @import("slides.zig");
-usingnamespace slides;
+const slideszig = @import("slides.zig");
+usingnamespace slideszig;
 
-//pub fn constructSlidesFromFile(input: []const u8, slides: *SlideList, allocator: *mem.Allocator) !void {
-pub fn constructSlidesFromFile(input: []const u8, allocator: *mem.Allocator) !void {
+pub fn constructSlidesFromBuf(input: []const u8, slides: *SlideList, allocator: *mem.Allocator) !void {
     var start: usize = if (mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
     var it = mem.tokenize(input[start..], "\n\r");
     var i: usize = 0;
@@ -26,8 +25,4 @@ pub fn constructSlidesFromFile(input: []const u8, allocator: *mem.Allocator) !vo
         }
     }
     return;
-}
-
-pub fn main() !void {
-    try constructSlidesFromFile(@embedFile("test.sld"), std.heap.page_allocator);
 }
