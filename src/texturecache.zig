@@ -1,6 +1,5 @@
 const upaya = @import("upaya");
-const sokol = @import("sokol");
-const Texture = @import("../zig-upaya/src/texture.zig").Texture;
+const Texture = upaya.Texture;
 const std = @import("std");
 
 const allocator = std.heap.page_allocator;
@@ -19,7 +18,8 @@ pub fn getImg(p: []const u8) !*upaya.Texture {
     try path2tex.put(p, tex);
     return tex;
 }
-pub fn texFromFile(file: []const u8, filter: upaya.Texture.Filter) !*Texture {
+
+pub fn texFromFile(file: []const u8, filter: Texture.Filter) !*Texture {
     const image_contents = try upaya.fs.read(allocator, file);
 
     var w: c_int = undefined;

@@ -1,6 +1,6 @@
 const upaya = @import("upaya");
 const sokol = @import("sokol");
-const Texture = @import("../zig-upaya/src/texture.zig").Texture;
+const Texture = upaya.Texture;
 const std = @import("std");
 const uianim = @import("uianim.zig");
 const tcache = @import("texturecache.zig");
