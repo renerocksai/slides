@@ -248,7 +248,7 @@ fn showSlide(slide: *const Slide) !void {
         switch (item.kind) {
             .background => {
                 if (item.img_path) |p| {
-                    var texptr = tcache.getImg(p) catch |err| null;
+                    var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
                     if (texptr) |t| {
                         slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
                     }
@@ -273,7 +273,7 @@ fn showSlide(slide: *const Slide) !void {
             },
             .img => {
                 if (item.img_path) |p| {
-                    var texptr = tcache.getImg(p) catch |err| null;
+                    var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
                     if (texptr) |t| {
                         slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
                     }
@@ -489,22 +489,36 @@ fn showMainMenu(app_data: *AppData) void {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
         if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {
             // file dialog
-            var buf: [2048]u8 = undefined;
-            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-            buf[my_path.len] = 0;
-            const x = buf[0 .. my_path.len + 1];
-            const y = x[0..my_path.len :0];
-            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
-            if (sel == null) {
+            const DEBUG = true;
+            var selected_file: []const u8 = undefined;
+            if (!DEBUG) {
+                var buf: [2048]u8 = undefined;
+                const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
+                buf[my_path.len] = 0;
+                const x = buf[0 .. my_path.len + 1];
+                const y = x[0..my_path.len :0];
+                const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
+                if (sel == null) {
+                    selected_file = "canceled";
+                } else {
+                    selected_file = std.mem.span(sel);
+                }
+            } else {
+                var cwdbuf: [2048]u8 = undefined;
+                const cwd: []u8 = std.os.getcwd(cwdbuf[0..]) catch |err| "";
+
+                selected_file = std.fmt.bufPrint(&cwdbuf, "{s}{c}{s}", .{ cwd, std.fs.path.sep, "test.sld" }) catch unreachable;
+            }
+
+            if (std.mem.startsWith(u8, selected_file, "canceled")) {
                 setStatusMsg("canceled");
             } else {
                 // now load the file
-                const filepath = std.mem.span(sel);
-                if (std.fs.openFileAbsolute(filepath, .{ .read = true })) |f| {
+                if (std.fs.openFileAbsolute(selected_file, .{ .read = true })) |f| {
                     defer f.close();
                     if (f.read(G.editor_memory)) |howmany| {
                         G.app_state = .presenting;
-                        const input = std.fs.path.basename(filepath);
+                        const input = std.fs.path.basename(selected_file);
                         setStatusMsg(sliceToC(input));
                     } else |err| {
                         setStatusMsg("Loading failed!");
