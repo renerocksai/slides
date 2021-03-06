@@ -167,20 +167,16 @@ fn showSlide(slide: []const SlideItem) !void {
         switch (item.kind) {
             .background => {
                 if (item.img_path) |p| {
-                    // TODO: texture cache
-                    std.log.info("{} img", .{i});
                     var texptr = tcache.getImg(p) catch |err| null;
                     if (texptr) |t| {
                         slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
                     }
                 } else {
-                    std.log.info("{} color", .{i});
                     setSlideBgColor(item.color);
                 }
             },
             .textbox => {
                 if (item.text) |t| {
-                    std.log.info("{} textbox", .{i});
                     var pos = item.position;
                     pos.x += item.size.x;
                     igPushTextWrapPos(trxyToSlideXY(pos).x);
@@ -194,7 +190,14 @@ fn showSlide(slide: []const SlideItem) !void {
                     igPopTextWrapPos();
                 }
             },
-            else => {},
+            .img => {
+                if (item.img_path) |p| {
+                    var texptr = tcache.getImg(p) catch |err| null;
+                    if (texptr) |t| {
+                        slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
+                    }
+                }
+            },
         }
     }
 
@@ -530,5 +533,11 @@ const slidedata = [_]SlideItem{
         .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
         .position = ImVec2{ .x = 219, .y = 758 },
         .size = ImVec2{ .x = 1149, .y = 246 },
+    },
+    SlideItem{
+        .kind = .img,
+        .img_path = demoimgpath[0..demoimgpath.len],
+        .position = ImVec2{ .x = 1000, .y = 300 },
+        .size = ImVec2{ .x = 512, .y = 384 },
     },
 };
