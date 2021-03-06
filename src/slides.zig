@@ -3,6 +3,8 @@ const upaya = @import("upaya");
 
 usingnamespace upaya.imgui;
 
+pub const SlideList = std.ArrayList(*Slide);
+
 // .
 // Slides
 // .
@@ -40,7 +42,8 @@ pub const SlideItem = struct {
 // demo slides
 // .
 
-pub fn makeDemoSlides(slides: *std.ArrayList(*Slide), allocator: *std.mem.Allocator) void {
+//pub fn makeDemoSlides(slides: *std.ArrayList(*Slide), allocator: *std.mem.Allocator) void {
+pub fn makeDemoSlides(slides: *SlideList, allocator: *std.mem.Allocator) void {
     // title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
     // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
     // authors color #993366

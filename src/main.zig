@@ -11,11 +11,15 @@ usingnamespace sokol;
 usingnamespace uianim;
 usingnamespace slides;
 
-const allocator = std.heap.page_allocator;
-
 const my_fonts = @import("myscalingfonts.zig");
 
 pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var allocator = &arena.allocator;
+    defer arena.deinit();
+
+    try G.init(allocator);
+
     upaya.run(.{
         .init = init,
         .update = update,
@@ -42,7 +46,7 @@ fn init() void {
 }
 
 fn initEditorContent() !void {
-    G.editor_memory = try allocator.alloc(u8, ed_anim.textbuf_size);
+    G.editor_memory = try G.allocator.alloc(u8, ed_anim.textbuf_size);
     ed_anim.textbuf = G.editor_memory.ptr;
     std.mem.set(u8, G.editor_memory, 0);
 
@@ -50,7 +54,7 @@ fn initEditorContent() !void {
     ed_anim.textbuf[0] = 0;
 
     // dummy slides
-    makeDemoSlides(&G.slides, allocator);
+    makeDemoSlides(&G.slides, G.allocator);
 }
 
 // .
@@ -79,6 +83,7 @@ const AppState = enum {
 };
 
 const AppData = struct {
+    allocator: *std.mem.Allocator = undefined,
     app_state: AppState = .mainmenu,
     editor_memory: []u8 = undefined,
     content_window_size: ImVec2 = ImVec2{},
@@ -89,8 +94,12 @@ const AppData = struct {
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = null,
     status_msg: [*c]const u8 = "",
-    slides: std.ArrayList(*Slide) = std.ArrayList(*Slide).init(allocator),
+    slides: std.ArrayList(*Slide) = undefined,
     current_slide: i32 = 0,
+    fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
+        self.allocator = alloc;
+        self.slides = SlideList.init(alloc);
+    }
 };
 
 var G = AppData{};
