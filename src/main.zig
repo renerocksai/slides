@@ -9,6 +9,8 @@ usingnamespace upaya.imgui;
 usingnamespace sokol;
 usingnamespace uianim;
 
+const allocator = std.heap.page_allocator;
+
 const my_fonts = @import("myscalingfonts.zig");
 
 pub fn main() !void {
@@ -39,16 +41,12 @@ fn init() void {
 }
 
 fn initEditorContent() !void {
-    var allocator = std.heap.page_allocator;
     G.editor_memory = try allocator.alloc(u8, ed_anim.textbuf_size);
     ed_anim.textbuf = G.editor_memory.ptr;
     std.mem.set(u8, G.editor_memory, 0);
 
-    // set to dummy content
-    var data = @embedFile("test.sld");
-    G.slideshow_filp = "test.sld";
-    const l = data.len;
-    @memcpy(ed_anim.textbuf, data, l);
+    G.slideshow_filp = "empty.sld";
+    ed_anim.textbuf[0] = 0;
 }
 
 // .
@@ -87,7 +85,8 @@ const AppData = struct {
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = null,
     status_msg: [*c]const u8 = "",
-    slides: ?[][]SlideItem = undefined,
+    slides: std.ArrayList(Slide) = std.ArrayList(Slide).init(allocator),
+    current_slide: usize = 0,
 };
 
 var G = AppData{};
@@ -126,7 +125,18 @@ fn update() void {
 
         switch (G.app_state) {
             .mainmenu => showMainMenu(&G),
-            .presenting => showSlide(slidedata[0..]) catch unreachable,
+            .presenting => {
+                if (G.slides.items.len > 0) {
+                    if (G.current_slide >= G.slides.items.len) {
+                        G.current_slide = G.slides.items.len - 1;
+                    }
+                    showSlide(slidedata[0..]) catch unreachable;
+                } else {
+                    const empty = [_]SlideItem{SlideItem{ .kind = .background, .color = igGetStyleColorVec4(ImGuiCol_Button).* }};
+                    anim_bottom_panel.visible = true;
+                    showSlide(&empty) catch unreachable;
+                }
+            },
             else => {
                 var b: bool = true;
                 igShowMetricsWindow(&b);
@@ -495,6 +505,10 @@ const SlideItem = struct {
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
 };
+
+// .
+// demo slides
+// .
 
 // title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
 // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
