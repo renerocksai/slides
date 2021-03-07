@@ -8,11 +8,37 @@ usingnamespace slideszig;
 
 pub const ParseError = error{Generic};
 
+const ParserContext = struct {
+    allocator: *std.mem.Allocator,
+    first_slide: bool = true,
+
+    slideshow: *SlideShow,
+    push_contexts: std.StringHashMap(ItemContext),
+    push_slides: std.StringHashMap(*Slide),
+
+    current_context: ItemContext = ItemContext{},
+    current_slide: *Slide,
+
+    fn commitSlide(self: *ParserContext, slide: *Slide) !void {
+        try self.slideshow.slides.append(slide);
+    }
+};
+
 pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
     var start: usize = if (std.mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
     var it = std.mem.tokenize(input[start..], "\n\r");
     var i: usize = 0;
-    while (it.next()) |line| {
+
+    var context = ParserContext{
+        .allocator = allocator,
+        .slideshow = slideshow,
+        .push_contexts = std.StringHashMap(ItemContext).init(allocator),
+        .push_slides = std.StringHashMap(*Slide).init(allocator),
+        .current_slide = try Slide.new(allocator),
+    };
+
+    while (it.next()) |line_untrimmed| {
+        const line = std.mem.trimRight(u8, line_untrimmed, " \t");
         i += 1;
         // std.log.debug("P {d}: {s}", .{ i, line });
         if (std.mem.startsWith(u8, line, "#")) {
@@ -21,15 +47,25 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
 
         if (std.mem.startsWith(u8, line, "@font")) {
             parseFontGlobals(line, slideshow, allocator) catch continue;
+            continue;
         }
 
         if (std.mem.startsWith(u8, line, "@underline_width=")) {
             parseUnderlineWidth(line, slideshow, allocator) catch continue;
+            continue;
         }
+
         if (std.mem.startsWith(u8, line, "@color=")) {
             parseDefaultColor(line, slideshow, allocator) catch continue;
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, line, "@slide")) {
+            parseSlideDirective(line, &context) catch continue;
+            continue;
         }
     }
+    // TODO: commit last slide
     return;
 }
 
@@ -112,4 +148,16 @@ fn parseColor(s: []const u8, allocator: *std.mem.Allocator) !ImVec4 {
         }
     }
     return ret;
+}
+
+fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
+    std.log.debug("Parsing @slide line", .{});
+    // if this is not the first slide, then commit it
+    if (!context.first_slide) {
+        std.log.debug("committing slide", .{});
+        try context.commitSlide(context.current_slide);
+    }
+    context.first_slide = false;
+    context.current_slide = try Slide.new(context.allocator);
+    // now parse the rest
 }

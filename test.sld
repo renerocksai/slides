@@ -1,76 +1,100 @@
-# -------------------------------------------------------------
-# GLOBALS
-#
+# #############################################################
+# ##   T  E  M  P  L  A  T  E  S
+# #############################################################
 
-# for now, no include of masters. too much can go wrong 
-# if we don't find it
-# but: we need the bg pngs anyway, so an additional text file
-# shouldn't be a problem, ... hmmm
-
-# for slides without bg pngs:
-@bgcolor #f0d020
-
-# global settings of the presentation
-@date today - just some string if used
-# -------------------------------------------------------------
-
-
+# -- global setup
+@fontsize=16
+@font=assets/Calibri Light.ttf
+@font_bold=assets/Calibri Regular.TTF
+@font_italic=assets/Calibri Light Italic.ttf
+@font_bold_italic=assets/Calibri Bold Italic.ttf
+@underline_width=2
+@color=#aabbccdd
 
 # -------------------------------------------------------------
-# title slide
-@slide
-@bg 0.png
-@textbox x y w h fontsize color Title
+# -- definitions for later
+# -------------------------------------------------------------
+@push slide_title x= y= w= h= fontsize= color=
+@push leftbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
+@push rightbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
+@push bigbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 
-@textbox x y w h fontsize color 
-subtitle
-
-@textbox x y w h fontsize color authors
+# the text $slide_number will be auto expanded 
+@push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff $slide_number
 
 # -------------------------------------------------------------
-@slide
-@bg 3.png
-@textbox x y w h fontsize color Title of the slide
-
-# left box
-@textbox x y w h fontsize color 
-Here comes the left text.
-- we have a bulleted list
-    - we can indent
-    - like so
-- and back
-_
-We make empty lines with _.
-
-# left box
-@textbox x y w h fontsize color 
-this goes into the right box
-
-# sources box
-@textbox x y w h fontsize color 
-if present, the sources come here
+# -- intro slide template
 # -------------------------------------------------------------
-
-
+@slide fontsize=16 bullet_color=#12345678
+@bg assets/nim/1.png
+@push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+# the following pushslide will the slide cause to be pushed, not rendered
+@pushslide intro     
 
 # -------------------------------------------------------------
-@slide 
-
-@title this is the second slide
-
-@singlebox
-this is a single box layout
-so no left and right, just one big one
-
-@img "/path/to/image.png" tl 0.1 0.1 br 0.9 0.9 centerscale
-
-@img "/path/to/image.png" tl 0.1 0.1 scale 0.9 0.9 
-
-@textbox x y w h fontsize color 
-- we just placed an image and placed it 
-- with relative TL BR coords, scaling to fit, centering the img
-- with relative TL coords and x, y scale
+# -- chapter slide template
 # -------------------------------------------------------------
+@slide fontsize=16 bullet_color=#12345678
+@bg assets/nim/3.png
+@push chapter_number x= y= w= h= fontsize= color=
+@push chapter_title x= y= w= h= fontsize= color=
+@pushslide chapter
+
+# -------------------------------------------------------------
+# -- content slide template
+# -------------------------------------------------------------
+@slide fontsize=16 bullet_color=#12345678
+@bg assets/nim/5.png
+@pop slide_number
+@pushslide content
+
+# -------------------------------------------------------------
+# -- thankyou slide template
+# -------------------------------------------------------------
+@slide fontsize=16 bullet_color=#12345678
+@bg assets/nim/thankyou3.png
+@push thankyou_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push thankyou_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push thankyou_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@pushslide thankyou
 
 
 
+# #############################################################
+# ##   S  L  I  D  E  S
+# #############################################################
+
+# -------------------------------------------------------------
+@popslide intro
+@pop intro_title Artificial Voices in Human Choices
+@pop intro_subtitle Milestone 3
+@pop intro_subtitle Dr. Carolin Kaiser, Rene Schallner
+
+# -------------------------------------------------------------
+@popslide chapter
+@pop chapter_number 1
+@pop chapter_title The big picture
+
+
+# -------------------------------------------------------------
+@popslide content
+
+@pop slide_title The Big Plan
+
+@pop leftbox
+- here comes the text
+- and so on
+
+@pop rightbox
+- here is text in the right box
+
+# -------------------------------------------------------------
+@popslide thankyou
+@pop thankyou_title Artificial Voices in Human Choices
+@pop thankyou_subtitle Milestone 3
+@pop thankyou_subtitle Dr. Carolin Kaiser, Rene Schallner
+
+# -------------------------------------------------------------
+# eof commits the slide

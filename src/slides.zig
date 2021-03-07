@@ -40,6 +40,8 @@ pub const SlideShow = struct {
 pub const Slide = struct {
     pos_in_editor: i32 = 0,
     items: std.ArrayList(SlideItem) = undefined,
+    fontsize: i32 = 16,
+    bullet_color: ImVec4 = ImVec4{ .x = 1, .w = 1 },
 
     // .
 
@@ -68,6 +70,23 @@ pub const SlideItem = struct {
     img_path: ?[]const u8 = undefined,
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
+
+    pub fn applyContext(self: *SlideItem, context: ItemContext) void {
+        if (context.text) |text| self.text = text;
+        if (context.fontSize) |fontsize| self.fontSize = fontsize;
+        if (context.color) |color| self.color = color;
+        if (context.position) |position| self.position = position;
+        if (context.size) |size| self.size = size;
+    }
+};
+
+pub const ItemContext = struct {
+    text: ?[*:0]u8 = undefined,
+    fontSize: ?i32 = undefined,
+    color: ?ImVec4 = undefined,
+    img_path: ?[]const u8 = undefined,
+    position: ?ImVec2 = undefined,
+    size: ?ImVec2 = undefined,
 };
 
 // .
