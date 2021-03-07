@@ -12,7 +12,7 @@ const mem = std.mem;
 const slideszig = @import("slides.zig");
 usingnamespace slideszig;
 
-pub fn constructSlidesFromBuf(input: []const u8, slides: *SlideList, allocator: *mem.Allocator) !void {
+pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *mem.Allocator) !void {
     var start: usize = if (mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
     var it = mem.tokenize(input[start..], "\n\r");
     var i: usize = 0;

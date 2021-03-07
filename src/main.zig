@@ -57,7 +57,7 @@ fn initEditorContent() !void {
     ed_anim.textbuf[0] = 0;
 
     // dummy slides
-    makeDemoSlides(&G.slides, G.allocator);
+    makeDemoSlides(&G.slideshow.slides, G.allocator);
 }
 
 // .
@@ -97,11 +97,11 @@ const AppData = struct {
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = null,
     status_msg: [*c]const u8 = "",
-    slides: std.ArrayList(*Slide) = undefined,
+    slideshow: *SlideShow = undefined,
     current_slide: i32 = 0,
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
-        self.slides = SlideList.init(alloc);
+        self.slideshow = try SlideShow.new(alloc);
     }
 };
 
@@ -143,8 +143,8 @@ fn update() void {
             .mainmenu => showMainMenu(&G),
             .presenting => {
                 handleKeyboard();
-                if (G.slides.items.len > 0) {
-                    showSlide(G.slides.items[@intCast(usize, G.current_slide)]) catch unreachable;
+                if (G.slideshow.slides.items.len > 0) {
+                    showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch unreachable;
                 } else {
                     anim_bottom_panel.visible = true;
                     const empty = Slide{};
@@ -207,13 +207,13 @@ fn handleKeyboard() void {
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_0)) {
-        G.current_slide = @intCast(i32, G.slides.items.len - 1);
+        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
     }
 
     // clamp slide index
-    if (G.slides.items.len > 0 and G.current_slide >= @intCast(i32, G.slides.items.len)) {
-        G.current_slide = @intCast(i32, G.slides.items.len - 1);
-    } else if (G.slides.items.len == 0 and G.current_slide > 0) {
+    if (G.slideshow.slides.items.len > 0 and G.current_slide >= @intCast(i32, G.slideshow.slides.items.len)) {
+        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
+    } else if (G.slideshow.slides.items.len == 0 and G.current_slide > 0) {
         G.current_slide = 0;
     }
     if (G.current_slide < 0) {
@@ -526,7 +526,7 @@ fn showMainMenu(app_data: *AppData) void {
                         // TODO: deinit the slides
 
                         // parse the shit
-                        _ = parser.constructSlidesFromBuf(G.editor_memory, &G.slides, G.allocator) catch |err| {};
+                        _ = parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator) catch |err| {};
                     } else |err| {
                         setStatusMsg("Loading failed!");
                     }

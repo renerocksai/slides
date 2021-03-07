@@ -2,6 +2,14 @@
 # ##   T  E  M  P  L  A  T  E  S
 # #############################################################
 
+# -- global setup
+@fontsize=16
+@font="assets/Calibri Light.ttf"
+@font_bold="assets/Calibri Regular.TTF"
+@font_italic="assets/Calibri Light Italic.ttf"
+@font_bold_italic="assets/Calibri Bold Italic.ttf"
+@underline_width=2
+
 # -------------------------------------------------------------
 # -- definitions for later
 # -------------------------------------------------------------
@@ -11,8 +19,7 @@
 @push bigbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 
 # the text $slide_number will be auto expanded 
-@push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff   
-$slide_number
+@push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff $slide_number
 
 # -------------------------------------------------------------
 # -- intro slide template
@@ -89,4 +96,3 @@ $slide_number
 
 # -------------------------------------------------------------
 # eof commits the slide
-

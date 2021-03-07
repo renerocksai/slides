@@ -5,19 +5,50 @@ usingnamespace upaya.imgui;
 
 pub const SlideList = std.ArrayList(*Slide);
 
+pub const SlideShow = struct {
+    slides: SlideList = undefined,
+
+    // defaults that can be overridden while parsing
+    default_font: []u8 = "assets/Calibri Regular.ttf",
+    default_font_bold: []u8 = "assets/Calibri Regular.ttf",
+    default_font_italic: []u8 = "assets/Calibri Regular.ttf",
+    default_font_bold_italic: []u8 = "assets/Calibri Regular.ttf",
+    default_fontsize: i32 = 16,
+    default_underline_width: i32 = 1,
+
+    // TODO: maybe later: font encountered while parsing
+    fonts: std.ArrayList([]u8) = undefined,
+    fontsizes: std.ArrayList(i32) = undefined,
+
+    pub fn new(a: *std.mem.Allocator) !*SlideShow {
+        var buffer = try a.alloc(SlideShow, 1);
+        var instance: *SlideShow = &buffer[0];
+        instance.slides = SlideList.init(a);
+        // TODO: init font, fontsize arraylists
+        return instance;
+    }
+
+    pub fn deinit(self: *SlideShow) void {
+        self.slides.deinit();
+    }
+};
+
 // .
 // Slides
 // .
 pub const Slide = struct {
     pos_in_editor: i32 = 0,
     items: std.ArrayList(SlideItem) = undefined,
-    fn new(a: *std.mem.Allocator) *Slide {
-        var slide_buffer = a.alloc(Slide, 1) catch unreachable;
+
+    // .
+
+    pub fn new(a: *std.mem.Allocator) !*Slide {
+        var slide_buffer = try a.alloc(Slide, 1);
         var slide: *Slide = &slide_buffer[0];
         slide.items = std.ArrayList(SlideItem).init(a);
         return slide;
     }
-    fn deinit(self: *Slide) void {
+    pub fn deinit(self: *Slide) void {
         self.items.deinit();
     }
 };
@@ -50,8 +81,9 @@ pub fn makeDemoSlides(slides: *SlideList, allocator: *std.mem.Allocator) void {
     const demoimgpath1 = "assets/nim/1.png";
     const demoimgpath2 = "assets/nim/3.png";
 
-    var slide_1: *Slide = Slide.new(allocator);
-    var slide_2: *Slide = Slide.new(allocator);
+    var slide_1: *Slide = Slide.new(allocator) catch unreachable;
+    var slide_2: *Slide = Slide.new(allocator) catch unreachable;
+
     slide_1.pos_in_editor = 0;
     slide_2.pos_in_editor = 0;
 
