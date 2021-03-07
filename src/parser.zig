@@ -161,6 +161,9 @@ fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
     if (!context.first_slide) {
         std.log.debug("committing slide", .{});
         try context.commitSlide(context.current_slide);
+    } else {
+        // don't leak
+        context.current_slide.deinit();
     }
     context.first_slide = false;
     context.current_slide = try Slide.new(context.allocator);
