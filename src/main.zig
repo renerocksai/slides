@@ -523,6 +523,8 @@ fn showMainMenu(app_data: *AppData) void {
                         const input = std.fs.path.basename(selected_file);
                         setStatusMsg(sliceToC(input));
 
+                        // TODO: deinit the slides
+
                         // parse the shit
                         _ = parser.constructSlidesFromBuf(G.editor_memory, &G.slides, G.allocator) catch |err| {};
                     } else |err| {
