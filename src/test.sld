@@ -4,11 +4,12 @@
 
 # -- global setup
 @fontsize=16
-@font="assets/Calibri Light.ttf"
-@font_bold="assets/Calibri Regular.TTF"
-@font_italic="assets/Calibri Light Italic.ttf"
-@font_bold_italic="assets/Calibri Bold Italic.ttf"
+@font=assets/Calibri Light.ttf
+@font_bold=assets/Calibri Regular.TTF
+@font_italic=assets/Calibri Light Italic.ttf
+@font_bold_italic=assets/Calibri Bold Italic.ttf
 @underline_width=2
+@color=#000000ff
 
 # -------------------------------------------------------------
 # -- definitions for later

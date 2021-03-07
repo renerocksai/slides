@@ -15,6 +15,7 @@ pub const SlideShow = struct {
     default_font_bold_italic: []u8 = "assets/Calibri Regular.ttf",
     default_fontsize: i32 = 16,
     default_underline_width: i32 = 1,
+    default_color: ImVec4 = ImVec4{ .w = 0.9 },
 
     // TODO: maybe later: font encountered while parsing
     fonts: std.ArrayList([]u8) = undefined,
