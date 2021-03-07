@@ -22,6 +22,7 @@
 
 # the text $slide_number will be auto expanded 
 @push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff text=$slide_number / $num_slides
+rene
 
 # -------------------------------------------------------------
 # -- intro slide template
@@ -100,7 +101,7 @@ here comes the text
 - on with the list
 _
 And some more text. Note that the _ is a placeholder for empty lines.
-This way we can say that the textbox will stop at the next @ command or an empty line.
+Empty lines will be swallowed by the parser!
 
 # -------------------------------------------------------------
 @popslide thankyou

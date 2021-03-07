@@ -84,10 +84,15 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
         } else {
             // add text lines to current parsing context
             var text: []const u8 = undefined;
+            var the_line = line;
+            // make _ line an empty line
+            if (line.len == 1 and line[0] == '_') {
+                the_line = " ";
+            }
             if (parsing_item_context.text) |txt| {
-                text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, line }) catch continue;
+                text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, the_line }) catch continue;
             } else {
-                text = line;
+                text = the_line;
             }
             parsing_item_context.text = text;
         }
@@ -308,4 +313,6 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
 
 fn commitParsingContext(itemctx: *ItemContext, context: *ParserContext) !void {
     // .
+    std.log.debug("{s} : {s}", .{ itemctx.directive, itemctx.text });
+    itemctx.* = ItemContext{};
 }
