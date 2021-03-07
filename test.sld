@@ -16,18 +16,20 @@
 # -- definitions for later
 # -------------------------------------------------------------
 @push slide_title x= y= w= h= fontsize= color=
-@push leftbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
+@push leftbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff bullet_color=#11223344 underline_width=4
 @push rightbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 @push bigbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 
 # the text $slide_number will be auto expanded 
-@push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff $slide_number
+@push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff text=$slide_number / $num_slides
 
 # -------------------------------------------------------------
 # -- intro slide template
 # -------------------------------------------------------------
 @slide fontsize=16 bullet_color=#12345678 color=#bbccddee
 @bg assets/nim/1.png
+# or
+# @bg color=#000000000
 @push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
@@ -90,6 +92,15 @@
 
 @pop rightbox
 - here is text in the right box
+
+# some random textbox
+@textbox x=100 y=100 w=100 h=100
+here comes the text
+- and we start a bullet list
+- on with the list
+_
+And some more text. Note that the _ is a placeholder for empty lines.
+This way we can say that the textbox will stop at the next @ command or an empty line.
 
 # -------------------------------------------------------------
 @popslide thankyou

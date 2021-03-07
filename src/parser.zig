@@ -8,6 +8,13 @@ usingnamespace slideszig;
 
 pub const ParserError = error{Internal};
 
+// TODO:
+// - @textbox
+// - @img
+// - @pop
+// - @pushslide
+// - @popslide
+//
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
     first_slide: bool = true,
@@ -63,6 +70,9 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
         if (std.mem.startsWith(u8, line, "@slide")) {
             parseSlideDirective(line, &context) catch continue;
             continue;
+        }
+        if (std.mem.startsWith(u8, line, "@push")) {
+            parsePush(line, &context) catch continue;
         }
     }
     // TODO: commit last slide
@@ -171,14 +181,7 @@ fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
 
     // now parse the rest
     // first, we expect the line to start with a @page keyword
-    var word_it = std.mem.tokenize(line, " \t");
-    if (word_it.next()) |expect_slide| {
-        if (!std.mem.eql(u8, expect_slide, "@slide")) {
-            return ParserError.Internal;
-        }
-    } else {
-        return ParserError.Internal;
-    }
+    var word_it = try expectDirectiveReturnWordIterator(line, "@slide");
 
     // now we parse the optional slide attributes
     while (word_it.next()) |word| {
@@ -208,6 +211,142 @@ fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
                     std.log.debug("current slide bullet_color: {any}", .{context.current_slide.bullet_color});
                 }
             }
+            if (std.mem.eql(u8, attrname, "underline_width")) {
+                if (attr_it.next()) |sizestr| {
+                    var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                    context.current_slide.underline_width = width;
+                    context.current_context.underline_width = width;
+                    std.log.debug("current context underline_width: {}", .{context.current_slide.underline_width});
+                }
+            }
         }
     }
+}
+
+fn expectDirectiveReturnWordIterator(line: []const u8, directive: []const u8) !std.mem.TokenIterator {
+    var word_it = std.mem.tokenize(line, " \t");
+    if (word_it.next()) |expect_directive| {
+        if (!std.mem.eql(u8, expect_directive, directive)) {
+            return ParserError.Internal;
+        }
+    } else {
+        return ParserError.Internal;
+    }
+    return word_it;
+}
+
+fn parsePush(line: []const u8, context: *ParserContext) !void {
+    var word_it = try expectDirectiveReturnWordIterator(line, "@push");
+    var context_name: []const u8 = undefined;
+    if (word_it.next()) |name| {
+        context_name = name;
+    } else {
+        return ParserError.Internal;
+    }
+
+    // reset item context
+    context.current_context = ItemContext{};
+
+    var text_words = std.ArrayList([]const u8).init(context.allocator);
+    defer text_words.deinit();
+    var after_text_directive = false;
+
+    while (word_it.next()) |word| {
+        if (!after_text_directive) {
+            var attr_it = std.mem.tokenize(word, "=");
+            if (attr_it.next()) |attrname| {
+                if (std.mem.eql(u8, attrname, "x")) {
+                    if (attr_it.next()) |sizestr| {
+                        var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        var pos: ImVec2 = .{};
+                        if (context.current_context.position) |position| {
+                            pos = position;
+                        }
+                        pos.x = @intToFloat(f32, size);
+                        context.current_context.position = pos;
+                        std.log.debug("current context {s} x: {}", .{ context_name, context.current_context.position.?.x });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "y")) {
+                    if (attr_it.next()) |sizestr| {
+                        var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        var pos: ImVec2 = .{};
+                        if (context.current_context.position) |position| {
+                            pos = position;
+                        }
+                        pos.y = @intToFloat(f32, size);
+                        context.current_context.position = pos;
+                        std.log.debug("current context {s} y: {}", .{ context_name, context.current_context.position.?.y });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "w")) {
+                    if (attr_it.next()) |sizestr| {
+                        var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        var size: ImVec2 = .{};
+                        if (context.current_context.size) |csize| {
+                            size = csize;
+                        }
+                        size.x = @intToFloat(f32, width);
+                        context.current_context.size = size;
+                        std.log.debug("current context {s} w: {}", .{ context_name, context.current_context.size.?.x });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "h")) {
+                    if (attr_it.next()) |sizestr| {
+                        var height = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        var size: ImVec2 = .{};
+                        if (context.current_context.size) |csize| {
+                            size = csize;
+                        }
+                        size.y = @intToFloat(f32, height);
+                        context.current_context.size = size;
+                        std.log.debug("current context {s} h: {}", .{ context_name, context.current_context.size.?.y });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "fontsize")) {
+                    if (attr_it.next()) |sizestr| {
+                        var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        context.current_context.fontSize = size;
+                        std.log.debug("current context {s} fontsize: {}", .{ context_name, context.current_context.fontSize });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "color")) {
+                    if (attr_it.next()) |colorstr| {
+                        var color = parseColorLiteral(colorstr) catch continue;
+                        context.current_context.color = color;
+                        std.log.debug("current context {s} color: {}", .{ context_name, context.current_context.color });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "bullet_color")) {
+                    if (attr_it.next()) |colorstr| {
+                        var color = parseColorLiteral(colorstr) catch continue;
+                        context.current_context.bullet_color = color;
+                        std.log.debug("current context {s} bullet_color: {}", .{ context_name, context.current_context.bullet_color });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "underline_width")) {
+                    if (attr_it.next()) |sizestr| {
+                        var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                        context.current_context.underline_width = width;
+                        std.log.debug("current context {s} underline_width: {}", .{ context_name, context.current_context.underline_width });
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "text")) {
+                    after_text_directive = true;
+                    if (attr_it.next()) |textafterequal| {
+                        try text_words.append(textafterequal);
+                    }
+                }
+            }
+        } else {
+            try text_words.append(word);
+        }
+    }
+    if (text_words.items.len > 0) {
+        context.current_context.text = try std.mem.join(context.allocator, " ", text_words.items);
+        std.log.debug("current context text: {s}", .{context.current_context.text});
+    }
+    // now push it
+    try context.push_contexts.put(context_name, context.current_context);
+    std.log.debug("pushed context {s}", .{context_name});
 }
