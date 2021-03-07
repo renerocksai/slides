@@ -10,6 +10,7 @@
 @font_bold_italic=assets/Calibri Bold Italic.ttf
 @underline_width=2
 @color=#000000ff
+@bullet_color=ff0000ff
 
 # -------------------------------------------------------------
 # -- definitions for later
@@ -25,7 +26,7 @@
 # -------------------------------------------------------------
 # -- intro slide template
 # -------------------------------------------------------------
-@slide fontsize=16 bullet_color=#12345678
+@slide fontsize=16 bullet_color=#12345678 color=#bbccddee
 @bg assets/nim/1.png
 @push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 

@@ -6,7 +6,7 @@ const upaya = @import("upaya");
 usingnamespace upaya.imgui;
 usingnamespace slideszig;
 
-pub const ParseError = error{Generic};
+pub const ParserError = error{Internal};
 
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
@@ -133,20 +133,25 @@ fn parseColor(s: []const u8, allocator: *std.mem.Allocator) !ImVec4 {
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "color")) {
             if (it.next()) |colorstr| {
-                if (colorstr.len != 9 or colorstr[0] != '#') {
-                    std.log.debug("color string '{s}' not 9 chars long or missing #", .{colorstr});
-                    return ParseError.Generic;
-                }
-                var temp: ImVec4 = undefined;
-                var coloru32 = try std.fmt.parseInt(c_uint, colorstr[1..], 16);
-                igColorConvertU32ToFloat4(&temp, coloru32);
-                ret.x = temp.w;
-                ret.y = temp.z;
-                ret.z = temp.y;
-                ret.w = temp.x;
+                ret = try parseColorLiteral(colorstr);
             }
         }
     }
+    return ret;
+}
+fn parseColorLiteral(colorstr: []const u8) !ImVec4 {
+    var ret = ImVec4{};
+    if (colorstr.len != 9 or colorstr[0] != '#') {
+        std.log.debug("color string '{s}' not 9 chars long or missing #", .{colorstr});
+        return ParserError.Internal;
+    }
+    var temp: ImVec4 = undefined;
+    var coloru32 = try std.fmt.parseInt(c_uint, colorstr[1..], 16);
+    igColorConvertU32ToFloat4(&temp, coloru32);
+    ret.x = temp.w;
+    ret.y = temp.z;
+    ret.z = temp.y;
+    ret.w = temp.x;
     return ret;
 }
 
@@ -159,5 +164,47 @@ fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
     }
     context.first_slide = false;
     context.current_slide = try Slide.new(context.allocator);
+    context.current_context = ItemContext{};
+
     // now parse the rest
+    // first, we expect the line to start with a @page keyword
+    var word_it = std.mem.tokenize(line, " \t");
+    if (word_it.next()) |expect_slide| {
+        if (!std.mem.eql(u8, expect_slide, "@slide")) {
+            return ParserError.Internal;
+        }
+    } else {
+        return ParserError.Internal;
+    }
+
+    // now we parse the optional slide attributes
+    while (word_it.next()) |word| {
+        var attr_it = std.mem.tokenize(word, "=");
+        if (attr_it.next()) |attrname| {
+            if (std.mem.eql(u8, attrname, "fontsize")) {
+                if (attr_it.next()) |sizestr| {
+                    var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
+                    context.current_slide.fontsize = size;
+                    context.current_context.fontSize = size;
+                    std.log.debug("current slide fontsize: {}", .{context.current_slide.fontsize});
+                }
+            }
+            if (std.mem.eql(u8, attrname, "color")) {
+                if (attr_it.next()) |colorstr| {
+                    var color = parseColorLiteral(colorstr) catch continue;
+                    context.current_slide.text_color = color;
+                    context.current_context.color = color;
+                    std.log.debug("current slide color: {any}", .{context.current_slide.text_color});
+                }
+            }
+            if (std.mem.eql(u8, attrname, "bullet_color")) {
+                if (attr_it.next()) |colorstr| {
+                    var color = parseColorLiteral(colorstr) catch continue;
+                    context.current_slide.text_color = color;
+                    context.current_context.color = color;
+                    std.log.debug("current slide bullet_color: {any}", .{context.current_slide.bullet_color});
+                }
+            }
+        }
+    }
 }
