@@ -9,11 +9,12 @@ usingnamespace slideszig;
 pub const ParserError = error{Internal};
 
 // TODO:
-// - @textbox
-// - @img
-// - @pop
+// - @push
 // - @pushslide
+// - @pop
 // - @popslide
+// - @box
+// - @bg
 //
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
@@ -44,6 +45,8 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
         .current_slide = try Slide.new(allocator),
     };
 
+    var parsing_item_context = ItemContext{};
+
     while (it.next()) |line_untrimmed| {
         const line = std.mem.trimRight(u8, line_untrimmed, " \t");
         i += 1;
@@ -67,15 +70,30 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
             continue;
         }
 
-        if (std.mem.startsWith(u8, line, "@slide")) {
-            parseSlideDirective(line, &context) catch continue;
+        if (std.mem.startsWith(u8, line, "@bullet_color=")) {
+            parseDefaultBulletColor(line, slideshow, allocator) catch continue;
             continue;
         }
-        if (std.mem.startsWith(u8, line, "@push")) {
-            parsePush(line, &context) catch continue;
+
+        if (std.mem.startsWith(u8, line, "@")) {
+            // commit current parsing_item_context
+            commitParsingContext(&parsing_item_context, &context) catch |err| {};
+
+            // then parse current item context
+            parsing_item_context = parseItemAttributes(line, &context) catch continue;
+        } else {
+            // add text lines to current parsing context
+            var text: []const u8 = undefined;
+            if (parsing_item_context.text) |txt| {
+                text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, line }) catch continue;
+            } else {
+                text = line;
+            }
+            parsing_item_context.text = text;
         }
     }
-    // TODO: commit last slide
+    // commit last slide
+    commitParsingContext(&parsing_item_context, &context) catch |err| {};
     return;
 }
 
@@ -137,6 +155,16 @@ fn parseDefaultColor(line: []const u8, slideshow: *SlideShow, allocator: *std.me
     }
 }
 
+fn parseDefaultBulletColor(line: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
+    var it = std.mem.tokenize(line, "=");
+    if (it.next()) |word| {
+        if (std.mem.eql(u8, word, "@bullet_color")) {
+            slideshow.default_bullet_color = try parseColor(line[8..], allocator);
+            std.log.debug("global default_bullet_color: {any}", .{slideshow.default_bullet_color});
+        }
+    }
+}
+
 fn parseColor(s: []const u8, allocator: *std.mem.Allocator) !ImVec4 {
     var it = std.mem.tokenize(s, "=");
     var ret = ImVec4{};
@@ -165,87 +193,25 @@ fn parseColorLiteral(colorstr: []const u8) !ImVec4 {
     return ret;
 }
 
-fn parseSlideDirective(line: []const u8, context: *ParserContext) !void {
-    std.log.debug("Parsing @slide line", .{});
-    // if this is not the first slide, then commit it
-    if (!context.first_slide) {
-        std.log.debug("committing slide", .{});
-        try context.commitSlide(context.current_slide);
-    } else {
-        // don't leak
-        context.current_slide.deinit();
-    }
-    context.first_slide = false;
-    context.current_slide = try Slide.new(context.allocator);
-    context.current_context = ItemContext{};
-
-    // now parse the rest
-    // first, we expect the line to start with a @page keyword
-    var word_it = try expectDirectiveReturnWordIterator(line, "@slide");
-
-    // now we parse the optional slide attributes
-    while (word_it.next()) |word| {
-        var attr_it = std.mem.tokenize(word, "=");
-        if (attr_it.next()) |attrname| {
-            if (std.mem.eql(u8, attrname, "fontsize")) {
-                if (attr_it.next()) |sizestr| {
-                    var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
-                    context.current_slide.fontsize = size;
-                    context.current_context.fontSize = size;
-                    std.log.debug("current slide fontsize: {}", .{context.current_slide.fontsize});
-                }
-            }
-            if (std.mem.eql(u8, attrname, "color")) {
-                if (attr_it.next()) |colorstr| {
-                    var color = parseColorLiteral(colorstr) catch continue;
-                    context.current_slide.text_color = color;
-                    context.current_context.color = color;
-                    std.log.debug("current slide color: {any}", .{context.current_slide.text_color});
-                }
-            }
-            if (std.mem.eql(u8, attrname, "bullet_color")) {
-                if (attr_it.next()) |colorstr| {
-                    var color = parseColorLiteral(colorstr) catch continue;
-                    context.current_slide.text_color = color;
-                    context.current_context.color = color;
-                    std.log.debug("current slide bullet_color: {any}", .{context.current_slide.bullet_color});
-                }
-            }
-            if (std.mem.eql(u8, attrname, "underline_width")) {
-                if (attr_it.next()) |sizestr| {
-                    var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
-                    context.current_slide.underline_width = width;
-                    context.current_context.underline_width = width;
-                    std.log.debug("current context underline_width: {}", .{context.current_slide.underline_width});
-                }
-            }
-        }
-    }
-}
-
-fn expectDirectiveReturnWordIterator(line: []const u8, directive: []const u8) !std.mem.TokenIterator {
+fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
+    var item_context = ItemContext{};
     var word_it = std.mem.tokenize(line, " \t");
-    if (word_it.next()) |expect_directive| {
-        if (!std.mem.eql(u8, expect_directive, directive)) {
+    if (word_it.next()) |directive| {
+        item_context.directive = directive;
+    } else {
+        return ParserError.Internal;
+    }
+
+    // check if directive needs to be followed by a name
+    if (std.mem.eql(u8, item_context.directive, "@push") or std.mem.eql(u8, item_context.directive, "@pop") or std.mem.eql(u8, item_context.directive, "@pushslide") or std.mem.eql(u8, item_context.directive, "@popslide")) {
+        if (word_it.next()) |name| {
+            item_context.context_name = name;
+        } else {
             return ParserError.Internal;
         }
-    } else {
-        return ParserError.Internal;
-    }
-    return word_it;
-}
-
-fn parsePush(line: []const u8, context: *ParserContext) !void {
-    var word_it = try expectDirectiveReturnWordIterator(line, "@push");
-    var context_name: []const u8 = undefined;
-    if (word_it.next()) |name| {
-        context_name = name;
-    } else {
-        return ParserError.Internal;
     }
 
-    // reset item context
-    context.current_context = ItemContext{};
+    std.log.debug("Parsing {s}", .{item_context.directive});
 
     var text_words = std.ArrayList([]const u8).init(context.allocator);
     defer text_words.deinit();
@@ -259,76 +225,68 @@ fn parsePush(line: []const u8, context: *ParserContext) !void {
                     if (attr_it.next()) |sizestr| {
                         var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
                         var pos: ImVec2 = .{};
-                        if (context.current_context.position) |position| {
+                        if (item_context.position) |position| {
                             pos = position;
                         }
                         pos.x = @intToFloat(f32, size);
-                        context.current_context.position = pos;
-                        std.log.debug("current context {s} x: {}", .{ context_name, context.current_context.position.?.x });
+                        item_context.position = pos;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "y")) {
                     if (attr_it.next()) |sizestr| {
                         var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
                         var pos: ImVec2 = .{};
-                        if (context.current_context.position) |position| {
+                        if (item_context.position) |position| {
                             pos = position;
                         }
                         pos.y = @intToFloat(f32, size);
-                        context.current_context.position = pos;
-                        std.log.debug("current context {s} y: {}", .{ context_name, context.current_context.position.?.y });
+                        item_context.position = pos;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "w")) {
                     if (attr_it.next()) |sizestr| {
                         var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
                         var size: ImVec2 = .{};
-                        if (context.current_context.size) |csize| {
+                        if (item_context.size) |csize| {
                             size = csize;
                         }
                         size.x = @intToFloat(f32, width);
-                        context.current_context.size = size;
-                        std.log.debug("current context {s} w: {}", .{ context_name, context.current_context.size.?.x });
+                        item_context.size = size;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "h")) {
                     if (attr_it.next()) |sizestr| {
                         var height = std.fmt.parseInt(i32, sizestr, 10) catch continue;
                         var size: ImVec2 = .{};
-                        if (context.current_context.size) |csize| {
+                        if (item_context.size) |csize| {
                             size = csize;
                         }
                         size.y = @intToFloat(f32, height);
-                        context.current_context.size = size;
-                        std.log.debug("current context {s} h: {}", .{ context_name, context.current_context.size.?.y });
+                        item_context.size = size;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "fontsize")) {
                     if (attr_it.next()) |sizestr| {
                         var size = std.fmt.parseInt(i32, sizestr, 10) catch continue;
-                        context.current_context.fontSize = size;
-                        std.log.debug("current context {s} fontsize: {}", .{ context_name, context.current_context.fontSize });
+                        item_context.fontSize = size;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "color")) {
                     if (attr_it.next()) |colorstr| {
                         var color = parseColorLiteral(colorstr) catch continue;
-                        context.current_context.color = color;
-                        std.log.debug("current context {s} color: {}", .{ context_name, context.current_context.color });
+                        item_context.color = color;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "bullet_color")) {
                     if (attr_it.next()) |colorstr| {
                         var color = parseColorLiteral(colorstr) catch continue;
-                        context.current_context.bullet_color = color;
-                        std.log.debug("current context {s} bullet_color: {}", .{ context_name, context.current_context.bullet_color });
+                        item_context.bullet_color = color;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "underline_width")) {
                     if (attr_it.next()) |sizestr| {
                         var width = std.fmt.parseInt(i32, sizestr, 10) catch continue;
-                        context.current_context.underline_width = width;
-                        std.log.debug("current context {s} underline_width: {}", .{ context_name, context.current_context.underline_width });
+                        item_context.underline_width = width;
                     }
                 }
                 if (std.mem.eql(u8, attrname, "text")) {
@@ -343,10 +301,11 @@ fn parsePush(line: []const u8, context: *ParserContext) !void {
         }
     }
     if (text_words.items.len > 0) {
-        context.current_context.text = try std.mem.join(context.allocator, " ", text_words.items);
-        std.log.debug("current context text: {s}", .{context.current_context.text});
+        item_context.text = try std.mem.join(context.allocator, " ", text_words.items);
     }
-    // now push it
-    try context.push_contexts.put(context_name, context.current_context);
-    std.log.debug("pushed context {s}", .{context_name});
+    return item_context;
+}
+
+fn commitParsingContext(itemctx: *ItemContext, context: *ParserContext) !void {
+    // .
 }

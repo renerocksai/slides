@@ -10,7 +10,7 @@
 @font_bold_italic=assets/Calibri Bold Italic.ttf
 @underline_width=2
 @color=#aabbccdd
-@bullet_color=ff0000ff
+@bullet_color=#ff0000ff
 
 # -------------------------------------------------------------
 # -- definitions for later
@@ -27,7 +27,7 @@
 # -- intro slide template
 # -------------------------------------------------------------
 @slide fontsize=16 bullet_color=#12345678 color=#bbccddee
-@bg assets/nim/1.png
+@bg img=assets/nim/1.png
 # or
 # @bg color=#000000000
 @push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
@@ -40,7 +40,7 @@
 # -- chapter slide template
 # -------------------------------------------------------------
 @slide fontsize=16 bullet_color=#12345678
-@bg assets/nim/3.png
+@bg img=assets/nim/3.png
 @push chapter_number x= y= w= h= fontsize= color=
 @push chapter_title x= y= w= h= fontsize= color=
 @pushslide chapter
@@ -49,7 +49,7 @@
 # -- content slide template
 # -------------------------------------------------------------
 @slide fontsize=16 bullet_color=#12345678
-@bg assets/nim/5.png
+@bg img=assets/nim/5.png
 @pop slide_number
 @pushslide content
 
@@ -57,7 +57,7 @@
 # -- thankyou slide template
 # -------------------------------------------------------------
 @slide fontsize=16 bullet_color=#12345678
-@bg assets/nim/thankyou3.png
+@bg img=assets/nim/thankyou3.png
 @push thankyou_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push thankyou_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push thankyou_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
@@ -94,7 +94,7 @@
 - here is text in the right box
 
 # some random textbox
-@textbox x=100 y=100 w=100 h=100
+@box x=100 y=100 w=100 h=100
 here comes the text
 - and we start a bullet list
 - on with the list

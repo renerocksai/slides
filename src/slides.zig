@@ -86,14 +86,16 @@ pub const SlideItem = struct {
 };
 
 pub const ItemContext = struct {
-    text: ?[]const u8 = undefined,
-    fontSize: ?i32 = undefined,
-    color: ?ImVec4 = undefined,
-    img_path: ?[]const u8 = undefined,
-    position: ?ImVec2 = undefined,
-    size: ?ImVec2 = undefined,
-    underline_width: ?i32 = 1,
-    bullet_color: ?ImVec4 = .{ .x = 1, .w = 1 },
+    directive: []const u8 = undefined, // @push, @slide, ...
+    context_name: ?[]const u8 = null,
+    text: ?[]const u8 = null,
+    fontSize: ?i32 = null,
+    color: ?ImVec4 = null,
+    img_path: ?[]const u8 = null,
+    position: ?ImVec2 = null,
+    size: ?ImVec2 = null,
+    underline_width: ?i32 = null,
+    bullet_color: ?ImVec4 = null,
 };
 
 // .
