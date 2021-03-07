@@ -260,7 +260,9 @@ fn showSlide(slide: *const Slide) !void {
                         slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
                     }
                 } else {
-                    setSlideBgColor(item.color);
+                    if (item.color) |color| {
+                        setSlideBgColor(color);
+                    }
                 }
             },
             .textbox => {
@@ -269,9 +271,11 @@ fn showSlide(slide: *const Slide) !void {
                     pos.x += item.size.x;
                     igPushTextWrapPos(trxyToSlideXY(pos).x);
                     igSetCursorPos(trxyToSlideXY(item.position));
-                    const fsize = @floatToInt(i32, @intToFloat(f32, item.fontSize) * slideSizeInWindow().y / G.internal_render_size.y);
+                    const fs = item.fontSize orelse slide.fontsize;
+                    const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
                     my_fonts.pushFontScaled(fsize);
-                    igPushStyleColorVec4(ImGuiCol_Text, item.color);
+                    const col = item.color orelse slide.text_color;
+                    igPushStyleColorVec4(ImGuiCol_Text, col);
                     igText(t);
                     my_fonts.popFontScaled();
                     igPopStyleColor(1);

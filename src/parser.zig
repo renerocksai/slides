@@ -3,22 +3,35 @@ const slideszig = @import("slides.zig");
 // for ImVec4 and stuff
 const upaya = @import("upaya");
 
+// NOTE:
+// why we have context.current_context:
+// @pop some_shit
+// # now current_context is loaded with the pushed values, like the color etc
+//
+// @box x= y=
+// # parsing context is loaded with x and y
+// text text
+// # text is added to the parsing context
+//
+// @pop other_shit
+// # at this moment, the parsing context is complete, it can be commited
+// # hence, the above @box with all text will be committed
+// # before that: the parsing context is merged with the current context, so the text color is set etc
+//
+// # then other_shit is popped and put into the current_context
+// # while parsing the other_shit line, parsing_context will be used
+//
+// @box
+// more text
 usingnamespace upaya.imgui;
 usingnamespace slideszig;
 
 pub const ParserError = error{Internal};
 
-// TODO:
-// - @push
-// - @pushslide
-// - @pop
-// - @popslide
-// - @box
-// - @bg
-//
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
-    first_slide: bool = true,
+    first_slide_pushed: bool = false,
+    first_slide_emitted: bool = false,
 
     slideshow: *SlideShow,
     push_contexts: std.StringHashMap(ItemContext),
@@ -50,7 +63,6 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     while (it.next()) |line_untrimmed| {
         const line = std.mem.trimRight(u8, line_untrimmed, " \t");
         i += 1;
-        // std.log.debug("P {d}: {s}", .{ i, line });
         if (std.mem.startsWith(u8, line, "#")) {
             continue;
         }
@@ -311,8 +323,151 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
     return item_context;
 }
 
-fn commitParsingContext(itemctx: *ItemContext, context: *ParserContext) !void {
+// TODO:
+// - @push       -- merge: parser context, current item context --> pushed item
+// - @pushslide  -- pushed slide just from parser context, clear current item context just as with @page
+// - @pop        -- merge: current item context with parser context --> current item context
+//                       e.g. "@pop some_shit x=1" -- pop and override
+// - @popslide   -- just pop the slide, clear current item context
+// - @slide      -- just create and emit slide with parser context (and not item context!), clear current item context
+//                       we don't want to merge current item context with @slide: we would inherit the shit from any
+//                       previous item!
+// - @box        -- merge: parser context, current item context -> emitted box
+//                         also, see override rules below for instantiating a box.
+// - @bg         -- merge: parser context, current item context -> emitted bg item
+//
+//
+// Instantiating a box:
+// override all unset settings by:
+// - item context values : use SlideItem.applyContext(ItemContext)
+// - slide defaults
+// - slideshow defaults
+//
+
+fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *ItemContext) void {
+    if (parsing_item_context.text == null) parsing_item_context.text = item_context.text;
+    if (parsing_item_context.fontSize == null) parsing_item_context.fontSize = item_context.fontSize;
+    if (parsing_item_context.color == null) parsing_item_context.color = item_context.color;
+    if (parsing_item_context.position == null) parsing_item_context.position = item_context.position;
+    if (parsing_item_context.size == null) parsing_item_context.size = item_context.size;
+    if (parsing_item_context.underline_width == null) parsing_item_context.underline_width = item_context.underline_width;
+    if (parsing_item_context.bullet_color == null) parsing_item_context.bullet_color = item_context.bullet_color;
+}
+
+fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserContext) !void {
     // .
-    std.log.debug("{s} : {s}", .{ itemctx.directive, itemctx.text });
-    itemctx.* = ItemContext{};
+    std.log.debug("{s} : {s}", .{ parsing_item_context.directive, parsing_item_context.text });
+
+    // switch over directives
+    if (std.mem.eql(u8, parsing_item_context.directive, "@push")) {
+        mergeParserAndItemContext(parsing_item_context, &context.current_context);
+        if (parsing_item_context.context_name) |context_name| {
+            try context.push_contexts.put(context_name, parsing_item_context.*);
+        }
+        // just to make sure this context remains active
+        context.current_context = parsing_item_context.*;
+        return;
+    }
+
+    if (std.mem.eql(u8, parsing_item_context.directive, "@pushslide")) {
+        if (!context.first_slide_pushed) {
+            // don't leak
+            if (!context.first_slide_emitted) {
+                // only de-init if we def. don't need it: never pushed, never emitted
+                context.current_slide.deinit();
+            }
+        }
+        context.first_slide_pushed = true;
+        context.current_slide.applyContext(parsing_item_context);
+        if (parsing_item_context.context_name) |context_name| {
+            try context.push_slides.put(context_name, context.current_slide);
+        }
+        context.current_slide = try Slide.new(context.allocator);
+    }
+
+    if (std.mem.eql(u8, parsing_item_context.directive, "@pop")) {
+        // pop the context if present
+        // also set the parsing context to the current context
+        if (parsing_item_context.context_name) |context_name| {
+            const ctx_opt = context.push_contexts.get(context_name);
+            if (ctx_opt) |ctx| {
+                context.current_context = ctx;
+                parsing_item_context.* = ctx;
+            }
+            mergeParserAndItemContext(parsing_item_context, &context.current_context);
+        }
+        return;
+    }
+
+    if (std.mem.eql(u8, parsing_item_context.directive, "@popslide")) {
+        // pop the slide and reset the item context
+        // (the latter is done by continue)
+        if (parsing_item_context.context_name) |context_name| {
+            const sld_opt = context.push_slides.get(context_name);
+            if (sld_opt) |sld| {
+                context.current_slide = sld;
+            }
+            // new slide, clear the current item context
+            context.current_context = .{};
+        }
+        return;
+    }
+
+    if (std.mem.eql(u8, parsing_item_context.directive, "@slide")) {
+        // emit the current slide (if present) into the slideshow
+        // then create a new slide (NOT deiniting the current one) with the **parsing** context's overrides
+        // and make it the current slide
+        // after that, clear the current item context
+        if (!context.first_slide_emitted) {
+            context.current_slide.applyContext(parsing_item_context); //  ignore current item context, it's a @slide
+            try context.slideshow.slides.append(context.current_slide);
+        }
+        context.first_slide_emitted = true;
+
+        context.current_slide = try Slide.new(context.allocator);
+        context.current_context = .{}; // clear the current item context, to start fresh in each new slide
+        return;
+    }
+
+    if (std.mem.eql(u8, parsing_item_context.directive, "@box")) {
+        // set kind to img if img attribute is present else set it to textbox
+        // but first, merge shit
+        // - @box        -- merge: parser context, current item context -> emitted box
+        //                         also, see override rules below for instantiating a box.
+        //
+        // Instantiating a box:
+        // override all unset settings by:
+        // - item context values : use SlideItem.applyContext(ItemContext)
+        // - slide defaults
+        // - slideshow defaults
+        mergeParserAndItemContext(parsing_item_context, &context.current_context);
+        var slide_item = try SlideItem.new(context.allocator);
+        try slide_item.applyContext(context.allocator, parsing_item_context.*);
+        slide_item.applySlideDefaultsIfNecessary(context.current_slide);
+        slide_item.applySlideShowDefaultsIfNecessary(context.slideshow);
+        if (slide_item.img_path) |img_path| {
+            slide_item.kind = .img;
+        } else {
+            slide_item.kind = .textbox;
+        }
+        try context.current_slide.items.append(slide_item.*);
+        return;
+    }
+
+    // @bg is just for convenience. x=0, y=0, w=render_width, h=render_hight
+    if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
+        // well, we can see if fun features emerge when we do all the merges
+        mergeParserAndItemContext(parsing_item_context, &context.current_context);
+        var slide_item = try SlideItem.new(context.allocator);
+        try slide_item.applyContext(context.allocator, parsing_item_context.*);
+        slide_item.applySlideDefaultsIfNecessary(context.current_slide);
+        slide_item.applySlideShowDefaultsIfNecessary(context.slideshow);
+        if (slide_item.img_path) |img_path| {
+            slide_item.kind = .img;
+        } else {
+            slide_item.kind = .textbox;
+        }
+        try context.current_slide.items.append(slide_item.*);
+        return;
+    }
 }

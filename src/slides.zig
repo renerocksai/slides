@@ -40,6 +40,7 @@ pub const SlideShow = struct {
 // .
 pub const Slide = struct {
     pos_in_editor: i32 = 0,
+    // TODO: don't we want to store pointers?
     items: std.ArrayList(SlideItem) = undefined,
     fontsize: i32 = 16,
     text_color: ImVec4 = .{ .w = 1 },
@@ -57,6 +58,13 @@ pub const Slide = struct {
     pub fn deinit(self: *Slide) void {
         self.items.deinit();
     }
+
+    pub fn applyContext(self: *Slide, ctx: *ItemContext) void {
+        if (ctx.fontSize) |fs| self.fontsize = fs;
+        if (ctx.color) |col| self.text_color = col;
+        if (ctx.bullet_color) |bul| self.bullet_color = bul;
+        if (ctx.underline_width) |uw| self.underline_width = uw;
+    }
 };
 
 pub const SlideItemKind = enum {
@@ -68,20 +76,45 @@ pub const SlideItemKind = enum {
 pub const SlideItem = struct {
     kind: SlideItemKind = .background,
     text: ?[*:0]u8 = undefined,
-    fontSize: i32 = 128,
-    color: ImVec4 = ImVec4{},
+    fontSize: ?i32 = undefined,
+    color: ?ImVec4 = ImVec4{},
     img_path: ?[]const u8 = undefined,
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
-    underline_width: i32 = 1,
-    bullet_color: ImVec4 = .{ .x = 1, .w = 1 },
+    underline_width: ?i32 = undefined,
+    bullet_color: ?ImVec4 = undefined,
 
-    pub fn applyContext(self: *SlideItem, context: ItemContext) void {
-        if (context.text) |text| self.text = text;
+    pub fn new(a: *std.mem.Allocator) !*SlideItem {
+        var slide_item_buffer = try a.alloc(SlideItem, 1);
+        var slide_item: *SlideItem = &slide_item_buffer[0];
+        return slide_item;
+    }
+    pub fn deinit(self: *Slide) void {
+        // empty
+    }
+
+    pub fn applyContext(self: *SlideItem, allocator: *std.mem.Allocator, context: ItemContext) !void {
+        if (context.text) |text| self.text = @ptrCast([*:0]u8, &try std.fmt.allocPrintZ(allocator, "{s}", .{text}));
+
+        if (context.img_path) |img_path| self.img_path = img_path;
         if (context.fontSize) |fontsize| self.fontSize = fontsize;
         if (context.color) |color| self.color = color;
         if (context.position) |position| self.position = position;
         if (context.size) |size| self.size = size;
+        if (context.underline_width) |w| self.underline_width = w;
+        if (context.bullet_color) |color| self.bullet_color = color;
+    }
+    pub fn applySlideDefaultsIfNecessary(self: *SlideItem, slide: *Slide) void {
+        if (self.fontSize == null) self.fontSize = slide.fontsize;
+        if (self.color == null) self.color = slide.text_color;
+        if (self.underline_width == null) self.underline_width = slide.underline_width;
+        if (self.bullet_color == null) self.bullet_color = slide.bullet_color;
+    }
+    pub fn applySlideShowDefaultsIfNecessary(self: *SlideItem, slideshow: *SlideShow) void {
+        if (self.fontSize == null) self.fontSize = slideshow.default_fontsize;
+        if (self.color == null) self.color = slideshow.default_color;
+        if (self.underline_width == null) self.underline_width = slideshow.default_underline_width;
+        if (self.bullet_color == null) self.bullet_color = slideshow.default_bullet_color;
     }
 };
 
@@ -108,7 +141,8 @@ pub fn makeDemoSlides(slides: *SlideList, allocator: *std.mem.Allocator) void {
     // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
     // authors color #993366
     const demoimgpath1 = "assets/nim/1.png";
-    const demoimgpath2 = "assets/nim/3.png";
+    const demoimgpath2 = "assets/nim/5.png";
+    const demoimgpath3 = "assets/example.png";
 
     var slide_1: *Slide = Slide.new(allocator) catch unreachable;
     var slide_2: *Slide = Slide.new(allocator) catch unreachable;
@@ -155,16 +189,16 @@ pub fn makeDemoSlides(slides: *SlideList, allocator: *std.mem.Allocator) void {
     slide_2.items.append(SlideItem{
         .kind = .textbox,
         .fontSize = 45,
-        .text = "SOMETHING SOMETHING REJECTIONS\n\nDr. Carolin Kaiser, Rene Schallner",
+        .text = "Milestone 3\n\nDr. Carolin Kaiser, Rene Schallner",
         .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
         .position = ImVec2{ .x = 219, .y = 758 },
         .size = ImVec2{ .x = 1149, .y = 246 },
     }) catch unreachable;
     slide_2.items.append(SlideItem{
         .kind = .img,
-        .img_path = demoimgpath1[0..demoimgpath1.len],
-        .position = ImVec2{ .x = 1000, .y = 300 },
-        .size = ImVec2{ .x = 512, .y = 384 },
+        .img_path = demoimgpath3[0..demoimgpath3.len],
+        .position = ImVec2{ .x = 916, .y = 121 },
+        .size = ImVec2{ .x = 1916 / 3, .y = 2121 / 3 },
     }) catch unreachable;
     slides.append(slide_2) catch unreachable;
 }

@@ -37,9 +37,13 @@ rene
 # the following pushslide will the slide cause to be pushed, not rendered
 @pushslide intro     
 
+
 # -------------------------------------------------------------
 # -- chapter slide template
 # -------------------------------------------------------------
+# Note: with each new @slide, the current item context will be cleared.
+#       That means, you will not inherit attributes from previous slides.
+
 @slide fontsize=16 bullet_color=#12345678
 @bg img=assets/nim/3.png
 @push chapter_number x= y= w= h= fontsize= color=
