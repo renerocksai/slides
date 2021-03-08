@@ -44,6 +44,16 @@ Example of the current format:
 @pop intro_subtitle text=Milestone 3
 @pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
 
+# -------------------------------------------------------------
+# some slide without slide template
+@slide
+
+@box x=100 y=100 w=1720 h=880
+Here come the bullets:
+- first
+    - some details
+- second
+- third
 
 ```
 
