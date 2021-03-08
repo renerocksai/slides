@@ -26,9 +26,9 @@ Example of the current format:
 # @bg color=#000000000
 
 # title, subtitle, authors
-@push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_title    x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
-@push intro_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 
 # the following pushslide will the slide cause to be pushed, not rendered
 @pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
@@ -40,7 +40,7 @@ Example of the current format:
 
 # -------------------------------------------------------------
 @popslide intro
-@pop intro_title text=Artificial Voices in Human Choices
+@pop intro_title    text=Artificial Voices in Human Choices
 @pop intro_subtitle text=Milestone 3
 @pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
 
