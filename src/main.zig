@@ -57,7 +57,6 @@ fn initEditorContent() !void {
     ed_anim.textbuf = G.editor_memory.ptr;
     std.mem.set(u8, G.editor_memory, 0);
 
-    G.slideshow_filp = "empty.sld";
     ed_anim.textbuf[0] = 0;
 
     // dummy slides
@@ -99,7 +98,7 @@ const AppData = struct {
     slide_render_height: f32 = 1080.0,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
-    slideshow_filp: ?[]const u8 = null,
+    slideshow_filp: ?[]const u8 = "empty.sld",
     status_msg: [*c]const u8 = "",
     slideshow: *SlideShow = undefined,
     current_slide: i32 = 0,
