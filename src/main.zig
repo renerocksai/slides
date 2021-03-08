@@ -534,7 +534,13 @@ fn showMainMenu(app_data: *AppData) void {
                         // TODO: deinit the slides
 
                         // parse the shit
-                        _ = parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator) catch |err| {};
+                        // TODO: this re-inits the slideshow
+                        G.init(G.allocator) catch unreachable;
+                        _ = parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator) catch |err| {
+                            std.log.err("{any}", .{err});
+                            setStatusMsg("Loading failed!");
+                        };
+                        std.log.info("{any}", .{G.slideshow.slides.items[0].items});
                     } else |err| {
                         setStatusMsg("Loading failed!");
                     }

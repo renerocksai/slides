@@ -9,10 +9,10 @@ pub const SlideShow = struct {
     slides: SlideList = undefined,
 
     // defaults that can be overridden while parsing
-    default_font: []u8 = "assets/Calibri Regular.ttf",
-    default_font_bold: []u8 = "assets/Calibri Regular.ttf",
-    default_font_italic: []u8 = "assets/Calibri Regular.ttf",
-    default_font_bold_italic: []u8 = "assets/Calibri Regular.ttf",
+    default_font: []const u8 = "assets/Calibri Regular.ttf",
+    default_font_bold: []const u8 = "assets/Calibri Regular.ttf",
+    default_font_italic: []const u8 = "assets/Calibri Regular.ttf",
+    default_font_bold_italic: []const u8 = "assets/Calibri Regular.ttf",
     default_fontsize: i32 = 16,
     default_underline_width: i32 = 1,
     default_color: ImVec4 = .{ .w = 0.9 },

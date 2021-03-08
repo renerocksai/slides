@@ -39,10 +39,6 @@ const ParserContext = struct {
 
     current_context: ItemContext = ItemContext{},
     current_slide: *Slide,
-
-    fn commitSlide(self: *ParserContext, slide: *Slide) !void {
-        try self.slideshow.slides.append(slide);
-    }
 };
 
 pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
@@ -223,7 +219,9 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
     if (std.mem.eql(u8, item_context.directive, "@push") or std.mem.eql(u8, item_context.directive, "@pop") or std.mem.eql(u8, item_context.directive, "@pushslide") or std.mem.eql(u8, item_context.directive, "@popslide")) {
         if (word_it.next()) |name| {
             item_context.context_name = name;
+            std.log.info("context name : {s}", .{item_context.context_name.?});
         } else {
+            std.log.err("context name missing!", .{});
             return ParserError.Internal;
         }
     }
@@ -356,7 +354,7 @@ fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *
 
 fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserContext) !void {
     // .
-    std.log.debug("{s} : {s}", .{ parsing_item_context.directive, parsing_item_context.text });
+    std.log.debug("{s} : text={s}", .{ parsing_item_context.directive, parsing_item_context.text });
 
     // switch over directives
     if (std.mem.eql(u8, parsing_item_context.directive, "@push")) {
@@ -418,7 +416,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         // then create a new slide (NOT deiniting the current one) with the **parsing** context's overrides
         // and make it the current slide
         // after that, clear the current item context
-        if (!context.first_slide_emitted) {
+        if (context.first_slide_emitted) {
             context.current_slide.applyContext(parsing_item_context); //  ignore current item context, it's a @slide
             try context.slideshow.slides.append(context.current_slide);
         }
@@ -451,6 +449,18 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
             slide_item.kind = .textbox;
         }
         try context.current_slide.items.append(slide_item.*);
+
+        // .
+        // .
+        // .
+        // YOU ARE HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // .
+        // .
+        // .
+
+        var text = slide_item.text orelse "";
+        std.log.info("added a slide item: {any} - {s}", .{ slide_item.*, text });
+
         return;
     }
 

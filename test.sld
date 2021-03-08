@@ -15,14 +15,13 @@
 # -------------------------------------------------------------
 # -- definitions for later
 # -------------------------------------------------------------
-@push slide_title x= y= w= h= fontsize= color=
+@push slide_title x=100 y=100 w=100 h=100 fontsize=64 color=#000000ff
 @push leftbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff bullet_color=#11223344 underline_width=4
 @push rightbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 @push bigbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 
 # the text $slide_number will be auto expanded 
 @push slide_number x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff text=$slide_number / $num_slides
-rene
 
 # -------------------------------------------------------------
 # -- intro slide template
@@ -109,9 +108,9 @@ Empty lines will be swallowed by the parser!
 
 # -------------------------------------------------------------
 @popslide thankyou
-@pop thankyou_title Artificial Voices in Human Choices
-@pop thankyou_subtitle Milestone 3
-@pop thankyou_subtitle Dr. Carolin Kaiser, Rene Schallner
+@pop thankyou_title text=Artificial Voices in Human Choices
+@pop thankyou_subtitle text=Milestone 3
+@pop thankyou_subtitle text=Dr. Carolin Kaiser, Rene Schallner
 
 # -------------------------------------------------------------
 # eof commits the slide
