@@ -85,7 +85,7 @@ pub const SlideItemError = error{
 
 pub const SlideItem = struct {
     kind: SlideItemKind = .background,
-    text: ?[*:0]u8 = undefined,
+    text: ?[]const u8 = undefined,
     fontSize: ?i32 = undefined,
     color: ?ImVec4 = ImVec4{},
     img_path: ?[]const u8 = undefined,
@@ -104,7 +104,7 @@ pub const SlideItem = struct {
     }
 
     pub fn applyContext(self: *SlideItem, allocator: *std.mem.Allocator, context: ItemContext) !void {
-        if (context.text) |text| self.text = @ptrCast([*:0]u8, &try std.fmt.allocPrintZ(allocator, "{s}", .{text}));
+        if (context.text) |text| self.text = text;
 
         if (context.img_path) |img_path| self.img_path = img_path;
         if (context.fontSize) |fontsize| self.fontSize = fontsize;
@@ -160,7 +160,11 @@ pub const SlideItem = struct {
                 std.log.info(indent ++ "Kind: TextBox", .{});
                 std.log.info(indent ++ "   pos: {any}", .{self.position});
                 std.log.info(indent ++ "  size: {any}", .{self.size});
-                std.log.info(indent ++ "  text: {s}", .{self.text});
+                if (self.text) |text| {
+                    std.log.info(indent ++ "  text:({d}) `{s}`", .{ std.mem.len(text), text });
+                } else {
+                    std.log.info(indent ++ "  text: (null)", .{});
+                }
                 std.log.info(indent ++ " fsize: {any}", .{self.fontSize});
                 std.log.info(indent ++ "uwidth: {any}", .{self.underline_width});
                 std.log.info(indent ++ "bcolor: {any}", .{self.bullet_color});

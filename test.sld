@@ -15,7 +15,7 @@
 # -------------------------------------------------------------
 # -- definitions for later
 # -------------------------------------------------------------
-@push slide_title x=100 y=100 w=100 h=100 fontsize=64 color=#000000ff
+@push slide_title x=100 y=100 w=1920 h=1080 fontsize=64 color=#000000ff
 @push leftbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff bullet_color=#11223344 underline_width=4
 @push rightbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff
 @push bigbox x=0 y=0 w=100 h=100 fontsize=16 color=#000000ff

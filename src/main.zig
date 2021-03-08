@@ -278,7 +278,7 @@ fn showSlide(slide: *const Slide) !void {
                     my_fonts.pushFontScaled(fsize);
                     const col = item.color orelse slide.text_color;
                     igPushStyleColorVec4(ImGuiCol_Text, col);
-                    igText(t);
+                    igText(sliceToCforImguiText(t));
                     my_fonts.popFontScaled();
                     igPopStyleColor(1);
                     igPopTextWrapPos();
@@ -290,6 +290,8 @@ fn showSlide(slide: *const Slide) !void {
                     if (texptr) |t| {
                         slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
                     }
+                } else {
+                    std.log.err("No img path!?!?!?", .{});
                 }
             },
         }
@@ -606,6 +608,20 @@ fn sliceToC(input: []const u8) [:0]u8 {
     std.mem.copy(u8, slicetocbuf[0..], input_cut);
     slicetocbuf[input_cut.len] = 0;
     const xx = slicetocbuf[0 .. input_cut.len + 1];
+    const yy = xx[0..input_cut.len :0];
+    return yy;
+}
+
+// TODO: get rid of this!
+var bigslicetocbuf: [10240]u8 = undefined;
+fn sliceToCforImguiText(input: []const u8) [:0]u8 {
+    var input_cut = input;
+    if (input.len > bigslicetocbuf.len) {
+        input_cut = input[0 .. bigslicetocbuf.len - 1];
+    }
+    std.mem.copy(u8, bigslicetocbuf[0..], input_cut);
+    bigslicetocbuf[input_cut.len] = 0;
+    const xx = bigslicetocbuf[0 .. input_cut.len + 1];
     const yy = xx[0..input_cut.len :0];
     return yy;
 }

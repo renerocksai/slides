@@ -173,7 +173,10 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                         continue;
                     };
                 } else {
-                    text = the_line;
+                    text = std.fmt.allocPrint(context.allocator, "{s}", .{the_line}) catch |err| {
+                        reportErrorInContext(err, &context, null);
+                        continue;
+                    };
                 }
                 parsing_item_context.text = text;
             }
@@ -190,7 +193,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     if (context.parser_errors.items.len == 0) {
         std.log.info("OK. There were no errors.", .{});
     } else {
-        std.log.info("There were no errors!", .{});
+        std.log.info("There were errors!", .{});
         context.logAllErrors();
     }
     return;
@@ -432,6 +435,11 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                         try text_words.append(textafterequal);
                     }
                 }
+                if (std.mem.eql(u8, attrname, "img")) {
+                    if (attr_it.next()) |imgpath| {
+                        item_context.img_path = imgpath;
+                    }
+                }
             }
         } else {
             try text_words.append(word);
@@ -453,7 +461,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
 //                       we don't want to merge current item context with @slide: we would inherit the shit from any
 //                       previous item!
 // - @box        -- merge: parser context, current item context -> emitted box
-//                         also, see override rules below for instantiating a box.
+//                       diese Software eure "normale" Software ist und   also, see override rules below for instantiating a box.
 // - @bg         -- merge: parser context, current item context -> emitted bg item
 //
 //
@@ -565,7 +573,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         // - slideshow defaults
         const slide_item = try commitItemToSlide(parsing_item_context, context);
         var text = slide_item.text orelse "";
-        std.log.info("added a slide item: {any} - {s}", .{ slide_item.*, text });
+        std.log.info("added a box item: `{s}`", .{text});
 
         return;
     }
