@@ -71,20 +71,20 @@
 
 # -------------------------------------------------------------
 @popslide intro
-@pop intro_title Artificial Voices in Human Choices
-@pop intro_subtitle Milestone 3
-@pop intro_subtitle Dr. Carolin Kaiser, Rene Schallner
+@pop intro_title text=Artificial Voices in Human Choices
+@pop intro_subtitle text=Milestone 3
+@pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
 
 # -------------------------------------------------------------
 @popslide chapter
 @pop chapter_number 1
-@pop chapter_title The big picture
+@pop chapter_title text=The big picture
 
 
 # -------------------------------------------------------------
 @popslide content
 
-@pop slide_title The Big Plan
+@pop slide_title text=The Big Plan
 
 @pop leftbox
 - here comes the text

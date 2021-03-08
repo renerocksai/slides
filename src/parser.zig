@@ -37,6 +37,7 @@ pub const ParserErrorContext = struct {
 
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
+    input: []const u8 = undefined,
 
     parsed_line_number: usize = 0,
     parsed_line_offset: usize = 0,
@@ -45,12 +46,26 @@ const ParserContext = struct {
 
     first_slide_emitted: bool = false,
 
-    slideshow: *SlideShow,
+    slideshow: *SlideShow = undefined,
     push_contexts: std.StringHashMap(ItemContext),
     push_slides: std.StringHashMap(*Slide),
 
     current_context: ItemContext = ItemContext{},
     current_slide: *Slide,
+
+    fn new(a: *std.mem.Allocator) !*ParserContext {
+        // .
+        var buffer = try a.alloc(ParserContext, 1);
+        var self: *ParserContext = &buffer[0];
+        self.* = ParserContext{
+            .allocator = a,
+            .push_contexts = std.StringHashMap(ItemContext).init(a),
+            .push_slides = std.StringHashMap(*Slide).init(a),
+            .current_slide = try Slide.new(a),
+            .parser_errors = std.ArrayList(ParserErrorContext).init(a),
+        };
+        return self;
+    }
 
     fn deinit(self: *ParserContext) void {
         self.parser_errors.deinit();
@@ -83,18 +98,15 @@ fn reportErrorInContext(err: anyerror, ctx: *ParserContext, msg: ?[]const u8) vo
     };
 }
 
-pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
-    var start: usize = if (std.mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
-    var it = std.mem.split(input[start..], "\n");
+pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !*ParserContext {
+    var context: *ParserContext = try ParserContext.new(allocator);
+    context.slideshow = slideshow;
 
-    var context = ParserContext{
-        .allocator = allocator,
-        .slideshow = slideshow,
-        .push_contexts = std.StringHashMap(ItemContext).init(allocator),
-        .push_slides = std.StringHashMap(*Slide).init(allocator),
-        .current_slide = try Slide.new(allocator),
-        .parser_errors = std.ArrayList(ParserErrorContext).init(allocator),
-    };
+    context.input = try allocator.dupeZ(u8, input);
+    std.log.info("input len: {d}, context.input len: {d}", .{ input.len, context.input.len });
+
+    var start: usize = if (std.mem.startsWith(u8, context.input, "\xEF\xBB\xBF")) 3 else 0;
+    var it = std.mem.split(context.input[start..], "\n");
 
     var parsing_item_context = ItemContext{};
 
@@ -108,8 +120,9 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                 continue;
             }
 
-            if (input[context.parsed_line_offset] != line[0]) {
-                std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], input[context.parsed_line_offset], input[context.parsed_line_offset] });
+            std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
+            if (context.input[context.parsed_line_offset] != line[0]) {
+                std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
                 return error.Overflow;
             }
 
@@ -118,32 +131,32 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
             }
 
             if (std.mem.startsWith(u8, line, "@font")) {
-                parseFontGlobals(line, slideshow, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                parseFontGlobals(line, slideshow, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                     continue;
                 };
                 continue;
             }
 
             if (std.mem.startsWith(u8, line, "@underline_width=")) {
-                parseUnderlineWidth(line, slideshow, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                parseUnderlineWidth(line, slideshow, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                     continue;
                 };
                 continue;
             }
 
             if (std.mem.startsWith(u8, line, "@color=")) {
-                parseDefaultColor(line, slideshow, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                parseDefaultColor(line, slideshow, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                     continue;
                 };
                 continue;
             }
 
             if (std.mem.startsWith(u8, line, "@bullet_color=")) {
-                parseDefaultBulletColor(line, slideshow, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                parseDefaultBulletColor(line, slideshow, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                     continue;
                 };
                 continue;
@@ -151,12 +164,12 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
 
             if (std.mem.startsWith(u8, line, "@")) {
                 // commit current parsing_item_context
-                commitParsingContext(&parsing_item_context, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                commitParsingContext(&parsing_item_context, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                 };
                 // then parse current item context
-                parsing_item_context = parseItemAttributes(line, &context) catch |err| {
-                    reportErrorInContext(err, &context, null);
+                parsing_item_context = parseItemAttributes(line, context) catch |err| {
+                    reportErrorInContext(err, context, null);
                     continue;
                 };
             } else {
@@ -169,12 +182,12 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                 }
                 if (parsing_item_context.text) |txt| {
                     text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, the_line }) catch |err| {
-                        reportErrorInContext(err, &context, null);
+                        reportErrorInContext(err, context, null);
                         continue;
                     };
                 } else {
                     text = std.fmt.allocPrint(context.allocator, "{s}", .{the_line}) catch |err| {
-                        reportErrorInContext(err, &context, null);
+                        reportErrorInContext(err, context, null);
                         continue;
                     };
                 }
@@ -183,11 +196,11 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
         }
     }
     // commit last slide
-    commitParsingContext(&parsing_item_context, &context) catch |err| {
-        reportErrorInContext(err, &context, null);
+    commitParsingContext(&parsing_item_context, context) catch |err| {
+        reportErrorInContext(err, context, null);
     };
     context.slideshow.slides.append(context.current_slide) catch |err| {
-        reportErrorInContext(err, &context, null);
+        reportErrorInContext(err, context, null);
     };
 
     if (context.parser_errors.items.len == 0) {
@@ -196,7 +209,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
         std.log.info("There were errors!", .{});
         context.logAllErrors();
     }
-    return;
+    return context;
 }
 
 fn parseFontGlobals(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
@@ -494,6 +507,8 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         }
         // just to make sure this context remains active
         context.current_context = parsing_item_context.*;
+        context.current_context.text = null;
+        context.current_context.img_path = null;
         return;
     }
 
@@ -511,8 +526,10 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             const ctx_opt = context.push_contexts.get(context_name);
             if (ctx_opt) |ctx| {
-                context.current_context = ctx;
                 parsing_item_context.* = ctx;
+                context.current_context = ctx;
+                context.current_context.text = null;
+                context.current_context.img_path = null;
             }
             _ = try commitItemToSlide(parsing_item_context, context);
         }
