@@ -317,9 +317,7 @@ fn setSlideBgColor(color: ImVec4) void {
     }
 }
 
-const bottomPanelAnim = struct {
-    visible: bool = false
-};
+const bottomPanelAnim = struct { visible: bool = false };
 
 fn showBottomPanel() void {
     my_fonts.pushFontScaled(16);
@@ -540,7 +538,13 @@ fn showMainMenu(app_data: *AppData) void {
                             std.log.err("{any}", .{err});
                             setStatusMsg("Loading failed!");
                         };
-                        std.log.info("{any}", .{G.slideshow.slides.items[0].items});
+                        std.log.info("=================================", .{});
+                        std.log.info("          Load Summary:", .{});
+                        std.log.info("=================================", .{});
+                        std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
+                        for (G.slideshow.slides.items) |slide, i| {
+                            std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
+                        }
                     } else |err| {
                         setStatusMsg("Loading failed!");
                     }
