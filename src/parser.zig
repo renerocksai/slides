@@ -43,7 +43,6 @@ const ParserContext = struct {
 
     parser_errors: std.ArrayList(ParserErrorContext) = undefined,
 
-    first_slide_pushed: bool = false,
     first_slide_emitted: bool = false,
 
     slideshow: *SlideShow,
@@ -76,6 +75,11 @@ fn reportErrorInContext(err: anyerror, ctx: *ParserContext, msg: ?[]const u8) vo
         .line_number = ctx.parsed_line_number,
         .line_offset = ctx.parsed_line_offset,
         .message = msg,
+    };
+    ctx.parser_errors.append(pec) catch |internal_err| {
+        std.log.crit("Could not add error to error list!", .{});
+        std.log.crit("    The error to be reported: {any}", .{err});
+        std.log.crit("    The error that prevented it: {any}", .{internal_err});
     };
 }
 
@@ -148,8 +152,9 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
 
             if (std.mem.startsWith(u8, line, "@")) {
                 // commit current parsing_item_context
-                commitParsingContext(&parsing_item_context, &context) catch |err| {};
-
+                commitParsingContext(&parsing_item_context, &context) catch |err| {
+                    reportErrorInContext(err, &context, null);
+                };
                 // then parse current item context
                 parsing_item_context = parseItemAttributes(line, &context) catch |err| {
                     reportErrorInContext(err, &context, null);
@@ -482,14 +487,6 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
     }
 
     if (std.mem.eql(u8, parsing_item_context.directive, "@pushslide")) {
-        if (!context.first_slide_pushed) {
-            // don't leak
-            if (!context.first_slide_emitted) {
-                // only de-init if we def. don't need it: never pushed, never emitted
-                context.current_slide.deinit();
-            }
-        }
-        context.first_slide_pushed = true;
         context.current_slide.applyContext(parsing_item_context);
         if (parsing_item_context.context_name) |context_name| {
             try context.push_slides.put(context_name, context.current_slide);
@@ -506,12 +503,21 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
                 context.current_context = ctx;
                 parsing_item_context.* = ctx;
             }
-            mergeParserAndItemContext(parsing_item_context, &context.current_context);
+            _ = try commitItemToSlide(parsing_item_context, context);
         }
         return;
     }
 
     if (std.mem.eql(u8, parsing_item_context.directive, "@popslide")) {
+        // emit the current slide (if present) into the slideshow
+        // then create a new slide (NOT deiniting the current one) with the **parsing** context's overrides
+        // and make it the current slide
+        // after that, clear the current item context
+        if (context.first_slide_emitted) {
+            context.current_slide.applyContext(parsing_item_context); //  ignore current item context, it's a @slide
+            try context.slideshow.slides.append(context.current_slide);
+        }
+        context.first_slide_emitted = true;
         // pop the slide and reset the item context
         // (the latter is done by continue)
         if (parsing_item_context.context_name) |context_name| {
@@ -554,26 +560,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         // - item context values : use SlideItem.applyContext(ItemContext)
         // - slide defaults
         // - slideshow defaults
-        mergeParserAndItemContext(parsing_item_context, &context.current_context);
-        var slide_item = try SlideItem.new(context.allocator);
-        try slide_item.applyContext(context.allocator, parsing_item_context.*);
-        slide_item.applySlideDefaultsIfNecessary(context.current_slide);
-        slide_item.applySlideShowDefaultsIfNecessary(context.slideshow);
-        if (slide_item.img_path) |img_path| {
-            slide_item.kind = .img;
-        } else {
-            slide_item.kind = .textbox;
-        }
-        try context.current_slide.items.append(slide_item.*);
-
-        // .
-        // .
-        // .
-        // YOU ARE HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // .
-        // .
-        // .
-
+        const slide_item = try commitItemToSlide(parsing_item_context, context);
         var text = slide_item.text orelse "";
         std.log.info("added a slide item: {any} - {s}", .{ slide_item.*, text });
 
@@ -583,17 +570,23 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
     // @bg is just for convenience. x=0, y=0, w=render_width, h=render_hight
     if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
         // well, we can see if fun features emerge when we do all the merges
-        mergeParserAndItemContext(parsing_item_context, &context.current_context);
-        var slide_item = try SlideItem.new(context.allocator);
-        try slide_item.applyContext(context.allocator, parsing_item_context.*);
-        slide_item.applySlideDefaultsIfNecessary(context.current_slide);
-        slide_item.applySlideShowDefaultsIfNecessary(context.slideshow);
-        if (slide_item.img_path) |img_path| {
-            slide_item.kind = .img;
-        } else {
-            slide_item.kind = .textbox;
-        }
-        try context.current_slide.items.append(slide_item.*);
+        _ = try commitItemToSlide(parsing_item_context, context);
         return;
     }
+}
+
+fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *ParserContext) !*SlideItem {
+    mergeParserAndItemContext(parsing_item_context, &parser_context.current_context);
+    var slide_item = try SlideItem.new(parser_context.allocator);
+    try slide_item.applyContext(parser_context.allocator, parsing_item_context.*);
+    slide_item.applySlideDefaultsIfNecessary(parser_context.current_slide);
+    slide_item.applySlideShowDefaultsIfNecessary(parser_context.slideshow);
+    if (slide_item.img_path) |img_path| {
+        slide_item.kind = .img;
+    } else {
+        slide_item.kind = .textbox;
+    }
+    std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
+    try parser_context.current_slide.items.append(slide_item.*);
+    return slide_item; // just FYI
 }
