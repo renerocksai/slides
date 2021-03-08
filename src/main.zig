@@ -7,7 +7,7 @@ const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const parser = @import("parser.zig");
 
-const DEBUG = true;
+const DEBUG = false;
 // TODO:
 // - tools menu or at least (smaller) image / icon buttons
 // - laserpointer
@@ -527,6 +527,7 @@ fn showMainMenu(app_data: *AppData) void {
             } else {
                 // now load the file
                 if (std.fs.openFileAbsolute(selected_file, .{ .read = true })) |f| {
+                    G.slideshow_filp = selected_file;
                     defer f.close();
                     if (f.read(G.editor_memory)) |howmany| {
                         G.app_state = .presenting;

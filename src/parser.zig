@@ -581,6 +581,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
     // @bg is just for convenience. x=0, y=0, w=render_width, h=render_hight
     if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
         // well, we can see if fun features emerge when we do all the merges
+        parsing_item_context.position = ImVec2{};
         _ = try commitItemToSlide(parsing_item_context, context);
         return;
     }
@@ -594,6 +595,9 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
     slide_item.applySlideShowDefaultsIfNecessary(parser_context.slideshow);
     if (slide_item.img_path) |img_path| {
         slide_item.kind = .img;
+        if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
+            slide_item.kind = .background;
+        }
     } else {
         slide_item.kind = .textbox;
     }
