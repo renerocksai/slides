@@ -184,6 +184,10 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     commitParsingContext(&parsing_item_context, &context) catch |err| {
         reportErrorInContext(err, &context, null);
     };
+    context.slideshow.slides.append(context.current_slide) catch |err| {
+        reportErrorInContext(err, &context, null);
+    };
+
     if (context.parser_errors.items.len == 0) {
         std.log.info("OK. There were no errors.", .{});
     } else {
