@@ -85,7 +85,6 @@ fn reportErrorInContext(err: anyerror, ctx: *ParserContext, msg: ?[]const u8) vo
 
 pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
     var start: usize = if (std.mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
-    // var it = std.mem.tokenize(input[start..], "\n\r");
     var it = std.mem.split(input[start..], "\n");
 
     var context = ParserContext{
@@ -592,5 +591,9 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
     }
     std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
     try parser_context.current_slide.items.append(slide_item.*);
+
+    slide_item.sanityCheck() catch |err| {
+        reportErrorInContext(err, parser_context, "item sanity check failed");
+    };
     return slide_item; // just FYI
 }

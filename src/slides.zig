@@ -74,6 +74,15 @@ pub const SlideItemKind = enum {
     img,
 };
 
+pub const SlideItemError = error{
+    TextNull,
+    ImgPathNull,
+    FontSizeNull,
+    ColorNull,
+    UnderlineWidthNull,
+    BulletColorNull,
+};
+
 pub const SlideItem = struct {
     kind: SlideItemKind = .background,
     text: ?[*:0]u8 = undefined,
@@ -116,6 +125,48 @@ pub const SlideItem = struct {
         if (self.color == null) self.color = slideshow.default_color;
         if (self.underline_width == null) self.underline_width = slideshow.default_underline_width;
         if (self.bullet_color == null) self.bullet_color = slideshow.default_bullet_color;
+    }
+
+    pub fn sanityCheck(self: *SlideItem) SlideItemError!void {
+        if (self.text == null and self.kind == .textbox) return SlideItemError.TextNull;
+        if (self.fontSize == null and self.kind == .textbox) return SlideItemError.FontSizeNull;
+        if (self.color == null and self.kind == .textbox) return SlideItemError.ColorNull;
+        if (self.underline_width == null and self.kind == .textbox) return SlideItemError.UnderlineWidthNull;
+        if (self.bullet_color == null and self.kind == .textbox) return SlideItemError.BulletColorNull;
+
+        if (self.img_path == null and (self.kind == .img or self.kind == .background)) return SlideItemError.ImgPathNull;
+    }
+
+    pub fn printToLog(self: *const SlideItem) void {
+        const indent = "    ";
+        switch (self.kind) {
+            .background => {
+                std.log.info(indent ++ "Kind: Background", .{});
+                if (self.img_path) |img| {
+                    std.log.info(indent ++ "   img: {any}", .{self.img_path});
+                    std.log.info(indent ++ "   pos: {any}", .{self.position});
+                    std.log.info(indent ++ "  size: {any}", .{self.size});
+                } else {
+                    std.log.info(indent ++ " color: {any}", .{self.color});
+                }
+            },
+            .img => {
+                std.log.info(indent ++ "Kind: Image", .{});
+                std.log.info(indent ++ "   img: {any}", .{self.img_path});
+                std.log.info(indent ++ "   pos: {any}", .{self.position});
+                std.log.info(indent ++ "  size: {any}", .{self.size});
+            },
+            .textbox => {
+                std.log.info(indent ++ "Kind: TextBox", .{});
+                std.log.info(indent ++ "   pos: {any}", .{self.position});
+                std.log.info(indent ++ "  size: {any}", .{self.size});
+                std.log.info(indent ++ "  text: {s}", .{self.text});
+                std.log.info(indent ++ " fsize: {any}", .{self.fontSize});
+                std.log.info(indent ++ "uwidth: {any}", .{self.underline_width});
+                std.log.info(indent ++ "bcolor: {any}", .{self.bullet_color});
+            },
+        }
+        std.log.info(indent ++ "-----------------------", .{});
     }
 };
 

@@ -148,7 +148,9 @@ fn update() void {
             .presenting => {
                 handleKeyboard();
                 if (G.slideshow.slides.items.len > 0) {
-                    showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch unreachable;
+                    showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
+                        std.log.err("SlideShow Error: {any}", .{err});
+                    };
                 } else {
                     anim_bottom_panel.visible = true;
                     const empty = Slide{};
@@ -543,7 +545,11 @@ fn showMainMenu(app_data: *AppData) void {
                         std.log.info("=================================", .{});
                         std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
                         for (G.slideshow.slides.items) |slide, i| {
+                            std.log.info("================================================", .{});
                             std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
+                            for (slide.items.items) |item| {
+                                item.printToLog();
+                            }
                         }
                     } else |err| {
                         setStatusMsg("Loading failed!");

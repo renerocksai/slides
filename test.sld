@@ -57,7 +57,7 @@
 # -------------------------------------------------------------
 # -- thankyou slide template
 # -------------------------------------------------------------
-@bg img=assets/nim/thankyou3.png
+@bg img=assets/nim/thankyou.png
 @push thankyou_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push thankyou_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push thankyou_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
