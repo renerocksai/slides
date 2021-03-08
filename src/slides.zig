@@ -23,11 +23,10 @@ pub const SlideShow = struct {
     fontsizes: std.ArrayList(i32) = undefined,
 
     pub fn new(a: *std.mem.Allocator) !*SlideShow {
-        var buffer = try a.alloc(SlideShow, 1);
-        var instance: *SlideShow = &buffer[0];
-        instance.slides = SlideList.init(a);
+        var self = @ptrCast(*SlideShow, try a.alloc(SlideShow, 1));
+        self.slides = SlideList.init(a);
         // TODO: init font, fontsize arraylists
-        return instance;
+        return self;
     }
 
     pub fn deinit(self: *SlideShow) void {
@@ -51,10 +50,9 @@ pub const Slide = struct {
     // .
 
     pub fn new(a: *std.mem.Allocator) !*Slide {
-        var slide_buffer = try a.alloc(Slide, 1);
-        var slide: *Slide = &slide_buffer[0];
-        slide.items = std.ArrayList(SlideItem).init(a);
-        return slide;
+        var self = @ptrCast(*Slide, try a.alloc(Slide, 1));
+        self.items = std.ArrayList(SlideItem).init(a);
+        return self;
     }
     pub fn deinit(self: *Slide) void {
         self.items.deinit();
@@ -95,9 +93,7 @@ pub const SlideItem = struct {
     bullet_color: ?ImVec4 = undefined,
 
     pub fn new(a: *std.mem.Allocator) !*SlideItem {
-        var slide_item_buffer = try a.alloc(SlideItem, 1);
-        var slide_item: *SlideItem = &slide_item_buffer[0];
-        return slide_item;
+        return @ptrCast(*SlideItem, try a.alloc(SlideItem, 1));
     }
     pub fn deinit(self: *Slide) void {
         // empty
