@@ -39,7 +39,8 @@ pub const SlideShow = struct {
 // Slides
 // .
 pub const Slide = struct {
-    pos_in_editor: i32 = 0,
+    pos_in_editor: usize = 0,
+    line_in_editor: usize = 0,
     // TODO: don't we want to store pointers?
     items: std.ArrayList(SlideItem) = undefined,
     fontsize: i32 = 16,

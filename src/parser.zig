@@ -30,6 +30,10 @@ pub const ParserError = error{Internal};
 
 const ParserContext = struct {
     allocator: *std.mem.Allocator,
+
+    parsed_line_number: usize = 0,
+    parsed_line_offset: usize = 0,
+
     first_slide_pushed: bool = false,
     first_slide_emitted: bool = false,
 
@@ -41,10 +45,12 @@ const ParserContext = struct {
     current_slide: *Slide,
 };
 
+fn reportErrorInContext(err: anyerror, ctx: *ParserContext) void {}
+
 pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !void {
     var start: usize = if (std.mem.startsWith(u8, input, "\xEF\xBB\xBF")) 3 else 0;
-    var it = std.mem.tokenize(input[start..], "\n\r");
-    var i: usize = 0;
+    // var it = std.mem.tokenize(input[start..], "\n\r");
+    var it = std.mem.split(input[start..], "\n");
 
     var context = ParserContext{
         .allocator = allocator,
@@ -57,52 +63,65 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     var parsing_item_context = ItemContext{};
 
     while (it.next()) |line_untrimmed| {
-        const line = std.mem.trimRight(u8, line_untrimmed, " \t");
-        i += 1;
-        if (std.mem.startsWith(u8, line, "#")) {
-            continue;
-        }
+        {
+            const line = std.mem.trimRight(u8, line_untrimmed, " \t");
+            context.parsed_line_number += 1;
+            defer context.parsed_line_offset += line_untrimmed.len + 1;
 
-        if (std.mem.startsWith(u8, line, "@font")) {
-            parseFontGlobals(line, slideshow, allocator) catch continue;
-            continue;
-        }
-
-        if (std.mem.startsWith(u8, line, "@underline_width=")) {
-            parseUnderlineWidth(line, slideshow, allocator) catch continue;
-            continue;
-        }
-
-        if (std.mem.startsWith(u8, line, "@color=")) {
-            parseDefaultColor(line, slideshow, allocator) catch continue;
-            continue;
-        }
-
-        if (std.mem.startsWith(u8, line, "@bullet_color=")) {
-            parseDefaultBulletColor(line, slideshow, allocator) catch continue;
-            continue;
-        }
-
-        if (std.mem.startsWith(u8, line, "@")) {
-            // commit current parsing_item_context
-            commitParsingContext(&parsing_item_context, &context) catch |err| {};
-
-            // then parse current item context
-            parsing_item_context = parseItemAttributes(line, &context) catch continue;
-        } else {
-            // add text lines to current parsing context
-            var text: []const u8 = undefined;
-            var the_line = line;
-            // make _ line an empty line
-            if (line.len == 1 and line[0] == '_') {
-                the_line = " ";
+            if (line.len == 0) {
+                continue;
             }
-            if (parsing_item_context.text) |txt| {
-                text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, the_line }) catch continue;
+
+            if (input[context.parsed_line_offset] != line[0]) {
+                std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], input[context.parsed_line_offset], input[context.parsed_line_offset] });
+                return error.Overflow;
+            }
+
+            if (std.mem.startsWith(u8, line, "#")) {
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, line, "@font")) {
+                parseFontGlobals(line, slideshow, allocator) catch continue;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, line, "@underline_width=")) {
+                parseUnderlineWidth(line, slideshow, allocator) catch continue;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, line, "@color=")) {
+                parseDefaultColor(line, slideshow, allocator) catch continue;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, line, "@bullet_color=")) {
+                parseDefaultBulletColor(line, slideshow, allocator) catch continue;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, line, "@")) {
+                // commit current parsing_item_context
+                commitParsingContext(&parsing_item_context, &context) catch |err| {};
+
+                // then parse current item context
+                parsing_item_context = parseItemAttributes(line, &context) catch continue;
             } else {
-                text = the_line;
+                // add text lines to current parsing context
+                var text: []const u8 = undefined;
+                var the_line = line;
+                // make _ line an empty line
+                if (line.len == 1 and line[0] == '_') {
+                    the_line = " ";
+                }
+                if (parsing_item_context.text) |txt| {
+                    text = std.fmt.allocPrint(context.allocator, "{s}\n{s}", .{ txt, the_line }) catch continue;
+                } else {
+                    text = the_line;
+                }
+                parsing_item_context.text = text;
             }
-            parsing_item_context.text = text;
         }
     }
     // commit last slide
@@ -423,6 +442,8 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         context.first_slide_emitted = true;
 
         context.current_slide = try Slide.new(context.allocator);
+        context.current_slide.pos_in_editor = context.parsed_line_offset;
+        context.current_slide.line_in_editor = context.parsed_line_number;
         context.current_context = .{}; // clear the current item context, to start fresh in each new slide
         return;
     }
