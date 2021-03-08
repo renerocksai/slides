@@ -30,7 +30,7 @@ Example of the current format:
 @push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 
-# the following pushslide will the slide cause to be pushed, not rendered
+# the following pushslide will cause the slide to be pushed, not rendered
 @pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
 
 
