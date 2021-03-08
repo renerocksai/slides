@@ -1,8 +1,51 @@
 # Slides
 
-My first steps creating a slideshow app in zig.
+My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
+
+**Danger - this is pre-alpha stuff**
+
+This app will be much simpler for users than [Bûllets](https://github.com/renerocksai/bullets) while still being totally functional.
+
+**Highlights:**
+- Presentations are created in a simple text format, see below.
+  - makes your slides totally GitHub-friendly
+- One single (mostly static) executable - no install, no fuzz.
+- Built-in editor: create, edit, and present in one small EXE.
+  - for Windows, Linux (and Mac, if you build it yourself)
+
+Example of the current format:
+
+```
+# -------------------------------------------------------------
+# --define intro slide template
+# -------------------------------------------------------------
+
+# Background
+@bg img=assets/nim/1.png
+# or
+# @bg color=#000000000
+
+# title, subtitle, authors
+@push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+
+# the following pushslide will the slide cause to be pushed, not rendered
+@pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
 
 
+# #############################################################
+# ##   S  L  I  D  E  S
+# #############################################################
+
+# -------------------------------------------------------------
+@popslide intro
+@pop intro_title text=Artificial Voices in Human Choices
+@pop intro_subtitle text=Milestone 3
+@pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
+
+
+```
 
 # prerequisites
 
