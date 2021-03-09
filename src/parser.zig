@@ -33,9 +33,23 @@ pub const ParserErrorContext = struct {
     line_number: usize = 0,
     line_offset: usize = 0,
     message: ?[]const u8,
+    formatted: ?[:0]const u8 = null,
+
+    pub fn getFormattedStr(self: *ParserErrorContext, allocator: *std.mem.Allocator) ![*:0]const u8 {
+        if (self.formatted) |txt| {
+            return txt.ptr;
+        }
+        if (self.message) |msg| {
+            self.formatted = try std.fmt.allocPrintZ(allocator, "line {d}: {s} ({s})", .{ self.line_number, self.parser_error, msg });
+        } else {
+            self.formatted = try std.fmt.allocPrintZ(allocator, "line {d}: {s}", .{ self.line_number, self.parser_error });
+        }
+
+        return self.formatted.?.ptr;
+    }
 };
 
-const ParserContext = struct {
+pub const ParserContext = struct {
     allocator: *std.mem.Allocator,
     input: []const u8 = undefined,
 

@@ -234,14 +234,14 @@ fn handleKeyboard() void {
 
 fn showSlide(slide: *const Slide) !void {
     // optionally show editor
-    igSetCursorPos(trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 }));
+    const editor_pos = trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 });
     my_fonts.pushFontScaled(16);
 
     var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 37 };
     if (anim_bottom_panel.visible == false) {
         editor_size.y += 20.0;
     }
-    const editor_active = try animatedEditor(&ed_anim, editor_size, G.content_window_size, G.internal_render_size);
+    const editor_active = try animatedEditor(&ed_anim, editor_pos, editor_size, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
             ed_anim.visible = !ed_anim.visible;
@@ -278,7 +278,7 @@ fn showSlide(slide: *const Slide) !void {
                     my_fonts.pushFontScaled(fsize);
                     const col = item.color orelse slide.text_color;
                     igPushStyleColorVec4(ImGuiCol_Text, col);
-                    igText(sliceToCforImguiText(t));
+                    igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
                     my_fonts.popFontScaled();
                     igPopStyleColor(1);
                     igPopTextWrapPos();
@@ -539,10 +539,13 @@ fn showMainMenu(app_data: *AppData) void {
                         // parse the shit
                         // TODO: this re-inits the slideshow
                         G.init(G.allocator) catch unreachable;
-                        _ = parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator) catch |err| {
+                        if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator)) |pcontext| {
+                            ed_anim.parser_context = pcontext;
+                        } else |err| {
                             std.log.err("{any}", .{err});
                             setStatusMsg("Loading failed!");
-                        };
+                        }
+
                         std.log.info("=================================", .{});
                         std.log.info("          Load Summary:", .{});
                         std.log.info("=================================", .{});
