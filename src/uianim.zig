@@ -1,6 +1,7 @@
 const std = @import("std");
 const upaya = @import("upaya");
 const parser = @import("parser.zig");
+const my_fonts = @import("myscalingfonts.zig");
 usingnamespace upaya.imgui;
 
 // .
@@ -116,15 +117,25 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         igSetCursorPos(pos);
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
         s.y = size.y;
-        const error_panel_height = s.y * 0.1; // reserve the last quarter for shit
+        var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
 
         var show_error_panel = false;
         var parser_errors: *std.ArrayList(parser.ParserErrorContext) = undefined;
+        var num_visible_error_lines: c_int = 0;
         if (anim.parser_context) |ctx| {
             parser_errors = &ctx.parser_errors;
             if (parser_errors.items.len > 0) {
                 show_error_panel = true;
-                s.y -= error_panel_height;
+                var text_size = ImVec2{};
+                const text_size_text: [:0]const u8 = "M";
+                my_fonts.pushFontScaled(12);
+                igCalcTextSize(&text_size, text_size_text.ptr, text_size_text.ptr + 2, false, 100);
+                my_fonts.popFontScaled();
+                num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_size.y);
+                if (num_visible_error_lines < 3) {
+                    num_visible_error_lines = 3;
+                }
+                s.y -= text_size.y * @intToFloat(f32, num_visible_error_lines) + 2;
             }
         }
 
@@ -133,23 +144,17 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, null, null);
 
         if (show_error_panel) {
-            var text_size = ImVec2{};
-            const text_size_text: [:0]const u8 = "M";
-            igCalcTextSize(&text_size, text_size_text.ptr, text_size_text.ptr + 2, false, 100);
-            const num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_size.y);
-
             igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
-            igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 0.9, .w = 0.9 });
+            igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 0.95, .y = 0.95, .w = 0.99 });
             igPushStyleColorVec4(ImGuiCol_FrameBg, .{ .x = 0, .y = 0.1, .z = 0.2, .w = 0.5 });
             var selected: c_int = 0;
             const item_array = try anim.parser_context.?.allErrorsToCstrArray(anim.parser_context.?.allocator);
 
-            //_= igListBoxStr_arr(label: [*c]const u8, current_item: [*c]c_int, items: [*c]const [*c]const u8, items_count: c_int, height_in_items: c_int) bool;
-            if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 2)) {
-                //                                                          ^---- output param: receives selected item index        -- top and bottom half visible
-
-                // an error was selected
+            my_fonts.pushFontScaled(12);
+            if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines)) {
+                // TODO: an error was selected
             }
+            my_fonts.popFontScaled();
             igPopStyleColor(2);
         }
 
