@@ -71,7 +71,7 @@ pub const ParserContext = struct {
 
     fn new(a: *std.mem.Allocator) !*ParserContext {
         // .
-        var self = @ptrCast(*ParserContext, try a.alloc(ParserContext, 1));
+        var self = try a.create(ParserContext);
         self.* = ParserContext{
             .allocator = a,
             .push_contexts = std.StringHashMap(ItemContext).init(a),
