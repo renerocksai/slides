@@ -37,7 +37,7 @@ pub const EditAnim = struct {
     textbuf_size: u32 = 128 * 1024,
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
-    editor_state: ImGuiInputTextCallbackData = .{},
+    editor_state: *ImGuiInputTextCallbackData = undefined,
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
