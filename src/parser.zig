@@ -67,6 +67,8 @@ pub const ParserContext = struct {
     current_context: ItemContext = ItemContext{},
     current_slide: *Slide,
 
+    allErrorsCstrArray: ?[][*]const u8 = null,
+
     fn new(a: *std.mem.Allocator) !*ParserContext {
         // .
         var self = @ptrCast(*ParserContext, try a.alloc(ParserContext, 1));
@@ -76,6 +78,7 @@ pub const ParserContext = struct {
             .push_slides = std.StringHashMap(*Slide).init(a),
             .current_slide = try Slide.new(a),
             .parser_errors = std.ArrayList(ParserErrorContext).init(a),
+            .allErrorsCstrArray = null,
         };
         return self;
     }
@@ -94,6 +97,22 @@ pub const ParserContext = struct {
                 std.log.err("line {d}: {s}", .{ err.line_number, err.parser_error });
             }
         }
+    }
+    pub fn allErrorsToCstrArray(self: *ParserContext, allocator: *std.mem.Allocator) ![*]const [*]const u8 {
+        if (self.allErrorsCstrArray) |ret| {
+            return ret.ptr;
+        }
+        const howmany = self.parser_errors.items.len;
+        var stringarray = try allocator.alloc([*]const u8, howmany);
+        var i: usize = 0;
+        for (self.parser_errors.items) |err| {
+            // err is const, so this doesn't work: stringarray[i] = try err.getFormattedStr(allocator);
+            var err2: ParserErrorContext = err;
+            stringarray[i] = try err2.getFormattedStr(allocator);
+            i += 1;
+        }
+        self.allErrorsCstrArray = stringarray;
+        return stringarray.ptr;
     }
 };
 
