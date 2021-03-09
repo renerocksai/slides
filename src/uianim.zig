@@ -36,6 +36,8 @@ pub const EditAnim = struct {
     textbuf: [*c]u8 = null,
     textbuf_size: u32 = 128 * 1024,
     parser_context: ?*parser.ParserContext = null,
+    selected_error: c_int = 1000,
+    editor_state: ImGuiInputTextCallbackData = .{},
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
@@ -131,16 +133,24 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, null, null);
 
         if (show_error_panel) {
-            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+            var text_size = ImVec2{};
+            const text_size_text: [:0]const u8 = "M";
+            igCalcTextSize(&text_size, text_size_text.ptr, text_size_text.ptr + 2, false, 100);
+            const num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_size.y);
 
-            if (igListBoxHeaderInt("header", @intCast(c_int, parser_errors.items.len), 5)) {
-                if (parser_errors.items[0].getFormattedStr(anim.parser_context.?.allocator)) |xtxt| {
-                    igText(xtxt);
-                } else |err| {
-                    std.log.err("Unable to print parser errors: {any}", .{err});
-                }
-                igListBoxFooter();
+            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+            igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 0.9, .w = 0.9 });
+            igPushStyleColorVec4(ImGuiCol_FrameBg, .{ .x = 0, .y = 0.1, .z = 0.2, .w = 0.5 });
+            var selected: c_int = 0;
+            const item_array = try anim.parser_context.?.allErrorsToCstrArray(anim.parser_context.?.allocator);
+
+            //_= igListBoxStr_arr(label: [*c]const u8, current_item: [*c]c_int, items: [*c]const [*c]const u8, items_count: c_int, height_in_items: c_int) bool;
+            if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 2)) {
+                //                                                          ^---- output param: receives selected item index        -- top and bottom half visible
+
+                // an error was selected
             }
+            igPopStyleColor(2);
         }
 
         // maybe do sth below: buttons or stuff
