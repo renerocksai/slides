@@ -1,5 +1,6 @@
 const std = @import("std");
 const upaya = @import("upaya");
+const parser = @import("parser.zig");
 usingnamespace upaya.imgui;
 
 // .
@@ -34,6 +35,7 @@ pub const EditAnim = struct {
     fadeout_duration: i32 = 200,
     textbuf: [*c]u8 = null,
     textbuf_size: u32 = 128 * 1024,
+    parser_context: ?*parser.ParserContext = null,
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
@@ -70,7 +72,7 @@ pub fn animateX(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVe
 var bt_save_anim = ButtonAnim{};
 
 // returns true if editor is active
-pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
+pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
@@ -109,15 +111,42 @@ pub fn animatedEditor(anim: *EditAnim, size: ImVec2, content_window_size: ImVec2
     }
 
     if (show) {
+        igSetCursorPos(pos);
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
         s.y = size.y;
-        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput;
-        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y - 0 }, flags, null, null);
+        const error_panel_height = s.y * 0.1; // reserve the last quarter for shit
 
+        var show_error_panel = false;
+        var parser_errors: *std.ArrayList(parser.ParserErrorContext) = undefined;
+        if (anim.parser_context) |ctx| {
+            parser_errors = &ctx.parser_errors;
+            if (parser_errors.items.len > 0) {
+                show_error_panel = true;
+                s.y -= error_panel_height;
+            }
+        }
+
+        // show the editor
+        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput;
+        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, null, null);
+
+        if (show_error_panel) {
+            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+
+            if (igListBoxHeaderInt("header", @intCast(c_int, parser_errors.items.len), 5)) {
+                if (parser_errors.items[0].getFormattedStr(anim.parser_context.?.allocator)) |xtxt| {
+                    igText(xtxt);
+                } else |err| {
+                    std.log.err("Unable to print parser errors: {any}", .{err});
+                }
+                igListBoxFooter();
+            }
+        }
+
+        // maybe do sth below: buttons or stuff
         // get real editor size
         s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
         const real_ed_w = s.x;
-
         const bt_width = s.x; //50;
         s.x = content_window_size.x - real_ed_w;
         s.y = size.y - 22.0;
