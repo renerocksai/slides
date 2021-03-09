@@ -23,7 +23,7 @@ pub const SlideShow = struct {
     fontsizes: std.ArrayList(i32) = undefined,
 
     pub fn new(a: *std.mem.Allocator) !*SlideShow {
-        var self = @ptrCast(*SlideShow, try a.alloc(SlideShow, 1));
+        var self = try a.create(SlideShow);
         self.slides = SlideList.init(a);
         // TODO: init font, fontsize arraylists
         return self;
@@ -50,7 +50,7 @@ pub const Slide = struct {
     // .
 
     pub fn new(a: *std.mem.Allocator) !*Slide {
-        var self = @ptrCast(*Slide, try a.alloc(Slide, 1));
+        var self = try a.create(Slide);
         self.items = std.ArrayList(SlideItem).init(a);
         return self;
     }
@@ -93,7 +93,7 @@ pub const SlideItem = struct {
     bullet_color: ?ImVec4 = undefined,
 
     pub fn new(a: *std.mem.Allocator) !*SlideItem {
-        return @ptrCast(*SlideItem, try a.alloc(SlideItem, 1));
+        return try a.create(SlideItem);
     }
     pub fn deinit(self: *Slide) void {
         // empty
