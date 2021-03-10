@@ -558,10 +558,10 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             const ctx_opt = context.push_contexts.get(context_name);
             if (ctx_opt) |ctx| {
-                parsing_item_context.* = ctx;
                 context.current_context = ctx;
                 context.current_context.text = null;
                 context.current_context.img_path = null;
+                parsing_item_context.applyOther(ctx);
             }
             _ = try commitItemToSlide(parsing_item_context, context);
         }
