@@ -1,8 +1,10 @@
 # Backlog
 
+- [ ] jump to editor cursor pos on error
+- [ ] fix parser and slide rendering
+- [ ] drag editor width / shrink, grow buttons
 - [ ] Themes
 - [ ] Menus - bring back the menus!
-- [ ] drag editor width / shrink, grow buttons
 - [ ] nicer (image?) buttons
 - [ ] laserpointer
 - [ ] hide mouse cursor
