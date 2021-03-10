@@ -78,7 +78,7 @@
 
 # -------------------------------------------------------------
 @popslide chapter
-@pop chapter_number 1
+@pop chapter_number text=1
 @pop chapter_title fontsize=16 text=The big picture
 
 
