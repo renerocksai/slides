@@ -163,7 +163,7 @@ fn update() void {
 
 fn handleKeyboard() void {
     // don't consume keys while the editor is visible
-    if (ed_anim.visible) {
+    if (igGetActiveID() == igGetIDStr("editor")) {
         return;
     }
     var deltaindex: i32 = 0;
