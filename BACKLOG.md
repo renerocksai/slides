@@ -4,7 +4,8 @@ fix @pop: parse context AFTER popping!
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
-- [ ] fix parser and slide rendering
+- [x] fix parser and initial slide rendering
+- [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] drag editor width / shrink, grow buttons
 - [ ] Themes
 - [ ] Menus - bring back the menus!
