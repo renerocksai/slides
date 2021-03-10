@@ -8,11 +8,6 @@ const slides = @import("slides.zig");
 const parser = @import("parser.zig");
 
 const DEBUG = false;
-// TODO:
-// drag editor width or at least inc / dec buttons
-// - tools menu or at least (smaller) image / icon buttons
-// - laserpointer
-// - hide mouse cursor
 
 usingnamespace upaya.imgui;
 usingnamespace sokol;

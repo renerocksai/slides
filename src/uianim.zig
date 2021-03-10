@@ -118,24 +118,28 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
         s.y = size.y;
         var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
+        const error_panel_fontsize: i32 = 14;
 
         var show_error_panel = false;
         var parser_errors: *std.ArrayList(parser.ParserErrorContext) = undefined;
         var num_visible_error_lines: c_int = 0;
+        var text_line_height = igGetTextLineHeightWithSpacing();
         if (anim.parser_context) |ctx| {
             parser_errors = &ctx.parser_errors;
             if (parser_errors.items.len > 0) {
                 show_error_panel = true;
-                var text_size = ImVec2{};
-                const text_size_text: [:0]const u8 = "M";
-                my_fonts.pushFontScaled(12);
-                igCalcTextSize(&text_size, text_size_text.ptr, text_size_text.ptr + 2, false, 100);
+                my_fonts.pushFontScaled(error_panel_fontsize);
+                // .
                 my_fonts.popFontScaled();
-                num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_size.y);
+                num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_line_height);
+                // std.log.info("Text line height is {d} --> {d} of {d} lines will fit in {d:.0}", .{ text_line_height, num_visible_error_lines, parser_errors.items.len, error_panel_height });
+                if (num_visible_error_lines > parser_errors.items.len) {
+                    num_visible_error_lines = @intCast(c_int, parser_errors.items.len);
+                }
                 if (num_visible_error_lines < 3) {
                     num_visible_error_lines = 3;
                 }
-                s.y -= text_size.y * @intToFloat(f32, num_visible_error_lines) + 2;
+                s.y -= text_line_height * @intToFloat(f32, num_visible_error_lines) + 2;
             }
         }
 
@@ -150,12 +154,14 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
             var selected: c_int = 0;
             const item_array = try anim.parser_context.?.allErrorsToCstrArray(anim.parser_context.?.allocator);
 
-            my_fonts.pushFontScaled(12);
-            if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines)) {
+            my_fonts.pushFontScaled(error_panel_fontsize);
+            if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
                 // TODO: an error was selected
             }
             my_fonts.popFontScaled();
             igPopStyleColor(2);
+            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+            // _ = igButton("CHECK", .{ .x = 100, .y = @intToFloat(f32, num_visible_error_lines) * text_line_height });
         }
 
         // maybe do sth below: buttons or stuff
