@@ -186,6 +186,13 @@ fn handleKeyboard() void {
     if (igIsKeyReleased(SAPP_KEYCODE_PAGE_DOWN)) {
         deltaindex = 1;
     }
+    if (igIsKeyReleased(SAPP_KEYCODE_UP)) {
+        ed_anim.grow();
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_DOWN)) {
+        ed_anim.shrink();
+    }
 
     if (igIsKeyReleased(SAPP_KEYCODE_F)) {
         sapp_toggle_fullscreen();
@@ -232,11 +239,11 @@ fn showSlide(slide: *const Slide) !void {
     const editor_pos = trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 });
     my_fonts.pushFontScaled(16);
 
-    var editor_size = ImVec2{ .x = 600.0, .y = G.content_window_size.y - 37 };
+    ed_anim.desired_size.y = G.content_window_size.y - 37;
     if (anim_bottom_panel.visible == false) {
-        editor_size.y += 20.0;
+        ed_anim.desired_size.y += 20.0;
     }
-    const editor_active = try animatedEditor(&ed_anim, editor_pos, editor_size, G.content_window_size, G.internal_render_size);
+    const editor_active = try animatedEditor(&ed_anim, editor_pos, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
             ed_anim.visible = !ed_anim.visible;
@@ -324,7 +331,7 @@ fn showBottomPanel() void {
     if (anim_bottom_panel.visible) {
         igColumns(6, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 0;
-        if (animatedButton("<", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
+        if (animatedButton("a", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
@@ -355,7 +362,7 @@ fn showBottomPanel() void {
     } else {
         igColumns(5, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 1;
-        if (animatedButton(">", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
+        if (animatedButton("b", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
         igNextColumn();

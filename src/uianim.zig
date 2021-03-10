@@ -54,6 +54,9 @@ pub const EditAnim = struct {
     visible: bool = false,
     visible_prev: bool = false,
     current_size: ImVec2 = ImVec2{},
+    desired_size: ImVec2 = .{ .x = 600, .y = 0 },
+    in_grow_shrink_animation: bool = false,
+    grow_shrink_from_width: f32 = 0,
     ticker_ms: u32 = 0,
     fadein_duration: i32 = 200,
     fadeout_duration: i32 = 200,
@@ -62,6 +65,23 @@ pub const EditAnim = struct {
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
     editAction: ?EditActionData = null,
+
+    pub fn shrink(self: *EditAnim) void {
+        if (self.desired_size.x > 300) {
+            self.grow_shrink_from_width = self.desired_size.x;
+            self.desired_size.x /= 1.20;
+            self.visible_prev = false;
+            self.in_grow_shrink_animation = true;
+        }
+    }
+    pub fn grow(self: *EditAnim) void {
+        if (self.desired_size.x < 1920.0 / 1.20 - 200.0) {
+            self.grow_shrink_from_width = self.desired_size.x;
+            self.desired_size.x *= 1.20;
+            self.visible_prev = false;
+            self.in_grow_shrink_animation = true;
+        }
+    }
 };
 
 const EditActionData = struct {
@@ -101,13 +121,17 @@ pub fn animateX(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVe
 }
 
 var bt_save_anim = ButtonAnim{};
+var bt_grow_anim = ButtonAnim{};
+var bt_shrink_anim = ButtonAnim{};
 
 // returns true if editor is active
-pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
+pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
     var show: bool = true;
+
+    var size = anim.desired_size;
 
     if (anim.textbuf == null) {
         var allocator = std.heap.page_allocator;
@@ -119,13 +143,21 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
     if (anim.visible != anim.visible_prev) {
         if (anim.visible) {
             // fading in
-            fromSize = ImVec2{};
+            if (!anim.in_grow_shrink_animation) {
+                fromSize = ImVec2{};
+            } else {
+                fromSize.x = anim.grow_shrink_from_width;
+            }
             fromSize.y = size.y;
             toSize = size;
             anim_duration = anim.fadein_duration;
         } else {
             fromSize = size;
-            toSize = ImVec2{};
+            if (!anim.in_grow_shrink_animation) {
+                toSize = ImVec2{};
+            } else {
+                toSize.x = anim.grow_shrink_from_width;
+            }
             toSize.y = size.y;
             anim_duration = anim.fadeout_duration;
         }
@@ -133,6 +165,7 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         anim.ticker_ms += @floatToInt(u32, frame_dt * 1000);
         if (anim.ticker_ms >= anim_duration) {
             anim.visible_prev = anim.visible;
+            anim.in_grow_shrink_animation = false;
         }
     } else {
         anim.ticker_ms = 0;
@@ -144,7 +177,8 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
     if (show) {
         igSetCursorPos(pos);
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
-        s.y = size.y;
+        const grow_shrink_button_panel_height = 22;
+        s.y = size.y - grow_shrink_button_panel_height;
         var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
         const error_panel_fontsize: i32 = 14;
 
@@ -192,7 +226,7 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
             }
             my_fonts.popFontScaled();
             igPopStyleColor(2);
-            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+            // igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
             // _ = igButton("CHECK", .{ .x = 100, .y = @intToFloat(f32, num_visible_error_lines) * text_line_height });
         }
 
@@ -200,10 +234,18 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         // get real editor size
         s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
         const real_ed_w = s.x;
-        const bt_width = s.x; //50;
+        const bt_width = s.x / 2; //50;
         s.x = content_window_size.x - real_ed_w;
-        s.y = size.y - 22.0;
+        s.y = size.y - grow_shrink_button_panel_height;
         igSetCursorPos(s);
+        if (animatedButton("<", .{ .x = bt_width, .y = 20 }, &bt_grow_anim) == .released) {
+            anim.grow();
+        }
+        s.x += bt_width;
+        igSetCursorPos(s);
+        if (animatedButton(">", .{ .x = bt_width, .y = 20 }, &bt_shrink_anim) == .released) {
+            anim.shrink();
+        }
         return ret;
     }
     return false;
