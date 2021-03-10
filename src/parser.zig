@@ -484,7 +484,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                 if (std.mem.eql(u8, attrname, "underline_width")) {
                     if (attr_it.next()) |sizestr| {
                         var width = std.fmt.parseInt(i32, sizestr, 10) catch |err| {
-                            reportErrorInContext(err, context, "cannot parse bullet_color=");
+                            reportErrorInContext(err, context, "cannot parse underline_width=");
                             continue;
                         };
                         item_context.underline_width = width;
@@ -553,10 +553,11 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             try context.push_contexts.put(context_name, parsing_item_context.*);
         }
-        // just to make sure this context remains active
-        context.current_context = parsing_item_context.*;
-        context.current_context.text = null;
-        context.current_context.img_path = null;
+        // just to make sure this context remains active -- TODO: why?!??!? isn't it better cleared out after the push?
+        // context.current_context = parsing_item_context.*;
+        // context.current_context.text = null;
+        // context.current_context.img_path = null;
+        context.current_context = .{}; // TODO: we better cleared the context after the push
         return;
     }
 
@@ -655,7 +656,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
 fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *ParserContext) !*SlideItem {
     mergeParserAndItemContext(parsing_item_context, &parser_context.current_context);
     var slide_item = try SlideItem.new(parser_context.allocator);
-    try slide_item.applyContext(parser_context.allocator, parsing_item_context.*);
+    slide_item.applyContext(parsing_item_context.*);
     slide_item.applySlideDefaultsIfNecessary(parser_context.current_slide);
     slide_item.applySlideShowDefaultsIfNecessary(parser_context.slideshow);
     if (slide_item.img_path) |img_path| {

@@ -99,7 +99,7 @@ pub const SlideItem = struct {
         // empty
     }
 
-    pub fn applyContext(self: *SlideItem, allocator: *std.mem.Allocator, context: ItemContext) !void {
+    pub fn applyContext(self: *SlideItem, context: ItemContext) void {
         if (context.text) |text| self.text = text;
 
         if (context.img_path) |img_path| self.img_path = img_path;
@@ -117,10 +117,23 @@ pub const SlideItem = struct {
         if (self.bullet_color == null) self.bullet_color = slide.bullet_color;
     }
     pub fn applySlideShowDefaultsIfNecessary(self: *SlideItem, slideshow: *SlideShow) void {
-        if (self.fontSize == null) self.fontSize = slideshow.default_fontsize;
-        if (self.color == null) self.color = slideshow.default_color;
-        if (self.underline_width == null) self.underline_width = slideshow.default_underline_width;
-        if (self.bullet_color == null) self.bullet_color = slideshow.default_bullet_color;
+        if (self.fontSize == null) {
+            self.fontSize = slideshow.default_fontsize;
+        }
+        if (self.color == null) {
+            self.color = slideshow.default_color;
+        }
+
+        // TODO: BUG BUG compiler BUG ?!?!?!?!?!
+        // if(self.underline_width == null) { A } else { B }
+        // does not work. Even when it is null, the B branch is always executed
+        if (self.underline_width) |w| {} else {
+            self.underline_width = slideshow.default_underline_width;
+        }
+
+        if (self.bullet_color) |bc| {} else {
+            self.bullet_color = slideshow.default_bullet_color;
+        }
     }
 
     pub fn sanityCheck(self: *SlideItem) SlideItemError!void {
@@ -172,15 +185,15 @@ pub const SlideItem = struct {
 
 pub const ItemContext = struct {
     directive: []const u8 = undefined, // @push, @slide, ...
-    context_name: ?[]const u8 = null,
-    text: ?[]const u8 = null,
-    fontSize: ?i32 = null,
-    color: ?ImVec4 = null,
-    img_path: ?[]const u8 = null,
-    position: ?ImVec2 = null,
-    size: ?ImVec2 = null,
-    underline_width: ?i32 = null,
-    bullet_color: ?ImVec4 = null,
+    context_name: ?[]const u8 = undefined,
+    text: ?[]const u8 = undefined,
+    fontSize: ?i32 = undefined,
+    color: ?ImVec4 = undefined,
+    img_path: ?[]const u8 = undefined,
+    position: ?ImVec2 = undefined,
+    size: ?ImVec2 = undefined,
+    underline_width: ?i32 = undefined,
+    bullet_color: ?ImVec4 = undefined,
     line_number: usize = 0,
     line_offset: usize = 0,
 
