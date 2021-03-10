@@ -27,6 +27,17 @@ pub const ButtonAnim = struct {
     arrow_dir: i32 = -1,
 };
 
+// pub const ImGuiInputTextCallback = ?fn ([*c]ImGuiInputTextCallbackData) callconv(.C) c_int;
+
+pub fn my_callback(data: [*c]ImGuiInputTextCallbackData) callconv(.C) c_int {
+    std.log.info("Callback Data:\n{any}", .{data.*});
+    data.*.CursorPos = @intCast(c_int, 100);
+    var x: *EditAnim = @ptrCast(*EditAnim, @alignCast(@alignOf(*EditAnim), data.*.UserData));
+
+    std.log.info("editAnim test: parser_errors = {}", .{x.*.parser_context.?.parser_errors});
+    return 0;
+}
+
 pub const EditAnim = struct {
     visible: bool = false,
     visible_prev: bool = false,
@@ -38,7 +49,6 @@ pub const EditAnim = struct {
     textbuf_size: u32 = 128 * 1024,
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
-    editor_state: *ImGuiInputTextCallbackData = undefined,
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
@@ -144,8 +154,9 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         }
 
         // show the editor
-        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput;
-        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, null, null);
+        var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways;
+        var x_anim: *EditAnim = anim;
+        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
 
         if (show_error_panel) {
             igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
