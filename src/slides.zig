@@ -181,16 +181,35 @@ pub const ItemContext = struct {
     size: ?ImVec2 = null,
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
-    pub fn applyOther(self: *ItemContext, other: ItemContext) void {
-        if (other.text) |text| self.text = text;
+    line_number: usize = 0,
+    line_offset: usize = 0,
 
-        if (other.img_path) |img_path| self.img_path = img_path;
-        if (other.fontSize) |fontsize| self.fontSize = fontsize;
-        if (other.color) |color| self.color = color;
-        if (other.position) |position| self.position = position;
-        if (other.size) |size| self.size = size;
-        if (other.underline_width) |w| self.underline_width = w;
-        if (other.bullet_color) |color| self.bullet_color = color;
+    pub fn applyOtherIfNull(self: *ItemContext, other: ItemContext) void {
+        if (self.text == null) {
+            if (other.text) |text| self.text = text;
+        }
+
+        if (self.img_path == null) {
+            if (other.img_path) |img_path| self.img_path = img_path;
+        }
+        if (self.fontSize == null) {
+            if (other.fontSize) |fontsize| self.fontSize = fontsize;
+        }
+        if (self.color == null) {
+            if (other.color) |color| self.color = color;
+        }
+        if (self.position == null) {
+            if (other.position) |position| self.position = position;
+        }
+        if (self.size == null) {
+            if (other.size) |size| self.size = size;
+        }
+        if (self.underline_width == null) {
+            if (other.underline_width) |w| self.underline_width = w;
+        }
+        if (self.bullet_color == null) {
+            if (other.bullet_color) |color| self.bullet_color = color;
+        }
     }
 };
 
