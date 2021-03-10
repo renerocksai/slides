@@ -73,8 +73,7 @@
 @popslide intro
 @pop intro_title text=Artificial Voices in Human Choices
 @pop intro_subtitle text=Milestone 3
-@pop intro_authors text=Dr. Carolin Kaiser, Rene Schallner
-#@pop intro_authors fontsize=36 text=fontsize change doesnt work, will not be applied
+@pop intro_authors fontsize=72 text=Dr. Carolin Kaiser, Rene Schallner
 
 
 # -------------------------------------------------------------

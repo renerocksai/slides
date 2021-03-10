@@ -130,6 +130,20 @@ fn reportErrorInContext(err: anyerror, ctx: *ParserContext, msg: ?[]const u8) vo
     };
 }
 
+fn reportErrorInParsingContext(err: anyerror, pctx: *ItemContext, ctx: *ParserContext, msg: ?[]const u8) void {
+    const pec = ParserErrorContext{
+        .parser_error = err,
+        .line_number = pctx.line_number,
+        .line_offset = pctx.line_offset,
+        .message = msg,
+    };
+    ctx.parser_errors.append(pec) catch |internal_err| {
+        std.log.crit("Could not add error to error list!", .{});
+        std.log.crit("    The error to be reported: {any}", .{err});
+        std.log.crit("    The error that prevented it: {any}", .{internal_err});
+    };
+}
+
 pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !*ParserContext {
     var context: *ParserContext = try ParserContext.new(allocator);
     context.slideshow = slideshow;
@@ -204,6 +218,8 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                     reportErrorInContext(err, context, null);
                     continue;
                 };
+                parsing_item_context.line_number = context.parsed_line_number;
+                parsing_item_context.line_offset = context.parsed_line_offset;
             } else {
                 // add text lines to current parsing context
                 var text: []const u8 = undefined;
@@ -561,7 +577,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
                 context.current_context = ctx;
                 context.current_context.text = null;
                 context.current_context.img_path = null;
-                parsing_item_context.applyOther(ctx);
+                parsing_item_context.applyOtherIfNull(ctx);
             }
             _ = try commitItemToSlide(parsing_item_context, context);
         }
@@ -654,7 +670,7 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
     try parser_context.current_slide.items.append(slide_item.*);
 
     slide_item.sanityCheck() catch |err| {
-        reportErrorInContext(err, parser_context, "item sanity check failed");
+        reportErrorInParsingContext(err, parsing_item_context, parser_context, "item sanity check failed");
     };
     return slide_item; // just FYI
 }
