@@ -1,6 +1,9 @@
 # Backlog
 
-- [ ] jump to editor cursor pos on error
+fix @pop: parse context AFTER popping!
+
+- [x] jump to editor cursor pos on error
+- [ ] dupe editor mem -> editing won't change slides stuff
 - [ ] fix parser and slide rendering
 - [ ] drag editor width / shrink, grow buttons
 - [ ] Themes

@@ -30,11 +30,23 @@ pub const ButtonAnim = struct {
 // pub const ImGuiInputTextCallback = ?fn ([*c]ImGuiInputTextCallbackData) callconv(.C) c_int;
 
 pub fn my_callback(data: [*c]ImGuiInputTextCallbackData) callconv(.C) c_int {
-    std.log.info("Callback Data:\n{any}", .{data.*});
-    data.*.CursorPos = @intCast(c_int, 100);
     var x: *EditAnim = @ptrCast(*EditAnim, @alignCast(@alignOf(*EditAnim), data.*.UserData));
 
-    std.log.info("editAnim test: parser_errors = {}", .{x.*.parser_context.?.parser_errors});
+    if (x.editAction) |action| {
+        data.*.CursorPos = @intCast(c_int, action.jump_to_cursor_pos);
+        if (action.highlight_line) {
+            data.*.SelectionStart = data.*.CursorPos;
+
+            const buf = x.parser_context.?.input;
+            if (std.mem.indexOfPos(u8, buf, action.jump_to_cursor_pos, "\n")) |eol_pos| {
+                data.*.SelectionEnd = @intCast(c_int, eol_pos);
+            } else {
+                data.*.SelectionEnd = data.*.SelectionStart + 10;
+            }
+        }
+        x.editAction = null;
+    }
+
     return 0;
 }
 
@@ -49,6 +61,12 @@ pub const EditAnim = struct {
     textbuf_size: u32 = 128 * 1024,
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
+    editAction: ?EditActionData = null,
+};
+
+const EditActionData = struct {
+    jump_to_cursor_pos: usize = 0,
+    highlight_line: bool = false,
 };
 
 pub fn animateVec2(from: ImVec2, to: ImVec2, duration_ms: i32, ticker_ms: u32) ImVec2 {
@@ -156,7 +174,8 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
         // show the editor
         var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways;
         var x_anim: *EditAnim = anim;
-        const ret = igInputTextMultiline("", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
+        var editor_id = igGetActiveID();
+        const ret = igInputTextMultiline("editor", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
 
         if (show_error_panel) {
             igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
@@ -168,6 +187,12 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
             my_fonts.pushFontScaled(error_panel_fontsize);
             if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
                 // TODO: an error was selected
+                anim.editAction = .{
+                    .jump_to_cursor_pos = parser_errors.items[@intCast(usize, anim.selected_error)].line_offset,
+                    .highlight_line = true,
+                };
+                igActivateItem(igGetIDStr("editor"));
+                std.log.info("Activated editor with ID {} from {}", .{ igGetIDStr("editor"), igGetItemID() });
             }
             my_fonts.popFontScaled();
             igPopStyleColor(2);
