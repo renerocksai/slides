@@ -29,9 +29,9 @@
 @bg img=assets/nim/1.png
 # or
 # @bg color=#000000000
-@push intro_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
-@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
-@push intro_authors x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_title    x=200 y=450 w=950 h=100 fontsize=96 color=#123456aa 
+@push intro_subtitle x=200 y=650 w=950 h=100 fontsize=96 color=#123456aa 
+@push intro_authors  x=200 y=850 w=950 h=100 fontsize=36 color=#123456aa 
 # the following pushslide will the slide cause to be pushed, not rendered
 @pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
 
@@ -43,8 +43,8 @@
 #       That means, you will not inherit attributes from previous slides.
 
 @bg img=assets/nim/3.png
-@push chapter_number x= y= w= h= fontsize= color=
-@push chapter_title x= y= w= h= fontsize= color=
+@push chapter_number x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push chapter_title x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @pushslide chapter
 
 # -------------------------------------------------------------
@@ -73,12 +73,14 @@
 @popslide intro
 @pop intro_title text=Artificial Voices in Human Choices
 @pop intro_subtitle text=Milestone 3
-@pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
+@pop intro_authors text=Dr. Carolin Kaiser, Rene Schallner
+#@pop intro_authors fontsize=36 text=fontsize change doesnt work, will not be applied
+
 
 # -------------------------------------------------------------
 @popslide chapter
 @pop chapter_number 1
-@pop chapter_title text=The big picture
+@pop chapter_title fontsize=16 text=The big picture
 
 
 # -------------------------------------------------------------

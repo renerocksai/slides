@@ -181,6 +181,17 @@ pub const ItemContext = struct {
     size: ?ImVec2 = null,
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
+    pub fn applyOther(self: *ItemContext, other: ItemContext) void {
+        if (other.text) |text| self.text = text;
+
+        if (other.img_path) |img_path| self.img_path = img_path;
+        if (other.fontSize) |fontsize| self.fontSize = fontsize;
+        if (other.color) |color| self.color = color;
+        if (other.position) |position| self.position = position;
+        if (other.size) |size| self.size = size;
+        if (other.underline_width) |w| self.underline_width = w;
+        if (other.bullet_color) |color| self.bullet_color = color;
+    }
 };
 
 // .

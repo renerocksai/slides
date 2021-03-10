@@ -164,9 +164,6 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, size: ImVec2, content_window
                 if (num_visible_error_lines > parser_errors.items.len) {
                     num_visible_error_lines = @intCast(c_int, parser_errors.items.len);
                 }
-                if (num_visible_error_lines < 3) {
-                    num_visible_error_lines = 3;
-                }
                 s.y -= text_line_height * @intToFloat(f32, num_visible_error_lines) + 2;
             }
         }
