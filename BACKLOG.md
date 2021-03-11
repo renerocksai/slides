@@ -6,7 +6,8 @@ fix @pop: parse context AFTER popping!
 - [x] dupe editor mem -> editing won't change slides stuff
 - [x] fix parser and initial slide rendering
 - [x] allow shortcut keys if editor !active (instead of !visible)
-- [x] (drag editor width / ) shrink, grow buttons
+- [x] editor width shrink, grow buttons
+- [ ] drag editor width button y-centered
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] Themes
 - [ ] Menus - bring back the menus!
