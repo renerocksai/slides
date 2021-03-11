@@ -99,7 +99,9 @@ const AppData = struct {
     slideshow: *SlideShow = undefined,
     current_slide: i32 = 0,
     hot_reload_ticker: usize = 0,
-    hot_reload_interval_ticks: usize = 1000 / 16,
+    hot_reload_interval_ticks: usize = 1500 / 16,
+    hot_reload_last_stat: ?std.fs.File.Stat = undefined,
+
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
         self.slideshow = try SlideShow.new(alloc);
@@ -144,6 +146,12 @@ fn update() void {
             .mainmenu => showMainMenu(&G),
             .presenting => {
                 handleKeyboard();
+                const do_reload = checkAutoReload() catch false;
+                if (do_reload) {
+                    loadSlideshow(G.slideshow_filp.?) catch |err| {
+                        std.log.err("Unable to auto-reload: {any}", .{err});
+                    };
+                }
                 if (G.slideshow.slides.items.len > 0) {
                     if (G.current_slide > G.slideshow.slides.items.len) {
                         G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
@@ -631,10 +639,34 @@ fn sliceToC(input: []const u8) [:0]u8 {
     const yy = xx[0..input_cut.len :0];
     return yy;
 }
+
+fn checkAutoReload() !bool {
+    if (G.slideshow_filp) |filp| {
+        G.hot_reload_ticker += 1;
+        if (G.hot_reload_ticker > G.hot_reload_interval_ticks) {
+            std.log.debug("Checking for auto-reload of {s}", .{filp});
+            G.hot_reload_ticker = 0;
+            var f = try std.fs.openFileAbsolute(filp, .{ .read = true });
+            defer f.close();
+            const x = try f.stat();
+            if (G.hot_reload_last_stat) |last| {
+                if (x.mtime != last.mtime) {
+                    std.log.debug("RELOAD {s}", .{filp});
+                    return true;
+                }
+            } else {
+                G.hot_reload_last_stat = x;
+            }
+        }
+    }
+    return false;
+}
+
 fn loadSlideshow(filp: []const u8) !void {
     if (std.fs.openFileAbsolute(filp, .{ .read = true })) |f| {
         G.slideshow_filp = filp;
         defer f.close();
+        G.hot_reload_last_stat = try f.stat();
         if (f.read(G.editor_memory)) |howmany| {
             G.app_state = .presenting;
             const input = std.fs.path.basename(filp);
