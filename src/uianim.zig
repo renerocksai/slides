@@ -160,7 +160,7 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
     var editor_pos = ImVec2{};
     var pos = ImVec2{};
     pos.x = internal_render_size.x - anim.current_size.x;
-    pos.x *= internal_render_size.x / content_window_size.x;
+    pos.x *= content_window_size.x / internal_render_size.x;
     editor_pos = pos;
     editor_pos.x += anim.slide_button_width;
 
@@ -202,11 +202,11 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
         if (anim.in_flash_editor_animation) {
             anim.ticker_ms += 1;
             anim.activate();
-            //std.log.debug("flashing editor {}", .{anim.ticker_ms});
+            std.log.debug("flashing editor {}", .{anim.ticker_ms});
             if (anim.ticker_ms > anim.flash_editor_duration) {
                 anim.in_flash_editor_animation = false;
                 igActivateItem(igGetIDStr("dummy"));
-                //std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
+                std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
             }
         } else {
             anim.ticker_ms = 0;
@@ -314,7 +314,8 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
                 anim.shrink();
             }
         }
-        _ = igButton("dummy", .{ .x = 1, .y = 1 });
+        igSetCursorPos(.{ .x = pos.x, .y = 0 });
+        _ = igButton("dummy", .{ .x = 2, .y = 2 });
         return ret;
     }
     return false;
