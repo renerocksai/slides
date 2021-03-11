@@ -109,5 +109,10 @@ Empty lines will be swallowed by the parser!
 @pop thankyou_subtitle text=Milestone 3
 @pop thankyou_subtitle text=Dr. Carolin Kaiser, Rene Schallner
 
+@slide
+@box x=100 y=100 w=100 h=100
+here comes the text
+- and we start a bullet list
+- on with the list
 # -------------------------------------------------------------
 # eof commits the slide

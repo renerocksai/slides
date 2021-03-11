@@ -161,7 +161,15 @@ fn update() void {
     }
 }
 
-fn clampSlideIndex(delta: i32) void {}
+fn jumpToSlide(slidenumber: i32) void {
+    if (G.current_slide == slidenumber) {
+        return;
+    }
+    G.current_slide = slidenumber;
+    const pos_in_editor = G.slideshow.slides.items[@intCast(usize, slidenumber)].pos_in_editor;
+    std.log.debug("wanna jump into editor: pos={}", .{pos_in_editor});
+    ed_anim.jumpToPosAndHighlightLine(pos_in_editor, false);
+}
 
 fn handleKeyboard() void {
     // don't consume keys while the editor is visible
@@ -208,32 +216,29 @@ fn handleKeyboard() void {
         }
     }
 
-    G.current_slide += deltaindex;
+    var new_slide_index: i32 = G.current_slide + deltaindex;
 
     // special slide navigation: 1 and 0
     // needs to be after applying deltaindex!!!!!
     if (igIsKeyReleased(SAPP_KEYCODE_1)) {
-        G.current_slide = 0;
+        new_slide_index = 0;
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_0)) {
-        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
+        new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
     }
 
     // clamp slide index
-    if (G.slideshow.slides.items.len > 0 and G.current_slide >= @intCast(i32, G.slideshow.slides.items.len)) {
-        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
+    if (G.slideshow.slides.items.len > 0 and new_slide_index >= @intCast(i32, G.slideshow.slides.items.len)) {
+        new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
     } else if (G.slideshow.slides.items.len == 0 and G.current_slide > 0) {
-        G.current_slide = 0;
+        new_slide_index = 0;
     }
-    if (G.current_slide < 0) {
-        G.current_slide = 0;
+    if (new_slide_index < 0) {
+        new_slide_index = 0;
     }
 
-    // a key was pressed
-    if (deltaindex != 0) {
-        std.log.debug("slide index: {}", .{G.current_slide});
-    }
+    jumpToSlide(new_slide_index);
 }
 
 fn showSlide(slide: *const Slide) !void {
@@ -248,7 +253,7 @@ fn showSlide(slide: *const Slide) !void {
     const editor_active = try animatedEditor(&ed_anim, editor_pos, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
-            ed_anim.visible = !ed_anim.visible;
+            toggleEditor();
         }
     }
 
@@ -327,6 +332,13 @@ fn setSlideBgColor(color: ImVec4) void {
 
 const bottomPanelAnim = struct { visible: bool = false };
 
+fn toggleEditor() void {
+    ed_anim.visible = !ed_anim.visible;
+    if (ed_anim.visible) {
+        //ed_anim.activate();
+    }
+}
+
 fn showBottomPanel() void {
     my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
@@ -350,7 +362,7 @@ fn showBottomPanel() void {
         }
         igNextColumn();
         if (animatedButton("[e]ditor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
-            ed_anim.visible = !ed_anim.visible;
+            toggleEditor();
         }
         // dummy column for the editor save button
         igNextColumn();
@@ -556,6 +568,7 @@ fn showMainMenu(app_data: *AppData) void {
                         std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
                         for (G.slideshow.slides.items) |slide, i| {
                             std.log.info("================================================", .{});
+                            std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
                             std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
                             for (slide.items.items) |item| {
                                 item.printToLog();

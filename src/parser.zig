@@ -601,6 +601,8 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
             const sld_opt = context.push_slides.get(context_name);
             if (sld_opt) |sld| {
                 context.current_slide = sld;
+                context.current_slide.pos_in_editor = parsing_item_context.line_offset;
+                context.current_slide.line_in_editor = parsing_item_context.line_number;
             }
             // new slide, clear the current item context
             context.current_context = .{};
@@ -620,8 +622,8 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         context.first_slide_emitted = true;
 
         context.current_slide = try Slide.new(context.allocator);
-        context.current_slide.pos_in_editor = context.parsed_line_offset;
-        context.current_slide.line_in_editor = context.parsed_line_number;
+        context.current_slide.pos_in_editor = parsing_item_context.line_offset; //context.parsed_line_offset;
+        context.current_slide.line_in_editor = parsing_item_context.line_number; // context.parsed_line_number;
         context.current_context = .{}; // clear the current item context, to start fresh in each new slide
         return;
     }
