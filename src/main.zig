@@ -161,6 +161,8 @@ fn update() void {
     }
 }
 
+fn clampSlideIndex(delta: i32) void {}
+
 fn handleKeyboard() void {
     // don't consume keys while the editor is visible
     if (igGetActiveID() == igGetIDStr("editor")) {
