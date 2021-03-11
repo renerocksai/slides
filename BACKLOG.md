@@ -12,7 +12,7 @@ make editor active for 500ms when E
 - [x] fix parser and initial slide rendering
 - [x] allow shortcut keys if editor !active (instead of !visible)
 - [x] editor width shrink, grow buttons
-- [x] show line in open editor when changing slides
+- [x] show line in open editor when changing slides (!new! flash it!)
 - [ ] drag editor width button y-centered
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] Themes
