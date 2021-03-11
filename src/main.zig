@@ -244,14 +244,13 @@ fn handleKeyboard() void {
 
 fn showSlide(slide: *const Slide) !void {
     // optionally show editor
-    const editor_pos = trxy(ImVec2{ .x = G.internal_render_size.x - ed_anim.current_size.x, .y = 0.0 });
     my_fonts.pushFontScaled(16);
 
     ed_anim.desired_size.y = G.content_window_size.y - 37;
     if (anim_bottom_panel.visible == false) {
         ed_anim.desired_size.y += 20.0;
     }
-    const editor_active = try animatedEditor(&ed_anim, editor_pos, G.content_window_size, G.internal_render_size);
+    const editor_active = try animatedEditor(&ed_anim, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
             toggleEditor();

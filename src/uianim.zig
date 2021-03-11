@@ -55,6 +55,7 @@ pub const EditAnim = struct {
     visible_prev: bool = false,
     current_size: ImVec2 = ImVec2{},
     desired_size: ImVec2 = .{ .x = 600, .y = 0 },
+    slide_button_width: f32 = 10,
     in_grow_shrink_animation: bool = false,
     in_flash_editor_animation: bool = false,
     grow_shrink_from_width: f32 = 0,
@@ -67,6 +68,9 @@ pub const EditAnim = struct {
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
     editAction: ?EditActionData = null,
+    resize_button_anim: ButtonAnim = .{},
+    resize_mouse_x: f32 = 0,
+    in_resize_mode: bool = false,
 
     pub fn shrink(self: *EditAnim) void {
         if (self.desired_size.x > 300) {
@@ -145,13 +149,20 @@ var bt_grow_anim = ButtonAnim{};
 var bt_shrink_anim = ButtonAnim{};
 
 // returns true if editor is active
-pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
+pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
     var show: bool = true;
 
     var size = anim.desired_size;
+
+    var editor_pos = ImVec2{};
+    var pos = ImVec2{};
+    pos.x = internal_render_size.x - anim.current_size.x;
+    pos.x *= internal_render_size.x / content_window_size.x;
+    editor_pos = pos;
+    editor_pos.x += anim.slide_button_width;
 
     if (anim.textbuf == null) {
         var allocator = std.heap.page_allocator;
@@ -206,9 +217,9 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
     }
 
     if (show) {
-        igSetCursorPos(pos);
+        igSetCursorPos(editor_pos);
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
-        const grow_shrink_button_panel_height = 22;
+        const grow_shrink_button_panel_height = 0; // 22;
         s.y = size.y - grow_shrink_button_panel_height;
         var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
         const error_panel_fontsize: i32 = 14;
@@ -240,8 +251,35 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
         const ret = igInputTextMultiline("editor", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
         igPopStyleColor(1);
 
+        // show the resize button
+        //
+        const resize_bt_height = content_window_size.y / 10;
+        const resize_bt_pos = ImVec2{ .x = pos.x, .y = (content_window_size.y - resize_bt_height) / 2 };
+        igSetCursorPos(resize_bt_pos);
+        const resize_ret = animatedButton("     resize", .{ .x = anim.slide_button_width, .y = resize_bt_height }, &anim.resize_button_anim);
+        if (resize_ret == .pressed or anim.in_resize_mode) {
+            var mouse_pos: ImVec2 = undefined;
+            igGetMousePos(&mouse_pos);
+            std.log.debug("mouse_pos: {d:.0}", .{mouse_pos.x});
+            if (anim.resize_mouse_x > 0) {
+                anim.current_size.x -= mouse_pos.x - anim.resize_mouse_x;
+                if (anim.current_size.x > internal_render_size.x - 300) {
+                    anim.current_size.x = internal_render_size.x - 300;
+                }
+                if (anim.current_size.x < 50) {
+                    anim.current_size.x = 50;
+                }
+            }
+            anim.resize_mouse_x = mouse_pos.x;
+            anim.in_resize_mode = true;
+        }
+        if (resize_ret == .released or igIsAnyMouseDown() == false) {
+            anim.in_resize_mode = false;
+            anim.resize_mouse_x = 0;
+        }
+
         if (show_error_panel) {
-            igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
+            igSetCursorPos(ImVec2{ .x = editor_pos.x, .y = s.y + 2 });
             igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 0.95, .y = 0.95, .w = 0.99 });
             igPushStyleColorVec4(ImGuiCol_FrameBg, .{ .x = 0, .y = 0.1, .z = 0.2, .w = 0.5 });
             var selected: c_int = 0;
@@ -260,19 +298,21 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
 
         // maybe do sth below: buttons or stuff
         // get real editor size
-        s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
-        const real_ed_w = s.x;
-        const bt_width = s.x / 2; //50;
-        s.x = content_window_size.x - real_ed_w;
-        s.y = size.y - grow_shrink_button_panel_height;
-        igSetCursorPos(s);
-        if (animatedButton("<", .{ .x = bt_width, .y = 20 }, &bt_grow_anim) == .released) {
-            anim.grow();
-        }
-        s.x += bt_width;
-        igSetCursorPos(s);
-        if (animatedButton(">", .{ .x = bt_width, .y = 20 }, &bt_shrink_anim) == .released) {
-            anim.shrink();
+        if (false) {
+            s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
+            const real_ed_w = s.x;
+            const bt_width = s.x / 2; //50;
+            s.x = content_window_size.x - real_ed_w;
+            s.y = size.y - grow_shrink_button_panel_height;
+            igSetCursorPos(s);
+            if (animatedButton("<", .{ .x = bt_width, .y = 20 }, &bt_grow_anim) == .released) {
+                anim.grow();
+            }
+            s.x += bt_width;
+            igSetCursorPos(s);
+            if (animatedButton(">", .{ .x = bt_width, .y = 20 }, &bt_shrink_anim) == .released) {
+                anim.shrink();
+            }
         }
         _ = igButton("dummy", .{ .x = 1, .y = 1 });
         return ret;
