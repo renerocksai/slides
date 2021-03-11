@@ -2,11 +2,6 @@
 
 fixed? @pop: parse context AFTER popping!
 
-If there are no slides, show a red background in showslides
-if current slide index > num_slides: jump to last slide in showslides
--- this is for hot reloads
-
-make editor active for 500ms when E
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
@@ -15,6 +10,8 @@ make editor active for 500ms when E
 - [x] editor width shrink, grow buttons
 - [x] show line in open editor when changing slides (!new! flash it!)
 - [x] drag editor width button y-centered - can be used as dummy button for flash animation? no, it would flash, too
+- [x] If there are no slides, show a red background in showslides
+- [x] if current slide index > num_slides: jump to last slide in showslides -- this will be used in hot reloads
 - [ ] hot reload slides
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] Themes

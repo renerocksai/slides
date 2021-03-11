@@ -56,7 +56,7 @@ fn initEditorContent() !void {
     ed_anim.textbuf[0] = 0;
 
     // dummy slides
-    makeDemoSlides(&G.slideshow.slides, G.allocator);
+    //makeDemoSlides(&G.slideshow.slides, G.allocator);
 }
 
 // .
@@ -94,7 +94,7 @@ const AppData = struct {
     slide_render_height: f32 = 1080.0,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
-    slideshow_filp: ?[]const u8 = "empty.sld",
+    slideshow_filp: ?[]const u8 = undefined,
     status_msg: [*c]const u8 = "",
     slideshow: *SlideShow = undefined,
     current_slide: i32 = 0,
@@ -143,13 +143,21 @@ fn update() void {
             .presenting => {
                 handleKeyboard();
                 if (G.slideshow.slides.items.len > 0) {
+                    if (G.current_slide > G.slideshow.slides.items.len) {
+                        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
+                    }
                     showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
                         std.log.err("SlideShow Error: {any}", .{err});
                     };
                 } else {
                     anim_bottom_panel.visible = true;
-                    const empty = Slide{};
-                    showSlide(&empty) catch unreachable;
+                    if (makeDefaultSlideshow()) |_| {
+                        showSlide(G.slideshow.slides.items[0]) catch |err| {
+                            std.log.err("SlideShow Error: {any}", .{err});
+                        };
+                    } else |err| {
+                        std.log.err("SlideShow Error: {any}", .{err});
+                    }
                 }
             },
             else => {
@@ -159,6 +167,16 @@ fn update() void {
         }
         igEnd();
     }
+}
+
+fn makeDefaultSlideshow() !void {
+    var empty: *Slide = undefined;
+    empty = try Slide.new(G.allocator);
+    // make a red background
+    var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
+    try empty.items.append(bg);
+    try G.slideshow.slides.append(empty);
+    std.log.debug("created empty slideshow", .{});
 }
 
 fn jumpToSlide(slidenumber: i32) void {
@@ -262,47 +280,49 @@ fn showSlide(slide: *const Slide) !void {
     // render slide
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
 
-    for (slide.items.items) |item, i| {
-        switch (item.kind) {
-            .background => {
-                if (item.img_path) |p| {
-                    var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
-                    if (texptr) |t| {
-                        slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
+    if (slide.items.items.len > 0) {
+        for (slide.items.items) |item, i| {
+            switch (item.kind) {
+                .background => {
+                    if (item.img_path) |p| {
+                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
+                        if (texptr) |t| {
+                            slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
+                        }
+                    } else {
+                        if (item.color) |color| {
+                            setSlideBgColor(color);
+                        }
                     }
-                } else {
-                    if (item.color) |color| {
-                        setSlideBgColor(color);
+                },
+                .textbox => {
+                    if (item.text) |t| {
+                        var pos = item.position;
+                        pos.x += item.size.x;
+                        igPushTextWrapPos(trxyToSlideXY(pos).x);
+                        igSetCursorPos(trxyToSlideXY(item.position));
+                        const fs = item.fontSize orelse slide.fontsize;
+                        const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
+                        my_fonts.pushFontScaled(fsize);
+                        const col = item.color orelse slide.text_color;
+                        igPushStyleColorVec4(ImGuiCol_Text, col);
+                        igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+                        my_fonts.popFontScaled();
+                        igPopStyleColor(1);
+                        igPopTextWrapPos();
                     }
-                }
-            },
-            .textbox => {
-                if (item.text) |t| {
-                    var pos = item.position;
-                    pos.x += item.size.x;
-                    igPushTextWrapPos(trxyToSlideXY(pos).x);
-                    igSetCursorPos(trxyToSlideXY(item.position));
-                    const fs = item.fontSize orelse slide.fontsize;
-                    const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
-                    my_fonts.pushFontScaled(fsize);
-                    const col = item.color orelse slide.text_color;
-                    igPushStyleColorVec4(ImGuiCol_Text, col);
-                    igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
-                    my_fonts.popFontScaled();
-                    igPopStyleColor(1);
-                    igPopTextWrapPos();
-                }
-            },
-            .img => {
-                if (item.img_path) |p| {
-                    var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
-                    if (texptr) |t| {
-                        slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
+                },
+                .img => {
+                    if (item.img_path) |p| {
+                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
+                        if (texptr) |t| {
+                            slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
+                        }
+                    } else {
+                        std.log.err("No img path!?!?!?", .{});
                     }
-                } else {
-                    std.log.err("No img path!?!?!?", .{});
-                }
-            },
+                },
+            }
         }
     }
 
@@ -407,6 +427,7 @@ fn setStatusMsg(msg: [*c]const u8) void {
 fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     if (filp == null) {
         std.log.err("no filename!", .{});
+        setStatusMsg("Save as -> not implemented!");
         return false;
     }
     std.log.debug("saving to: {s} ", .{filp.?});
@@ -542,51 +563,24 @@ fn showMainMenu(app_data: *AppData) void {
                 setStatusMsg("canceled");
             } else {
                 // now load the file
-                if (std.fs.openFileAbsolute(selected_file, .{ .read = true })) |f| {
-                    G.slideshow_filp = selected_file;
-                    defer f.close();
-                    if (f.read(G.editor_memory)) |howmany| {
-                        G.app_state = .presenting;
-                        const input = std.fs.path.basename(selected_file);
-                        setStatusMsg(sliceToC(input));
-
-                        // TODO: deinit the slides
-
-                        // parse the shit
-                        // TODO: this re-inits the slideshow
-                        G.init(G.allocator) catch unreachable;
-                        if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator)) |pcontext| {
-                            ed_anim.parser_context = pcontext;
-                        } else |err| {
-                            std.log.err("{any}", .{err});
-                            setStatusMsg("Loading failed!");
-                        }
-
-                        std.log.info("=================================", .{});
-                        std.log.info("          Load Summary:", .{});
-                        std.log.info("=================================", .{});
-                        std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
-                        for (G.slideshow.slides.items) |slide, i| {
-                            std.log.info("================================================", .{});
-                            std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
-                            std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
-                            for (slide.items.items) |item| {
-                                item.printToLog();
-                            }
-                        }
-                    } else |err| {
-                        setStatusMsg("Loading failed!");
-                    }
-                } else |err| {
-                    setStatusMsg("Loading failed!");
-                }
+                loadSlideshow(selected_file) catch |err| {
+                    std.log.err("loadSlideshow: {any}", .{err});
+                };
             }
         }
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        if (animatedButton("[P]resent!", bt_size, &bt_anim_2) == .released or igIsKeyReleased(SAPP_KEYCODE_P)) {
+        // New or present - depends on whether we have stuff loaded or not
+        var lbl: [*:0]const u8 = undefined;
+        if (G.slideshow_filp) |_| {
+            lbl = "[P]resent!";
+        } else {
+            lbl = "New [P]resentation";
+        }
+
+        if (animatedButton(lbl, bt_size, &bt_anim_2) == .released or igIsKeyReleased(SAPP_KEYCODE_P)) {
             G.app_state = .presenting;
-            const input = std.fs.path.basename(G.slideshow_filp.?);
+            const input = std.fs.path.basename(G.slideshow_filp orelse "empty.sld");
             setStatusMsg(sliceToC(input));
         }
 
@@ -631,6 +625,46 @@ fn sliceToC(input: []const u8) [:0]u8 {
     const xx = slicetocbuf[0 .. input_cut.len + 1];
     const yy = xx[0..input_cut.len :0];
     return yy;
+}
+fn loadSlideshow(filp: []const u8) !void {
+    if (std.fs.openFileAbsolute(filp, .{ .read = true })) |f| {
+        G.slideshow_filp = filp;
+        defer f.close();
+        if (f.read(G.editor_memory)) |howmany| {
+            G.app_state = .presenting;
+            const input = std.fs.path.basename(filp);
+            setStatusMsg(sliceToC(input));
+
+            // TODO: deinit the slides
+
+            // parse the shit
+            // TODO: this re-inits the slideshow
+            G.init(G.allocator) catch unreachable;
+            if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator)) |pcontext| {
+                ed_anim.parser_context = pcontext;
+            } else |err| {
+                std.log.err("{any}", .{err});
+                setStatusMsg("Loading failed!");
+            }
+
+            std.log.info("=================================", .{});
+            std.log.info("          Load Summary:", .{});
+            std.log.info("=================================", .{});
+            std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
+            for (G.slideshow.slides.items) |slide, i| {
+                std.log.info("================================================", .{});
+                std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
+                std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
+                for (slide.items.items) |item| {
+                    item.printToLog();
+                }
+            }
+        } else |err| {
+            setStatusMsg("Loading failed!");
+        }
+    } else |err| {
+        setStatusMsg("Loading failed!");
+    }
 }
 
 // TODO: get rid of this!
