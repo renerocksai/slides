@@ -316,7 +316,17 @@ fn showSlide(slide: *const Slide) !void {
                         my_fonts.pushFontScaled(fsize);
                         const col = item.color orelse slide.text_color;
                         igPushStyleColorVec4(ImGuiCol_Text, col);
-                        igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+
+                        // diplay the text
+                        // replace $slide_number by the slide number
+                        var tt_buf: [1024]u8 = undefined;
+                        var tt: []u8 = tt_buf[0..];
+                        if (std.mem.indexOf(u8, t, "$slide_number")) |_| {
+                            _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
+                            igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+                        } else {
+                            igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+                        }
                         my_fonts.popFontScaled();
                         igPopStyleColor(1);
                         igPopTextWrapPos();
@@ -668,6 +678,7 @@ fn loadSlideshow(filp: []const u8) !void {
         defer f.close();
         G.hot_reload_last_stat = try f.stat();
         if (f.read(G.editor_memory)) |howmany| {
+            G.editor_memory[howmany] = 0;
             G.app_state = .presenting;
             const input = std.fs.path.basename(filp);
             setStatusMsg(sliceToC(input));
@@ -706,6 +717,7 @@ fn loadSlideshow(filp: []const u8) !void {
 
 // TODO: get rid of this!
 var bigslicetocbuf: [10240]u8 = undefined;
+
 fn sliceToCforImguiText(input: []const u8) [:0]u8 {
     var input_cut = input;
     if (input.len > bigslicetocbuf.len) {
