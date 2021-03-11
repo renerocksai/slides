@@ -4,6 +4,7 @@ fixed? @pop: parse context AFTER popping!
 
 If there are no slides, show a red background in showslides
 if current slide index > num_slides: jump to last slide in showslides
+-- this is for hot reloads
 
 make editor active for 500ms when E
 
@@ -13,13 +14,14 @@ make editor active for 500ms when E
 - [x] allow shortcut keys if editor !active (instead of !visible)
 - [x] editor width shrink, grow buttons
 - [x] show line in open editor when changing slides (!new! flash it!)
-- [ ] drag editor width button y-centered
+- [x] drag editor width button y-centered - can be used as dummy button for flash animation? no, it would flash, too
+- [ ] hot reload slides
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] Themes
 - [ ] Menus - bring back the menus!
 - [ ] nicer (image?) buttons
 - [ ] laserpointer
-- [ ] hide mouse cursor
+- [ ] hide mouse cursor in full-screen mode
 
 ## Themes
 - Load `default.theme` if present next to executable
