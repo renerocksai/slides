@@ -202,11 +202,11 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
         if (anim.in_flash_editor_animation) {
             anim.ticker_ms += 1;
             anim.activate();
-            std.log.debug("flashing editor {}", .{anim.ticker_ms});
+            // std.log.debug("flashing editor {}", .{anim.ticker_ms});
             if (anim.ticker_ms > anim.flash_editor_duration) {
                 anim.in_flash_editor_animation = false;
                 igActivateItem(igGetIDStr("dummy"));
-                std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
+                // std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
             }
         } else {
             anim.ticker_ms = 0;
@@ -260,7 +260,7 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
         if (resize_ret == .pressed or anim.in_resize_mode) {
             var mouse_pos: ImVec2 = undefined;
             igGetMousePos(&mouse_pos);
-            std.log.debug("mouse_pos: {d:.0}", .{mouse_pos.x});
+            // std.log.debug("mouse_pos: {d:.0}", .{mouse_pos.x});
             if (anim.resize_mouse_x > 0) {
                 anim.current_size.x -= mouse_pos.x - anim.resize_mouse_x;
                 if (anim.current_size.x > internal_render_size.x - 300) {
