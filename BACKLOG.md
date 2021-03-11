@@ -14,7 +14,7 @@ fixed? @pop: parse context AFTER popping!
 - [x] if current slide index > num_slides: jump to last slide in showslides -- this will be used in hot reloads
 - [x] hot reload slides
 - [x] `$slide_number`
-- [ ] bullets bg imgs and colors -- bullets-like template
+- [x] bullets bg imgs and colors -- bullets-like template
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] **cache all font sizes**
 - [ ] Themes
