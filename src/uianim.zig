@@ -56,10 +56,12 @@ pub const EditAnim = struct {
     current_size: ImVec2 = ImVec2{},
     desired_size: ImVec2 = .{ .x = 600, .y = 0 },
     in_grow_shrink_animation: bool = false,
+    in_flash_editor_animation: bool = false,
     grow_shrink_from_width: f32 = 0,
     ticker_ms: u32 = 0,
     fadein_duration: i32 = 200,
     fadeout_duration: i32 = 200,
+    flash_editor_duration: i32 = 10,
     textbuf: [*c]u8 = null,
     textbuf_size: u32 = 128 * 1024,
     parser_context: ?*parser.ParserContext = null,
@@ -89,10 +91,16 @@ pub const EditAnim = struct {
         };
         if (activate_editor) {
             self.activate();
+        } else {
+            self.startFlashAnimation();
         }
     }
     pub fn activate(self: *EditAnim) void {
         igActivateItem(igGetIDStr("editor")); // TODO move ID str into struct
+    }
+    pub fn startFlashAnimation(self: *EditAnim) void {
+        self.ticker_ms = 0;
+        self.in_flash_editor_animation = true;
     }
 };
 
@@ -180,9 +188,20 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
             anim.in_grow_shrink_animation = false;
         }
     } else {
-        anim.ticker_ms = 0;
-        if (!anim.visible) {
-            show = false;
+        if (anim.in_flash_editor_animation) {
+            anim.ticker_ms += 1;
+            anim.activate();
+            //std.log.debug("flashing editor {}", .{anim.ticker_ms});
+            if (anim.ticker_ms > anim.flash_editor_duration) {
+                anim.in_flash_editor_animation = false;
+                igActivateItem(igGetIDStr("dummy"));
+                //std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
+            }
+        } else {
+            anim.ticker_ms = 0;
+            if (!anim.visible) {
+                show = false;
+            }
         }
     }
 
@@ -255,6 +274,7 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
         if (animatedButton(">", .{ .x = bt_width, .y = 20 }, &bt_shrink_anim) == .released) {
             anim.shrink();
         }
+        _ = igButton("dummy", .{ .x = 1, .y = 1 });
         return ret;
     }
     return false;

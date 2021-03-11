@@ -167,8 +167,9 @@ fn jumpToSlide(slidenumber: i32) void {
     }
     G.current_slide = slidenumber;
     const pos_in_editor = G.slideshow.slides.items[@intCast(usize, slidenumber)].pos_in_editor;
-    std.log.debug("wanna jump into editor: pos={}", .{pos_in_editor});
-    ed_anim.jumpToPosAndHighlightLine(pos_in_editor, false);
+    if (ed_anim.visible) {
+        ed_anim.jumpToPosAndHighlightLine(pos_in_editor, false);
+    }
 }
 
 fn handleKeyboard() void {
@@ -335,7 +336,7 @@ const bottomPanelAnim = struct { visible: bool = false };
 fn toggleEditor() void {
     ed_anim.visible = !ed_anim.visible;
     if (ed_anim.visible) {
-        //ed_anim.activate();
+        ed_anim.startFlashAnimation();
     }
 }
 
@@ -376,7 +377,7 @@ fn showBottomPanel() void {
     } else {
         igColumns(5, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 1;
-        if (animatedButton("b", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
+        if (animatedButton("a", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
         igNextColumn();
