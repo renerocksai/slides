@@ -43,8 +43,8 @@
 #       That means, you will not inherit attributes from previous slides.
 
 @bg img=assets/nim/3.png
-@push chapter_number x=201 y=509 w=260 h=422 fontsize=300 color=#000000ff 
-@push chapter_title  x=757 y=673 w=949 h=114 fontsize=72  color=#cd0f2dff 
+@push chapter_number x=201 y=509 w=260 h=422 fontsize=300 color=#cd0f2dff 
+@push chapter_title  x=757 y=673 w=949 h=114 fontsize=72  color=#000000ff 
 @push chapter_subtitle x=757 y=794 w=887 h=141 fontsize=36 color=#993366ff 
 @pushslide chapter
 
