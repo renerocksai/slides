@@ -1,12 +1,18 @@
 # Backlog
 
-fix @pop: parse context AFTER popping!
+fixed? @pop: parse context AFTER popping!
+
+If there are no slides, show a red background in showslides
+if current slide index > num_slides: jump to last slide in showslides
+
+make editor active for 500ms when E
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
 - [x] fix parser and initial slide rendering
 - [x] allow shortcut keys if editor !active (instead of !visible)
 - [x] editor width shrink, grow buttons
+- [x] show line in open editor when changing slides
 - [ ] drag editor width button y-centered
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] Themes

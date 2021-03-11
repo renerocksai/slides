@@ -82,6 +82,18 @@ pub const EditAnim = struct {
             self.in_grow_shrink_animation = true;
         }
     }
+    pub fn jumpToPosAndHighlightLine(self: *EditAnim, pos: usize, activate_editor: bool) void {
+        self.editAction = .{
+            .jump_to_cursor_pos = pos,
+            .highlight_line = true,
+        };
+        if (activate_editor) {
+            self.activate();
+        }
+    }
+    pub fn activate(self: *EditAnim) void {
+        igActivateItem(igGetIDStr("editor")); // TODO move ID str into struct
+    }
 };
 
 const EditActionData = struct {
@@ -205,7 +217,9 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
         // show the editor
         var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways;
         var x_anim: *EditAnim = anim;
+        igPushStyleColorVec4(ImGuiCol_TextSelectedBg, .{ .x = 1, .w = 0.9 });
         const ret = igInputTextMultiline("editor", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
+        igPopStyleColor(1);
 
         if (show_error_panel) {
             igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
@@ -217,12 +231,7 @@ pub fn animatedEditor(anim: *EditAnim, pos: ImVec2, content_window_size: ImVec2,
             my_fonts.pushFontScaled(error_panel_fontsize);
             if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
                 // TODO: an error was selected
-                anim.editAction = .{
-                    .jump_to_cursor_pos = parser_errors.items[@intCast(usize, anim.selected_error)].line_offset,
-                    .highlight_line = true,
-                };
-                igActivateItem(igGetIDStr("editor"));
-                std.log.info("Activated editor with ID {} from {}", .{ igGetIDStr("editor"), igGetItemID() });
+                anim.jumpToPosAndHighlightLine(parser_errors.items[@intCast(usize, anim.selected_error)].line_offset, true);
             }
             my_fonts.popFontScaled();
             igPopStyleColor(2);
