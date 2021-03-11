@@ -98,6 +98,8 @@ const AppData = struct {
     status_msg: [*c]const u8 = "",
     slideshow: *SlideShow = undefined,
     current_slide: i32 = 0,
+    hot_reload_ticker: usize = 0,
+    hot_reload_interval_ticks: usize = 1000 / 16,
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
         self.slideshow = try SlideShow.new(alloc);
@@ -390,6 +392,9 @@ fn showBottomPanel() void {
             if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
                 // save the shit
                 _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+                if (G.slideshow_filp) |filp| {
+                    loadSlideshow(filp) catch unreachable;
+                }
             }
         }
         igEndColumns();

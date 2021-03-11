@@ -579,6 +579,9 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
                 context.current_context.text = null;
                 context.current_context.img_path = null;
                 parsing_item_context.applyOtherIfNull(ctx);
+            } else {
+                const errmsg = try std.fmt.allocPrint(context.allocator, "cannot @pop `{s}` : was not pushed!", .{context_name});
+                reportErrorInParsingContext(ParserError.Syntax, parsing_item_context, context, errmsg);
             }
             _ = try commitItemToSlide(parsing_item_context, context);
         }
@@ -603,6 +606,9 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
                 context.current_slide = sld;
                 context.current_slide.pos_in_editor = parsing_item_context.line_offset;
                 context.current_slide.line_in_editor = parsing_item_context.line_number;
+            } else {
+                const errmsg = try std.fmt.allocPrint(context.allocator, "cannot @popslide `{s}` : was not pushed!", .{context_name});
+                reportErrorInParsingContext(ParserError.Syntax, parsing_item_context, context, errmsg);
             }
             // new slide, clear the current item context
             context.current_context = .{};
