@@ -356,27 +356,55 @@ fn renderTextItem(item: *const SlideItem, slide: *const Slide) !void {
         var pos = item.position;
         pos.x += item.size.x;
         igPushTextWrapPos(trxyToSlideXY(pos).x);
-        igSetCursorPos(trxyToSlideXY(item.position));
         const fs = item.fontSize orelse slide.fontsize;
         const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
         my_fonts.pushFontScaled(fsize);
         const col = item.color orelse slide.text_color;
-        igPushStyleColorVec4(ImGuiCol_Text, col);
 
         // diplay the text
         // replace $slide_number by the slide number
+        // TODO: FIXME : maybe need more buffer -- or be more flexible here
         var tt_buf: [1024]u8 = undefined;
         var tt: []u8 = tt_buf[0..];
-        if (std.mem.indexOf(u8, t, "$slide_number")) |_| {
-            if (std.mem.lenZ(t) < tt_buf.len) {
-                _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
-                igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+        if (std.mem.lenZ(t) < tt_buf.len) {
+            // pass 1: replace all `^-` with `> `
+            // replace $slide_number first
+            _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
+            _ = std.mem.replace(u8, tt, "\n- ", "\n", tt);
+            // special case: 1st char is bullet
+            const ttt = if (std.mem.startsWith(u8, tt, "- ")) tt[2..] else tt[0..];
+
+            igSetCursorPos(trxyToSlideXY(.{ .x = item.position.x + 25, .y = item.position.y }));
+            igPushStyleColorVec4(ImGuiCol_Text, col);
+            igText(sliceToCforImguiText(ttt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+            igPopStyleColor(1);
+
+            // pass 2: render only the bullet symbols
+            const bullet_color = item.bullet_color orelse slide.bullet_color;
+            igPushStyleColorVec4(ImGuiCol_Text, bullet_color);
+            if (std.mem.startsWith(u8, tt, "- ")) {
+                tt[0] = '>';
             }
-        } else {
-            igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+            var newline: bool = true;
+            for (t) |c, i| {
+                if (c == '\n') {
+                    newline = true;
+                    tt[i] = c;
+                } else {
+                    if (c == '-' and newline) {
+                        tt[i] = '>';
+                        continue;
+                    }
+                    newline = false;
+                    tt[i] = ' ';
+                }
+            }
+
+            igSetCursorPos(trxyToSlideXY(item.position));
+            igText(sliceToCforImguiText(tt));
+            igPopStyleColor(1);
         }
         my_fonts.popFontScaled();
-        igPopStyleColor(1);
         igPopTextWrapPos();
     }
 }
@@ -699,13 +727,12 @@ fn checkAutoReload() !bool {
                 G.hot_reload_last_stat = x;
             }
         }
-    }
+    } else {}
     return false;
 }
 
 fn loadSlideshow(filp: []const u8) !void {
     if (std.fs.openFileAbsolute(filp, .{ .read = true })) |f| {
-        G.slideshow_filp = filp;
         defer f.close();
         G.hot_reload_last_stat = try f.stat();
         if (f.read(G.editor_memory)) |howmany| {
@@ -716,6 +743,7 @@ fn loadSlideshow(filp: []const u8) !void {
 
             // parse the shit
             if (G.reinit()) |_| {
+                G.slideshow_filp = filp;
                 if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.slideshow_allocator)) |pcontext| {
                     ed_anim.parser_context = pcontext;
                 } else |err| {
