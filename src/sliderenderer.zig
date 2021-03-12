@@ -131,3 +131,27 @@ fn scaleToSlide(size: ImVec2, slide_pos: ImVec2, slide_size: ImVec2, internal_re
     ret.y = size.y * ss.y / G.internal_render_size.y;
     return ret;
 }
+
+fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+    var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
+    var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
+
+    // position the img in the slide
+    const my_tl = ImVec2{
+        .x = slide_pos.x + pos.x * slide_size.x / internal_render_size.x,
+        .y = slide_pos.y + pos.y * slide_size.y / internal_render_size.y,
+    };
+
+    const my_size = ImVec2{
+        .x = size.x * slide_size.x / internal_render_size.x,
+        .y = size.y * slide_size.y / internal_render_size.y,
+    };
+
+    const tint_color: ImVec2 = .{};
+    const border_color: ImVec2 = .{};
+
+    igSetCursorPos(my_tl);
+    igImage(texture.*.imTextureID(), my_size, uv_min, uv_max, tint_color, border_color);
+}
+
+fn slidePosToRenderPos
