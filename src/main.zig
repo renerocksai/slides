@@ -6,8 +6,7 @@ const uianim = @import("uianim.zig");
 const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const parser = @import("parser.zig");
-
-const DEBUG = false;
+const render = @import("sliderenderer.zig");
 
 usingnamespace upaya.imgui;
 usingnamespace sokol;
@@ -95,6 +94,7 @@ const AppData = struct {
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
     slide_render_width: f32 = 1920.0,
     slide_render_height: f32 = 1080.0,
+    slide_renderer: *render.SlideshowRenderer = undefined,
     img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = undefined,
@@ -111,6 +111,7 @@ const AppData = struct {
         self.slideshow_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         self.slideshow_allocator = &self.slideshow_arena.allocator;
         self.slideshow = try SlideShow.new(self.slideshow_allocator);
+        self.slide_renderer = try render.SlideshowRenderer.new(self.slideshow_allocator);
     }
 
     fn deinit(self: *AppData) void {
@@ -622,23 +623,16 @@ fn showMainMenu(app_data: *AppData) void {
         if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {
             // file dialog
             var selected_file: []const u8 = undefined;
-            if (!DEBUG) {
-                var buf: [2048]u8 = undefined;
-                const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-                buf[my_path.len] = 0;
-                const x = buf[0 .. my_path.len + 1];
-                const y = x[0..my_path.len :0];
-                const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
-                if (sel == null) {
-                    selected_file = "canceled";
-                } else {
-                    selected_file = std.mem.span(sel);
-                }
+            var buf: [2048]u8 = undefined;
+            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
+            buf[my_path.len] = 0;
+            const x = buf[0 .. my_path.len + 1];
+            const y = x[0..my_path.len :0];
+            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
+            if (sel == null) {
+                selected_file = "canceled";
             } else {
-                var cwdbuf: [2048]u8 = undefined;
-                const cwd: []u8 = std.os.getcwd(cwdbuf[0..]) catch |err| "";
-
-                selected_file = std.fmt.bufPrint(&cwdbuf, "{s}{c}{s}", .{ cwd, std.fs.path.sep, "test.sld" }) catch unreachable;
+                selected_file = std.mem.span(sel);
             }
 
             if (std.mem.startsWith(u8, selected_file, "canceled")) {
