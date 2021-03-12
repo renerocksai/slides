@@ -18,7 +18,7 @@
 
 @push slide_title  x=110  y=71   w=1712 h=73  fontsize=52 color=#000000ff
 @push slide_number x=1803 y=1021 w=40   h=40  fontsize=20 color=#000000ff text=$slide_number
-@push sources_info x=110  y=960  w=1758 h=129 fontsize=20 color=#bfbfbfff 
+@push sources_info x=110  y=960  w=1758 h=129 fontsize=20 color=#bfbfbfff text=Sources:
 
 @push bigbox       x=110  y=181  w=1700 h=971 fontsize=36 color=#000000ff
 @push leftbox      x=110  y=181  w=850  h=861 fontsize=36 color=#000000ff
@@ -81,8 +81,12 @@
 # -------------------------------------------------------------
 @popslide chapter
 @pop chapter_number text=1
-@pop chapter_title text=The big picture
-@pop chapter_subtitle text=The big picture
+
+@pop chapter_title 
+The big picture
+
+@pop chapter_subtitle
+The big picture
 
 
 # -------------------------------------------------------------
@@ -91,7 +95,8 @@
 @pop slide_title text=The Big Plan
 
 
-@pop  sources_info text=here come the sources
+@pop  sources_info 
+here come the sources
 
 @pop leftbox 
 - here comes the text

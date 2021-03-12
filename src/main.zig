@@ -322,8 +322,10 @@ fn showSlide(slide: *const Slide) !void {
                         var tt_buf: [1024]u8 = undefined;
                         var tt: []u8 = tt_buf[0..];
                         if (std.mem.indexOf(u8, t, "$slide_number")) |_| {
-                            _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
-                            igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+                            if (std.mem.lenZ(t) < tt_buf.len) {
+                                _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
+                                igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+                            }
                         } else {
                             igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
                         }
