@@ -70,3 +70,20 @@ fixed? @pop: parse context AFTER popping!
 Show menu also in main menu screen (on startup). This makes the main menu screen a start screen only. Going back to the start screen is not really practical once we have the menu. So the main menu button can go.
 
 
+## Exports and Builds
+### Export to Bullets
+
+Export a godot project : templated .tscn
+
+Create static Dockerfile in Export that builds all exports (win, lin, web) of the presentation.
+
+### Build Slides executable via docker
+Easy builds and releases -- can potentially be put into GitHub CI.
+
+#### Option A
+GitHub CI - if it provides windows builds
+
+#### Option B
+Check if we can provide the missing windows links and cross-compile / cross-build it in just one Docker container.
+
+
