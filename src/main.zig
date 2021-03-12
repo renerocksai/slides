@@ -322,37 +322,16 @@ fn showSlide(slide: *const Slide) !void {
                     }
                 },
                 .textbox => {
-                    if (item.text) |t| {
-                        var pos = item.position;
-                        pos.x += item.size.x;
-                        igPushTextWrapPos(trxyToSlideXY(pos).x);
-                        igSetCursorPos(trxyToSlideXY(item.position));
-                        const fs = item.fontSize orelse slide.fontsize;
-                        const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
-                        my_fonts.pushFontScaled(fsize);
-                        const col = item.color orelse slide.text_color;
-                        igPushStyleColorVec4(ImGuiCol_Text, col);
-
-                        // diplay the text
-                        // replace $slide_number by the slide number
-                        var tt_buf: [1024]u8 = undefined;
-                        var tt: []u8 = tt_buf[0..];
-                        if (std.mem.indexOf(u8, t, "$slide_number")) |_| {
-                            if (std.mem.lenZ(t) < tt_buf.len) {
-                                _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
-                                igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
-                            }
-                        } else {
-                            igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
-                        }
-                        my_fonts.popFontScaled();
-                        igPopStyleColor(1);
-                        igPopTextWrapPos();
-                    }
+                    renderTextItem(&item, slide) catch |err| {
+                        std.log.err("Text render error {any}", .{err});
+                    };
                 },
                 .img => {
                     if (item.img_path) |p| {
-                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
+                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| blk: {
+                            std.log.err("Img render error: {any}", .{err});
+                            break :blk null;
+                        };
                         if (texptr) |t| {
                             slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
                         }
@@ -372,6 +351,36 @@ fn showSlide(slide: *const Slide) !void {
     showStatusMsgV(G.status_msg);
 }
 
+fn renderTextItem(item: *const SlideItem, slide: *const Slide) !void {
+    if (item.text) |t| {
+        var pos = item.position;
+        pos.x += item.size.x;
+        igPushTextWrapPos(trxyToSlideXY(pos).x);
+        igSetCursorPos(trxyToSlideXY(item.position));
+        const fs = item.fontSize orelse slide.fontsize;
+        const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
+        my_fonts.pushFontScaled(fsize);
+        const col = item.color orelse slide.text_color;
+        igPushStyleColorVec4(ImGuiCol_Text, col);
+
+        // diplay the text
+        // replace $slide_number by the slide number
+        var tt_buf: [1024]u8 = undefined;
+        var tt: []u8 = tt_buf[0..];
+        if (std.mem.indexOf(u8, t, "$slide_number")) |_| {
+            if (std.mem.lenZ(t) < tt_buf.len) {
+                _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
+                igText(sliceToCforImguiText(tt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+            }
+        } else {
+            igText(sliceToCforImguiText(t)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
+        }
+        my_fonts.popFontScaled();
+        igPopStyleColor(1);
+        igPopTextWrapPos();
+    }
+}
+
 fn setSlideBgColor(color: ImVec4) void {
     igSetCursorPos(trxyToSlideXY(ImVec2{}));
     var drawlist = igGetForegroundDrawListNil();
@@ -388,12 +397,16 @@ fn setSlideBgColor(color: ImVec4) void {
     }
 }
 
-const bottomPanelAnim = struct { visible: bool = false };
+const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: bool = false };
 
 fn toggleEditor() void {
     ed_anim.visible = !ed_anim.visible;
     if (ed_anim.visible) {
         ed_anim.startFlashAnimation();
+        anim_bottom_panel.visible_before_editor = anim_bottom_panel.visible;
+        anim_bottom_panel.visible = true;
+    } else {
+        anim_bottom_panel.visible = anim_bottom_panel.visible_before_editor;
     }
 }
 
