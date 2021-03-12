@@ -22,6 +22,7 @@ pub fn main() !void {
     defer arena.deinit();
 
     try G.init(allocator);
+    defer G.deinit();
 
     upaya.run(.{
         .init = init,
@@ -86,6 +87,8 @@ const AppState = enum {
 
 const AppData = struct {
     allocator: *std.mem.Allocator = undefined,
+    slideshow_arena: std.heap.ArenaAllocator = undefined,
+    slideshow_allocator: *std.mem.Allocator = undefined,
     app_state: AppState = .mainmenu,
     editor_memory: []u8 = undefined,
     content_window_size: ImVec2 = ImVec2{},
@@ -104,7 +107,20 @@ const AppData = struct {
 
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
-        self.slideshow = try SlideShow.new(alloc);
+
+        self.slideshow_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        self.slideshow_allocator = &self.slideshow_arena.allocator;
+        self.slideshow = try SlideShow.new(self.slideshow_allocator);
+    }
+
+    fn deinit(self: *AppData) void {
+        self.slideshow_arena.deinit();
+    }
+
+    fn reinit(self: *AppData) !void {
+        self.slideshow_arena.deinit();
+        self.slideshow_filp = null;
+        try self.init(self.allocator);
     }
 };
 
@@ -181,7 +197,7 @@ fn update() void {
 
 fn makeDefaultSlideshow() !void {
     var empty: *Slide = undefined;
-    empty = try Slide.new(G.allocator);
+    empty = try Slide.new(G.slideshow_allocator);
     // make a red background
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
     try empty.items.append(bg);
@@ -685,29 +701,29 @@ fn loadSlideshow(filp: []const u8) !void {
             const input = std.fs.path.basename(filp);
             setStatusMsg(sliceToC(input));
 
-            // TODO: deinit the slides
-
             // parse the shit
-            // TODO: this re-inits the slideshow
-            G.init(G.allocator) catch unreachable;
-            if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.allocator)) |pcontext| {
-                ed_anim.parser_context = pcontext;
-            } else |err| {
-                std.log.err("{any}", .{err});
-                setStatusMsg("Loading failed!");
-            }
-
-            std.log.info("=================================", .{});
-            std.log.info("          Load Summary:", .{});
-            std.log.info("=================================", .{});
-            std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
-            for (G.slideshow.slides.items) |slide, i| {
-                std.log.info("================================================", .{});
-                std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
-                std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
-                for (slide.items.items) |item| {
-                    item.printToLog();
+            if (G.reinit()) |_| {
+                if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.slideshow_allocator)) |pcontext| {
+                    ed_anim.parser_context = pcontext;
+                } else |err| {
+                    std.log.err("{any}", .{err});
+                    setStatusMsg("Loading failed!");
                 }
+
+                std.log.info("=================================", .{});
+                std.log.info("          Load Summary:", .{});
+                std.log.info("=================================", .{});
+                std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
+                for (G.slideshow.slides.items) |slide, i| {
+                    std.log.info("================================================", .{});
+                    std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
+                    std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
+                    for (slide.items.items) |item| {
+                        item.printToLog();
+                    }
+                }
+            } else |err| {
+                setStatusMsg("Loading failed!");
             }
         } else |err| {
             setStatusMsg("Loading failed!");

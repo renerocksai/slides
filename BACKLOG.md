@@ -15,13 +15,20 @@ fixed? @pop: parse context AFTER popping!
 - [x] hot reload slides
 - [x] `$slide_number`
 - [x] bullets bg imgs and colors -- bullets-like template
+- [x] separate arena for slides : on reload just wipe the arena
+- [ ] initial bullet rendering: draw text first, substituting bullet symbols by "  ", then a second time with just the bullets in their own style
+- [ ] slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] **cache all font sizes**
+  - [ ] cache **fullscreen** font sizes (cause they matter most!)
 - [ ] Themes
 - [ ] Menus - bring back the menus!
 - [ ] nicer (image?) buttons
 - [ ] laserpointer
 - [ ] hide mouse cursor in full-screen mode
+- [ ] **export to bullets** 
+  - [ ] dockerized exports for web, win, linux
+- [ ] dockerized builds of slides, incl windows !!! (provide missing libs) -- is this possible?
 
 ## Themes
 - Load `default.theme` if present next to executable
@@ -32,6 +39,7 @@ fixed? @pop: parse context AFTER popping!
         - all relevant slides specific ui colors
         - all relevant imgui colors
         - fonts, font sizes
+- edit themes in built-in editor
 
 ## Menus
 
