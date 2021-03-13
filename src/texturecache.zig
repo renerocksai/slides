@@ -10,7 +10,7 @@ var path2tex = std.StringHashMap(*upaya.Texture).init(allocator);
 pub fn getImg(p: []const u8, refpath: ?[]const u8) !?*upaya.Texture {
     var tex: ?*upaya.Texture = null;
 
-    std.log.debug("trying to load texture: {s}", .{p});
+    // std.log.debug("trying to load texture: {s}", .{p});
     if (path2tex.count() > 0) {
         if (path2tex.contains(p)) {
             return path2tex.get(p).?;
@@ -33,7 +33,7 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !?*upaya.Texture {
     // std.log.debug("trying to load: {s} with refpath: {s} -> {s}", .{ p, refpath, absp });
     tex = try texFromFile(absp, .nearest);
     if (tex) |okTexture| {
-        std.log.debug("storing {s} as {any}", .{ p, okTexture });
+        // std.log.debug("storing {s} as {any}", .{ p, okTexture });
         const key = try std.mem.dupe(allocator, u8, p);
         try path2tex.put(key, okTexture);
     }

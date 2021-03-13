@@ -50,8 +50,10 @@ fn init() void {
 
 fn initEditorContent() !void {
     G.editor_memory = try G.allocator.alloc(u8, ed_anim.textbuf_size);
+    G.loaded_content = try G.allocator.alloc(u8, ed_anim.textbuf_size);
     ed_anim.textbuf = G.editor_memory.ptr;
     std.mem.set(u8, G.editor_memory, 0);
+    std.mem.set(u8, G.loaded_content, 0);
 
     ed_anim.textbuf[0] = 0;
 
@@ -90,6 +92,7 @@ const AppData = struct {
     slideshow_allocator: *std.mem.Allocator = undefined,
     app_state: AppState = .mainmenu,
     editor_memory: []u8 = undefined,
+    loaded_content: []u8 = undefined, // we will check for dirty editor against this
     content_window_size: ImVec2 = ImVec2{},
     internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
     slide_render_width: f32 = 1920.0,
@@ -712,6 +715,7 @@ fn loadSlideshow(filp: []const u8) !void {
         G.hot_reload_last_stat = try f.stat();
         if (f.read(G.editor_memory)) |howmany| {
             G.editor_memory[howmany] = 0;
+            std.mem.copy(u8, G.loaded_content, G.editor_memory);
             G.app_state = .presenting;
             const input = std.fs.path.basename(filp);
             setStatusMsg(sliceToC(input));
@@ -762,6 +766,10 @@ fn sliceToCforImguiText(input: []const u8) [:0]u8 {
     const xx = bigslicetocbuf[0 .. input_cut.len + 1];
     const yy = xx[0..input_cut.len :0];
     return yy;
+}
+
+fn isEditorDirty() bool {
+    return !std.mem.eql(u8, G.editor_memory, G.loaded_content);
 }
 
 // .
@@ -830,6 +838,23 @@ fn cmdSave() void {
     if (G.slideshow_filp) |filp| {
         loadSlideshow(filp) catch unreachable;
     }
+}
+
+fn yesNoPopup(title: []const u8) bool {
+    igSetNextWindowSize(.{ .x = 500, .y = -1 }, ImGuiCond_Always);
+    var open: bool = true;
+    if (igBeginPopupModal(title, &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+        defer igEndPopup();
+
+        igColumns(2, "id", true);
+        igSetColumnWidth(0, 150);
+
+        igPushItemWidth(-1);
+        igPopItemWidth();
+
+        igNextColumn();
+    }
+    return open;
 }
 
 fn cmdSaveAs() void {
