@@ -7,9 +7,14 @@ const allocator = std.heap.page_allocator;
 var path2tex = std.StringHashMap(*upaya.Texture).init(allocator);
 
 // open img file relative to refpath (slideshow file)
-pub fn getImg(p: []const u8, refpath: ?[]const u8) !*upaya.Texture {
-    if (path2tex.contains(p)) {
-        return path2tex.get(p).?;
+pub fn getImg(p: []const u8, refpath: ?[]const u8) !?*upaya.Texture {
+    var tex: ?*upaya.Texture = null;
+
+    std.log.debug("trying to load texture: {s}", .{p});
+    if (path2tex.count() > 0) {
+        if (path2tex.contains(p)) {
+            return path2tex.get(p).?;
+        }
     }
     var absp: []const u8 = undefined;
     if (refpath) |rp| {
@@ -26,12 +31,16 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !*upaya.Texture {
         absp = p;
     }
     // std.log.debug("trying to load: {s} with refpath: {s} -> {s}", .{ p, refpath, absp });
-    var tex = try texFromFile(absp, .nearest);
-    try path2tex.put(p, tex);
+    tex = try texFromFile(absp, .nearest);
+    if (tex) |okTexture| {
+        std.log.debug("storing {s} as {any}", .{ p, okTexture });
+        const key = try std.mem.dupe(allocator, u8, p);
+        try path2tex.put(key, okTexture);
+    }
     return tex;
 }
 
-pub fn texFromFile(file: []const u8, filter: Texture.Filter) !*Texture {
+pub fn texFromFile(file: []const u8, filter: Texture.Filter) !?*Texture {
     const image_contents = try upaya.fs.read(allocator, file);
 
     var w: c_int = undefined;
@@ -41,8 +50,11 @@ pub fn texFromFile(file: []const u8, filter: Texture.Filter) !*Texture {
     if (load_res == null) return error.ImageLoadFailed;
     defer upaya.stb.stbi_image_free(load_res);
 
+    var ret: ?*Texture = null;
     var tex: ?Texture = Texture.initWithData(load_res[0..@intCast(usize, w * h * channels)], w, h, filter);
-    var ret: *Texture = try allocator.create(Texture);
-    ret.* = tex.?;
+    if (tex) |okTexture| {
+        ret = try allocator.create(Texture);
+        ret.?.* = okTexture;
+    }
     return ret;
 }
