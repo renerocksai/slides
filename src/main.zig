@@ -222,6 +222,18 @@ fn handleKeyboard() void {
         cmdQuit();
         return;
     }
+    if (igIsKeyReleased(SAPP_KEYCODE_O) and ctrl) {
+        cmdLoadSlideshow();
+        return;
+    }
+    if (igIsKeyReleased(SAPP_KEYCODE_N) and ctrl) {
+        cmdNewSlideshow();
+        return;
+    }
+    if (igIsKeyReleased(SAPP_KEYCODE_S) and ctrl) {
+        cmdSave();
+        return;
+    }
     // don't consume keys while the editor is visible
     if (igGetActiveID() == igGetIDStr("editor")) {
         return;
@@ -316,7 +328,11 @@ fn showSlide(slide: *const Slide) !void {
             switch (item.kind) {
                 .background => {
                     if (item.img_path) |p| {
-                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| null;
+                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| blk: {
+                            std.log.err("Img render error: {any}", .{err});
+                            break :blk null;
+                        };
+
                         if (texptr) |t| {
                             slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
                         }
@@ -461,13 +477,7 @@ fn showBottomPanel() void {
         // dummy column for the editor save button
         igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
-                // save the shit
-                _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
-                if (G.slideshow_filp) |filp| {
-                    loadSlideshow(filp) catch unreachable;
-                }
-            }
+            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {}
         }
         igEndColumns();
     } else {
@@ -614,30 +624,7 @@ fn showMainMenu(app_data: *AppData) void {
 
     {
         igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {
-            // file dialog
-            var selected_file: []const u8 = undefined;
-            var buf: [2048]u8 = undefined;
-            const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-            buf[my_path.len] = 0;
-            const x = buf[0 .. my_path.len + 1];
-            const y = x[0..my_path.len :0];
-            const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
-            if (sel == null) {
-                selected_file = "canceled";
-            } else {
-                selected_file = std.mem.span(sel);
-            }
-
-            if (std.mem.startsWith(u8, selected_file, "canceled")) {
-                setStatusMsg("canceled");
-            } else {
-                // now load the file
-                loadSlideshow(selected_file) catch |err| {
-                    std.log.err("loadSlideshow: {any}", .{err});
-                };
-            }
-        }
+        if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {}
 
         igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
         // New or present - depends on whether we have stuff loaded or not
@@ -803,6 +790,52 @@ fn cmdToggleBottomPanel() void {
     anim_bottom_panel.visible = !anim_bottom_panel.visible;
 }
 
+fn cmdLoadSlideshow() void {
+    // file dialog
+    var selected_file: []const u8 = undefined;
+    var buf: [2048]u8 = undefined;
+    const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
+    buf[my_path.len] = 0;
+    const x = buf[0 .. my_path.len + 1];
+    const y = x[0..my_path.len :0];
+    const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
+    if (sel == null) {
+        selected_file = "canceled";
+    } else {
+        selected_file = std.mem.span(sel);
+    }
+
+    if (std.mem.startsWith(u8, selected_file, "canceled")) {
+        setStatusMsg("canceled");
+    } else {
+        // now load the file
+        loadSlideshow(selected_file) catch |err| {
+            std.log.err("loadSlideshow: {any}", .{err});
+        };
+    }
+}
+
+fn cmdNewSlideshow() void {
+    setStatusMsg("Not implemented!");
+}
+
+fn cmdNewFromTemplate() void {
+    setStatusMsg("Not implemented!");
+}
+
+fn cmdSave() void {
+
+    // save the shit
+    _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+    if (G.slideshow_filp) |filp| {
+        loadSlideshow(filp) catch unreachable;
+    }
+}
+
+fn cmdSaveAs() void {
+    setStatusMsg("Not implemented!");
+}
+
 // .
 // .
 // MENU
@@ -815,11 +848,21 @@ fn showMenu() void {
         defer igEndMenuBar();
 
         if (igBeginMenu("File", true)) {
-            if (igMenuItemBool("New", "Ctrl + N", false, true)) {}
-            if (igMenuItemBool("New from template...", "", false, true)) {}
-            if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {}
-            if (igMenuItemBool("Save", "Ctrl + S", false, true)) {}
-            if (igMenuItemBool("Save as...", "", false, true)) {}
+            if (igMenuItemBool("New", "Ctrl + N", false, true)) {
+                cmdNewSlideshow();
+            }
+            if (igMenuItemBool("New from template...", "", false, true)) {
+                cmdNewFromTemplate();
+            }
+            if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {
+                cmdLoadSlideshow();
+            }
+            if (igMenuItemBool("Save", "Ctrl + S", false, true)) {
+                cmdSave();
+            }
+            if (igMenuItemBool("Save as...", "", false, true)) {
+                cmdSaveAs();
+            }
             if (igMenuItemBool("Quit", "Ctrl + Q", false, true)) {
                 cmdQuit();
             }
