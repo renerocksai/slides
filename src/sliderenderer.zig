@@ -154,4 +154,7 @@ fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, bo
     igImage(texture.*.imTextureID(), my_size, uv_min, uv_max, tint_color, border_color);
 }
 
-fn slidePosToRenderPos
+fn slidePosToRenderPos() void {
+    // TODO:
+    // . YOU ARE HERE
+}

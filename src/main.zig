@@ -154,43 +154,42 @@ fn update() void {
 
     var flags: c_int = 0;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
+    const is_fullscreen = sapp_is_fullscreen();
+    if (!is_fullscreen) {
+        flags |= ImGuiWindowFlags_MenuBar;
+    }
     if (igBegin("main", null, flags)) {
         // make the "window" fill the whole available area
         igSetWindowPosStr("main", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
         igSetWindowSizeStr("main", G.content_window_size, ImGuiCond_Always);
 
-        switch (G.app_state) {
-            .mainmenu => showMainMenu(&G),
-            .presenting => {
-                handleKeyboard();
-                const do_reload = checkAutoReload() catch false;
-                if (do_reload) {
-                    loadSlideshow(G.slideshow_filp.?) catch |err| {
-                        std.log.err("Unable to auto-reload: {any}", .{err});
-                    };
-                }
-                if (G.slideshow.slides.items.len > 0) {
-                    if (G.current_slide > G.slideshow.slides.items.len) {
-                        G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
-                    }
-                    showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
-                        std.log.err("SlideShow Error: {any}", .{err});
-                    };
-                } else {
-                    anim_bottom_panel.visible = true;
-                    if (makeDefaultSlideshow()) |_| {
-                        showSlide(G.slideshow.slides.items[0]) catch |err| {
-                            std.log.err("SlideShow Error: {any}", .{err});
-                        };
-                    } else |err| {
-                        std.log.err("SlideShow Error: {any}", .{err});
-                    }
-                }
-            },
-            else => {
-                var b: bool = true;
-                igShowMetricsWindow(&b);
-            },
+        if (!is_fullscreen) {
+            showMenu();
+        }
+
+        // no switch appstate
+        handleKeyboard();
+        const do_reload = checkAutoReload() catch false;
+        if (do_reload) {
+            loadSlideshow(G.slideshow_filp.?) catch |err| {
+                std.log.err("Unable to auto-reload: {any}", .{err});
+            };
+        }
+        if (G.slideshow.slides.items.len > 0) {
+            if (G.current_slide > G.slideshow.slides.items.len) {
+                G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
+            }
+            showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
+                std.log.err("SlideShow Error: {any}", .{err});
+            };
+        } else {
+            if (makeDefaultSlideshow()) |_| {
+                showSlide(G.slideshow.slides.items[0]) catch |err| {
+                    std.log.err("SlideShow Error: {any}", .{err});
+                };
+            } else |err| {
+                std.log.err("SlideShow Error: {any}", .{err});
+            }
         }
         igEnd();
     }
@@ -218,6 +217,11 @@ fn jumpToSlide(slidenumber: i32) void {
 }
 
 fn handleKeyboard() void {
+    const ctrl = igIsKeyDown(SAPP_KEYCODE_LEFT_CONTROL) or igIsKeyDown(SAPP_KEYCODE_RIGHT_CONTROL);
+    if (igIsKeyReleased(SAPP_KEYCODE_Q) and ctrl) {
+        cmdQuit();
+        return;
+    }
     // don't consume keys while the editor is visible
     if (igGetActiveID() == igGetIDStr("editor")) {
         return;
@@ -251,14 +255,14 @@ fn handleKeyboard() void {
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_F)) {
-        sapp_toggle_fullscreen();
+        cmdToggleFullscreen();
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_M)) {
         if (igIsKeyDown(SAPP_KEYCODE_LEFT_SHIFT) or igIsKeyDown(SAPP_KEYCODE_RIGHT_SHIFT)) {
             G.app_state = .mainmenu;
         } else {
-            anim_bottom_panel.visible = !anim_bottom_panel.visible;
+            cmdToggleBottomPanel();
         }
     }
 
@@ -298,7 +302,7 @@ fn showSlide(slide: *const Slide) !void {
     const editor_active = try animatedEditor(&ed_anim, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
-            toggleEditor();
+            cmdToggleEditor();
         }
     }
 
@@ -428,17 +432,6 @@ fn setSlideBgColor(color: ImVec4) void {
 
 const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: bool = false };
 
-fn toggleEditor() void {
-    ed_anim.visible = !ed_anim.visible;
-    if (ed_anim.visible) {
-        ed_anim.startFlashAnimation();
-        anim_bottom_panel.visible_before_editor = anim_bottom_panel.visible;
-        anim_bottom_panel.visible = true;
-    } else {
-        anim_bottom_panel.visible = anim_bottom_panel.visible_before_editor;
-    }
-}
-
 fn showBottomPanel() void {
     my_fonts.pushFontScaled(16);
     igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
@@ -449,12 +442,13 @@ fn showBottomPanel() void {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
-        if (animatedButton("[m]ain menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
-            G.app_state = .mainmenu;
-        }
+        igNextColumn();
+        //        if (animatedButton("[m]ain menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
+        //            G.app_state = .mainmenu;
+        //        }
         igNextColumn();
         if (animatedButton("[f]ullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
-            sapp_toggle_fullscreen();
+            cmdToggleFullscreen();
         }
         igNextColumn();
         if (animatedButton("[o]verview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
@@ -462,7 +456,7 @@ fn showBottomPanel() void {
         }
         igNextColumn();
         if (animatedButton("[e]ditor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
-            toggleEditor();
+            cmdToggleEditor();
         }
         // dummy column for the editor save button
         igNextColumn();
@@ -781,4 +775,69 @@ fn sliceToCforImguiText(input: []const u8) [:0]u8 {
     const xx = bigslicetocbuf[0 .. input_cut.len + 1];
     const yy = xx[0..input_cut.len :0];
     return yy;
+}
+
+// .
+// COMMANDS
+// .
+fn cmdQuit() void {
+    std.process.exit(0);
+}
+
+fn cmdToggleFullscreen() void {
+    sapp_toggle_fullscreen();
+}
+
+fn cmdToggleEditor() void {
+    ed_anim.visible = !ed_anim.visible;
+    if (ed_anim.visible) {
+        ed_anim.startFlashAnimation();
+        anim_bottom_panel.visible_before_editor = anim_bottom_panel.visible;
+        anim_bottom_panel.visible = true;
+    } else {
+        anim_bottom_panel.visible = anim_bottom_panel.visible_before_editor;
+    }
+}
+
+fn cmdToggleBottomPanel() void {
+    anim_bottom_panel.visible = !anim_bottom_panel.visible;
+}
+
+// .
+// .
+// MENU
+// .
+// .
+
+fn showMenu() void {
+    my_fonts.pushFontScaled(14);
+    if (igBeginMenuBar()) {
+        defer igEndMenuBar();
+
+        if (igBeginMenu("File", true)) {
+            if (igMenuItemBool("New", "Ctrl + N", false, true)) {}
+            if (igMenuItemBool("New from template...", "", false, true)) {}
+            if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {}
+            if (igMenuItemBool("Save", "Ctrl + S", false, true)) {}
+            if (igMenuItemBool("Save as...", "", false, true)) {}
+            if (igMenuItemBool("Quit", "Ctrl + Q", false, true)) {
+                cmdQuit();
+            }
+            igEndMenu();
+        }
+        if (igBeginMenu("View", true)) {
+            if (igMenuItemBool("Toggle editor", "E", false, true)) {
+                cmdToggleEditor();
+            }
+            if (igMenuItemBool("Toggle full-screen", "F", false, true)) {
+                cmdToggleFullscreen();
+            }
+            if (igMenuItemBool("Overview", "O", false, true)) {}
+            if (igMenuItemBool("Toggle on-screen menu buttons", "M", false, true)) {
+                cmdToggleBottomPanel();
+            }
+            igEndMenu();
+        }
+    }
+    my_fonts.popFontScaled();
 }
