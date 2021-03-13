@@ -1,3 +1,5 @@
 nmap <leader>t :VimuxRunCommand("zig build slides")<cr>
-:runtime VimuxRunCommand ls
+
+" run :make to get compilation errors into quickfix list
+:set makeprg=zig\ build\ slides
 
