@@ -2,6 +2,11 @@
 
 fixed? @pop: parse context AFTER popping!
 
+* overview mode
+* pdf export (png?)
+* native pdf export
+* markdown support + underline and colors
+
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
