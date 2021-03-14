@@ -107,6 +107,8 @@ const AppData = struct {
     hot_reload_ticker: usize = 0,
     hot_reload_interval_ticks: usize = 1500 / 16,
     hot_reload_last_stat: ?std.fs.File.Stat = undefined,
+    show_saveas: bool = true,
+    show_saveas_reason: SaveAsReason = .none,
 
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -157,6 +159,7 @@ fn update() void {
 
     var flags: c_int = 0;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
+    flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     const is_fullscreen = sapp_is_fullscreen();
     if (!is_fullscreen) {
         flags |= ImGuiWindowFlags_MenuBar;
@@ -195,6 +198,14 @@ fn update() void {
             }
         }
         igEnd();
+        if (G.show_saveas) {
+            igOpenPopup("Save slideshow?");
+        }
+
+        if (savePopup(G.show_saveas_reason)) {
+            G.show_saveas = false;
+            G.show_saveas_reason = .none;
+        }
     }
 }
 
@@ -775,10 +786,6 @@ fn isEditorDirty() bool {
 // .
 // COMMANDS
 // .
-fn cmdQuit() void {
-    std.process.exit(0);
-}
-
 fn cmdToggleFullscreen() void {
     sapp_toggle_fullscreen();
 }
@@ -798,7 +805,24 @@ fn cmdToggleBottomPanel() void {
     anim_bottom_panel.visible = !anim_bottom_panel.visible;
 }
 
-fn cmdLoadSlideshow() void {
+fn cmdSave() void {
+
+    // save the shit
+    _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+    if (G.slideshow_filp) |filp| {
+        loadSlideshow(filp) catch unreachable;
+    }
+}
+
+fn cmdSaveAs() void {
+    setStatusMsg("Not implemented!");
+}
+
+fn doQuit() void {
+    std.process.exit(0);
+}
+
+fn doLoadSlideshow() void {
     // file dialog
     var selected_file: []const u8 = undefined;
     var buf: [2048]u8 = undefined;
@@ -823,42 +847,99 @@ fn cmdLoadSlideshow() void {
     }
 }
 
-fn cmdNewSlideshow() void {
+fn doNewSlideshow() void {
     setStatusMsg("Not implemented!");
+}
+
+fn doNewFromTemplate() void {
+    setStatusMsg("Not implemented!");
+}
+
+fn cmdQuit() void {
+    if (isEditorDirty()) {
+        G.show_saveas_reason = .quit;
+        G.show_saveas = true;
+    } else {
+        doQuit();
+    }
+}
+
+fn cmdLoadSlideshow() void {
+    if (isEditorDirty()) {
+        G.show_saveas_reason = .load;
+        G.show_saveas = true;
+    } else {
+        doLoadSlideshow();
+    }
+}
+
+fn cmdNewSlideshow() void {
+    if (isEditorDirty()) {
+        G.show_saveas_reason = .new;
+        G.show_saveas = true;
+    } else {
+        doNewSlideshow();
+    }
 }
 
 fn cmdNewFromTemplate() void {
-    setStatusMsg("Not implemented!");
-}
-
-fn cmdSave() void {
-
-    // save the shit
-    _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
-    if (G.slideshow_filp) |filp| {
-        loadSlideshow(filp) catch unreachable;
+    if (isEditorDirty()) {
+        G.show_saveas_reason = .newtemplate;
+        G.show_saveas = true;
+    } else {
+        doNewFromTemplate();
     }
 }
 
-fn yesNoPopup(title: []const u8) bool {
+const SaveAsReason = enum {
+    none,
+    quit,
+    load,
+    new,
+    newtemplate,
+};
+
+fn savePopup(reason: SaveAsReason) bool {
+    if (reason == .none) {
+        return true;
+    }
     igSetNextWindowSize(.{ .x = 500, .y = -1 }, ImGuiCond_Always);
     var open: bool = true;
-    if (igBeginPopupModal(title, &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+    my_fonts.pushFontScaled(14);
+    defer my_fonts.popFontScaled();
+    var doit = false;
+    if (igBeginPopupModal("Save slideshow?", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
         defer igEndPopup();
 
-        igColumns(2, "id", true);
-        igSetColumnWidth(0, 150);
+        igText("The slideshow has unsaved changes.\nSave it?");
+        igColumns(2, "id-x", true);
 
-        igPushItemWidth(-1);
-        igPopItemWidth();
-
+        var yes = igButton("Yes", .{ .x = -1, .y = 30 });
         igNextColumn();
+        var no = igButton("No", .{ .x = -1, .y = 30 });
+        doit = yes or no;
+        if (doit) {
+            if (yes) {
+                cmdSave();
+            }
+            switch (reason) {
+                .quit => {
+                    doQuit();
+                },
+                .load => {
+                    doLoadSlideshow();
+                },
+                .new => {
+                    doNewSlideshow();
+                },
+                .newtemplate => {
+                    doNewFromTemplate();
+                },
+                .none => {},
+            }
+        }
     }
-    return open;
-}
-
-fn cmdSaveAs() void {
-    setStatusMsg("Not implemented!");
+    return doit;
 }
 
 // .
@@ -882,7 +963,7 @@ fn showMenu() void {
             if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {
                 cmdLoadSlideshow();
             }
-            if (igMenuItemBool("Save", "Ctrl + S", false, true)) {
+            if (igMenuItemBool("Save", "Ctrl + S", false, isEditorDirty())) {
                 cmdSave();
             }
             if (igMenuItemBool("Save as...", "", false, true)) {
