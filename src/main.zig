@@ -807,16 +807,44 @@ fn cmdToggleBottomPanel() void {
 }
 
 fn cmdSave() void {
-
-    // save the shit
-    _ = saveSlideshow(G.slideshow_filp, ed_anim.textbuf);
+    if (G.slideshow_filp) |filp| {
+        // save the shit
+        _ = saveSlideshow(filp, ed_anim.textbuf);
+    } else {
+        saveSlideshowAs();
+    }
     if (G.slideshow_filp) |filp| {
         loadSlideshow(filp) catch unreachable;
     }
 }
 
+fn saveSlideshowAs() void {
+
+    // file dialog
+    var selected_file: []const u8 = undefined;
+    var buf: [2048]u8 = undefined;
+    const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
+    buf[my_path.len] = 0;
+    const x = buf[0 .. my_path.len + 1];
+    const y = x[0..my_path.len :0];
+    const sel = upaya.filebrowser.saveFileDialog("Save Slideshow as...", y, "*.sld");
+    if (sel == null) {
+        selected_file = "canceled";
+    } else {
+        selected_file = std.mem.span(sel);
+    }
+
+    if (std.mem.startsWith(u8, selected_file, "canceled")) {
+        setStatusMsg("canceled");
+    } else {
+        // now load the file
+        G.slideshow_filp = selected_file;
+        _ = saveSlideshow(selected_file, ed_anim.textbuf);
+    }
+}
+
 fn cmdSaveAs() void {
-    setStatusMsg("Not implemented!");
+    saveSlideshowAs();
 }
 
 fn doQuit() void {
@@ -849,7 +877,13 @@ fn doLoadSlideshow() void {
 }
 
 fn doNewSlideshow() void {
-    setStatusMsg("Not implemented!");
+    G.reinit() catch |err| {
+        std.log.err("Reinit failed: {any}", .{err});
+    };
+    initEditorContent() catch |err| {
+        std.log.err("Reinit editor failed: {any}", .{err});
+    };
+    std.log.debug("Re-initted", .{});
 }
 
 fn doNewFromTemplate() void {
