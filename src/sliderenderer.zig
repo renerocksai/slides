@@ -19,11 +19,11 @@ const RenderElement = struct {
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
     color: ?ImVec4 = ImVec4{},
-    text: ?[:0]const u8 = undefined,
-    fontSize: ?i32 = undefined,
-    underline_width: ?i32 = undefined,
-    bullet_color: ?ImVec4 = undefined,
-    texture: ?*upaya.Texture = undefined,
+    text: ?[:0]const u8 = null,
+    fontSize: ?i32 = null,
+    underline_width: ?i32 = null,
+    bullet_color: ?ImVec4 = null,
+    texture: ?*upaya.Texture = null,
 };
 
 const RenderedSlide = struct {
@@ -84,7 +84,7 @@ pub const SlideshowRenderer = struct {
         if (item.img_path) |p| {
             var texptr = try tcache.getImg(p, slideshow_filp);
             if (texptr) |t| {
-                try renderSlide.elements.append(RenderElement{ .kind = .background, .texture = texptr });
+                try renderSlide.elements.append(RenderElement{ .kind = .background, .texture = t });
             }
         } else {
             if (item.color) |color| {
@@ -124,12 +124,49 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    pub fn render(self: *SlideshowRenderer, slide_number: usize, pos: ImVec2, size: ImVec2, internal_render_size: ImVec2) !void {
-        // .
+    pub fn render(self: *SlideshowRenderer, slide_number: i32, pos: ImVec2, size: ImVec2, internal_render_size: ImVec2) !void {
+        if (self.renderedSlides.items.len == 0) {
+            std.log.debug("0 renderedSlides", .{});
+            return;
+        }
+
+        const slide = self.renderedSlides.items[@intCast(usize, slide_number)];
+        if (slide.elements.items.len == 0) {
+            std.log.debug("0 elements", .{});
+            return;
+        }
+
+        for (slide.elements.items) |element| {
+            switch (element.kind) {
+                .background => {
+                    if (element.texture) |txt| {
+                        const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
+                        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }; // 50% opaque black
+                        renderImg(.{}, internal_render_size, txt, img_tint_col, img_border_col, pos, size, internal_render_size);
+                    } else {
+                        std.log.debug("bg: no texture", .{});
+                        if (element.color) |color| {
+                            renderBgColor(color, internal_render_size, pos, size, internal_render_size);
+                        } else {
+                            std.log.debug("bg: no color", .{});
+                        }
+                    }
+                },
+                .text => {
+                    renderText(&element, pos, size, internal_render_size);
+                },
+                .image => {
+                    std.log.debug("not rendering image", .{});
+                },
+                .bulleted_text => {
+                    std.log.debug("not bulleted text", .{});
+                },
+            }
+        }
     }
 };
 
-fn slidePosToRenderPos(pos: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+fn slidePosToRenderPos(pos: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
     const my_tl = ImVec2{
         .x = slide_tl.x + pos.x * slide_size.x / internal_render_size.x,
         .y = slide_tl.y + pos.y * slide_size.y / internal_render_size.y,
@@ -137,7 +174,7 @@ fn slidePosToRenderPos(pos: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, intern
     return my_tl;
 }
 
-fn slideSizeToRenderSize(size: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+fn slideSizeToRenderSize(size: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
     const my_size = ImVec2{
         .x = size.x * slide_size.x / internal_render_size.x,
         .y = size.y * slide_size.y / internal_render_size.y,
@@ -145,7 +182,7 @@ fn slideSizeToRenderSize(size: ImVec2, slide_size: ImVec2, internal_render_size:
     return my_size;
 }
 
-fn renderImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+fn renderImg(pos: ImVec2, size: ImVec2, texture: *upaya.Texture, tint_color: ImVec4, border_color: ImVec4, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
     var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
     var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
 
@@ -153,11 +190,9 @@ fn renderImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, b
     const my_tl = slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size);
     const my_size = slideSizeToRenderSize(size, slide_size, internal_render_size);
 
-    const tint_color: ImVec2 = .{};
-    const border_color: ImVec2 = .{};
-
     igSetCursorPos(my_tl);
     igImage(texture.*.imTextureID(), my_size, uv_min, uv_max, tint_color, border_color);
+    std.log.debug("rendering img at {} size {}", .{ my_tl, my_size });
 }
 
 fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
@@ -167,65 +202,43 @@ fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVe
         std.log.warn("drawlist is null!", .{});
     } else {
         var br = slide_tl;
-        br.x = tl.x + slide_size.x;
-        br.y = tl.y + slide_size.y;
-        const bgcol = igGetColorU32Vec4(color);
-        igRenderFrame(slide_tl, br, bgcol, true, 0.0);
+        br.x = slide_tl.x + slide_size.x;
+        br.y = slide_tl.y + slide_size.y;
+        const bgcolu32 = igGetColorU32Vec4(bgcol);
+        igRenderFrame(slide_tl, br, bgcolu32, true, 0.0);
     }
 }
 
-fn renderText(item: *RenderElement) void {
+fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
     var pos = item.position;
     pos.x += item.size.x;
-    igPushTextWrapPos(trxyToSlideXY(pos).x);
-    const fs = item.fontSize orelse slide.fontsize;
-    const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
+    igPushTextWrapPos(slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size).x);
+    const fs = item.fontSize.?;
+    const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slide_size.y / internal_render_size.y);
     my_fonts.pushFontScaled(fsize);
-    const col = item.color orelse slide.text_color;
+    const col = item.color;
 
     // diplay the text
-    // replace $slide_number by the slide number
-    // TODO: FIXME : maybe need more buffer -- or be more flexible here
-    var tt_buf: [1024]u8 = undefined;
-    var tt: []u8 = tt_buf[0..];
-    if (std.mem.lenZ(t) < tt_buf.len) {
-        // pass 1: replace all `^-` with `> `
-        // replace $slide_number first
-        _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
-        _ = std.mem.replace(u8, tt, "\n- ", "\n", tt);
-        // special case: 1st char is bullet
-        const ttt = if (std.mem.startsWith(u8, tt, "- ")) tt[2..] else tt[0..];
-
-        igSetCursorPos(trxyToSlideXY(.{ .x = item.position.x + 25, .y = item.position.y }));
-        igPushStyleColorVec4(ImGuiCol_Text, col);
-        igText(sliceToCforImguiText(ttt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
-        igPopStyleColor(1);
-
-        // pass 2: render only the bullet symbols
-        const bullet_color = item.bullet_color orelse slide.bullet_color;
-        igPushStyleColorVec4(ImGuiCol_Text, bullet_color);
-        if (std.mem.startsWith(u8, tt, "- ")) {
-            tt[0] = '>';
-        }
-        var newline: bool = true;
-        for (t) |c, i| {
-            if (c == '\n') {
-                newline = true;
-                tt[i] = c;
-            } else {
-                if (c == '-' and newline) {
-                    tt[i] = '>';
-                    continue;
-                }
-                newline = false;
-                tt[i] = ' ';
-            }
-        }
-
-        igSetCursorPos(trxyToSlideXY(item.position));
-        igText(sliceToCforImguiText(tt));
-        igPopStyleColor(1);
-    }
+    const t = item.text.?;
+    // special case: 1st char is bullet
+    igSetCursorPos(slidePosToRenderPos(.{ .x = item.position.x + 25, .y = item.position.y }, slide_tl, slide_size, internal_render_size));
+    igPushStyleColorVec4(ImGuiCol_Text, col.?);
+    igText(sliceToCforImguiText(t));
+    igPopStyleColor(1);
     my_fonts.popFontScaled();
     igPopTextWrapPos();
+}
+// TODO: get rid of this!
+var bigslicetocbuf: [10240]u8 = undefined;
+
+fn sliceToCforImguiText(input: []const u8) [:0]u8 {
+    var input_cut = input;
+    if (input.len > bigslicetocbuf.len) {
+        input_cut = input[0 .. bigslicetocbuf.len - 1];
+    }
+    std.mem.copy(u8, bigslicetocbuf[0..], input_cut);
+    bigslicetocbuf[input_cut.len] = 0;
+    const xx = bigslicetocbuf[0 .. input_cut.len + 1];
+    const yy = xx[0..input_cut.len :0];
+    return yy;
 }
