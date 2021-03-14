@@ -168,6 +168,8 @@ fn update() void {
             showMenu();
         }
 
+        const USE_RENDERER: bool = true;
+
         // no switch appstate
         handleKeyboard();
         const do_reload = checkAutoReload() catch false;
@@ -180,14 +182,27 @@ fn update() void {
             if (G.current_slide > G.slideshow.slides.items.len) {
                 G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
             }
-            showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
-                std.log.err("SlideShow Error: {any}", .{err});
-            };
-        } else {
-            if (makeDefaultSlideshow()) |_| {
-                showSlide(G.slideshow.slides.items[0]) catch |err| {
+            if (USE_RENDERER) {
+                showSlide2(G.current_slide) catch |err| {
                     std.log.err("SlideShow Error: {any}", .{err});
                 };
+            } else {
+                showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
+                    std.log.err("SlideShow Error: {any}", .{err});
+                };
+            }
+        } else {
+            if (makeDefaultSlideshow()) |_| {
+                G.current_slide = 0;
+                if (USE_RENDERER) {
+                    showSlide2(G.current_slide) catch |err| {
+                        std.log.err("SlideShow Error: {any}", .{err});
+                    };
+                } else {
+                    showSlide(G.slideshow.slides.items[0]) catch |err| {
+                        std.log.err("SlideShow Error: {any}", .{err});
+                    };
+                }
             } else |err| {
                 std.log.err("SlideShow Error: {any}", .{err});
             }
@@ -211,6 +226,7 @@ fn makeDefaultSlideshow() !void {
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
     try empty.items.append(bg);
     try G.slideshow.slides.append(empty);
+    try G.slide_renderer.preRender(G.slideshow, "");
     std.log.debug("created empty slideshow", .{});
 }
 
@@ -310,6 +326,39 @@ fn handleKeyboard() void {
     }
 
     jumpToSlide(new_slide_index);
+}
+
+fn showSlide2(slide_number: i32) !void {
+    // optionally show editor
+    my_fonts.pushFontScaled(16);
+
+    var start_y: f32 = 22;
+    if (sapp_is_fullscreen()) {
+        start_y = 0;
+    }
+    ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
+    if (!anim_bottom_panel.visible) {
+        ed_anim.desired_size.y += 20.0;
+    }
+    const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
+    if (!editor_active) {
+        if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
+            cmdToggleEditor();
+        }
+    }
+
+    my_fonts.popFontScaled();
+
+    // render slide
+    G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
+    try G.slide_renderer.render(slide_number, slideAreaTL(), slideSizeInWindow(), G.internal_render_size);
+
+    // .
+    // button row
+    // .
+    showBottomPanel();
+
+    showStatusMsgV(G.status_msg);
 }
 
 fn showSlide(slide: *const Slide) !void {
@@ -956,7 +1005,7 @@ fn savePopup(reason: SaveAsReason) bool {
         igText("The slideshow has unsaved changes.\nSave it?");
         igColumns(2, "id-x", true);
 
-        var yes = igButton("Yes", .{ .x = -1, .y = 30 });
+        var yes = igButton("YES", .{ .x = -1, .y = 30 });
         igNextColumn();
         var no = igButton("No", .{ .x = -1, .y = 30 });
         doit = yes or no;
@@ -1026,6 +1075,12 @@ fn showMenu() void {
             if (igMenuItemBool("Overview", "O", false, true)) {}
             if (igMenuItemBool("Toggle on-screen menu buttons", "M", false, true)) {
                 cmdToggleBottomPanel();
+            }
+            igEndMenu();
+        }
+        if (igBeginMenu("Help", true)) {
+            if (igMenuItemBool("About", "", false, true)) {
+                setStatusMsg("Not implemented!");
             }
             igEndMenu();
         }

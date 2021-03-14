@@ -21,8 +21,8 @@ fixed? @pop: parse context AFTER popping!
 - [x] `$slide_number`
 - [x] bullets bg imgs and colors -- bullets-like template
 - [x] separate arena for slides : on reload just wipe the arena
-- [ ] initial bullet rendering: draw text first, substituting bullet symbols by "  ", then a second time with just the bullets in their own style
-- [ ] slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
+- [x] initial bullet rendering: draw text first, substituting bullet symbols by "  ", then a second time with just the bullets in their own style
+- [x] slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
 - [ ] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [ ] **cache all font sizes**
   - [ ] cache **fullscreen** font sizes (cause they matter most!)
@@ -31,6 +31,10 @@ fixed? @pop: parse context AFTER popping!
 - [ ] nicer (image?) buttons
 - [ ] laserpointer
 - [ ] hide mouse cursor in full-screen mode
+- [ ] presenter mode - with notes? multi-monitor-support?
+  - interesting idea: compagnion website: shows slideshow notes, timer, etc -- instead of 2nd monitor
+  - when in home office, we aren't connected to a beamer - and don't have a 2nd monitor
+  - hosted directly by the exe: we are in same network anyway
 - [ ] **export to bullets** 
   - [ ] dockerized exports for web, win, linux
 - [ ] dockerized builds of slides, incl windows !!! (provide missing libs) -- is this possible?
