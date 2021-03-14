@@ -223,22 +223,8 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     // special case: 1st char is bullet
     igSetCursorPos(slidePosToRenderPos(.{ .x = item.position.x + 25, .y = item.position.y }, slide_tl, slide_size, internal_render_size));
     igPushStyleColorVec4(ImGuiCol_Text, col.?);
-    igText(sliceToCforImguiText(t));
+    igText(t);
     igPopStyleColor(1);
     my_fonts.popFontScaled();
     igPopTextWrapPos();
-}
-// TODO: get rid of this!
-var bigslicetocbuf: [10240]u8 = undefined;
-
-fn sliceToCforImguiText(input: []const u8) [:0]u8 {
-    var input_cut = input;
-    if (input.len > bigslicetocbuf.len) {
-        input_cut = input[0 .. bigslicetocbuf.len - 1];
-    }
-    std.mem.copy(u8, bigslicetocbuf[0..], input_cut);
-    bigslicetocbuf[input_cut.len] = 0;
-    const xx = bigslicetocbuf[0 .. input_cut.len + 1];
-    const yy = xx[0..input_cut.len :0];
-    return yy;
 }

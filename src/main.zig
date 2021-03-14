@@ -168,8 +168,6 @@ fn update() void {
             showMenu();
         }
 
-        const USE_RENDERER: bool = true;
-
         // no switch appstate
         handleKeyboard();
         const do_reload = checkAutoReload() catch false;
@@ -182,27 +180,15 @@ fn update() void {
             if (G.current_slide > G.slideshow.slides.items.len) {
                 G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
             }
-            if (USE_RENDERER) {
-                showSlide2(G.current_slide) catch |err| {
-                    std.log.err("SlideShow Error: {any}", .{err});
-                };
-            } else {
-                showSlide(G.slideshow.slides.items[@intCast(usize, G.current_slide)]) catch |err| {
-                    std.log.err("SlideShow Error: {any}", .{err});
-                };
-            }
+            showSlide2(G.current_slide) catch |err| {
+                std.log.err("SlideShow Error: {any}", .{err});
+            };
         } else {
             if (makeDefaultSlideshow()) |_| {
                 G.current_slide = 0;
-                if (USE_RENDERER) {
-                    showSlide2(G.current_slide) catch |err| {
-                        std.log.err("SlideShow Error: {any}", .{err});
-                    };
-                } else {
-                    showSlide(G.slideshow.slides.items[0]) catch |err| {
-                        std.log.err("SlideShow Error: {any}", .{err});
-                    };
-                }
+                showSlide2(G.current_slide) catch |err| {
+                    std.log.err("SlideShow Error: {any}", .{err});
+                };
             } else |err| {
                 std.log.err("SlideShow Error: {any}", .{err});
             }
@@ -361,153 +347,6 @@ fn showSlide2(slide_number: i32) !void {
     showStatusMsgV(G.status_msg);
 }
 
-fn showSlide(slide: *const Slide) !void {
-    // optionally show editor
-    my_fonts.pushFontScaled(16);
-
-    var start_y: f32 = 22;
-    if (sapp_is_fullscreen()) {
-        start_y = 0;
-    }
-    ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
-    if (!anim_bottom_panel.visible) {
-        ed_anim.desired_size.y += 20.0;
-    }
-    const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
-    if (!editor_active) {
-        if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
-            cmdToggleEditor();
-        }
-    }
-
-    my_fonts.popFontScaled();
-
-    // render slide
-    G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
-
-    if (slide.items.items.len > 0) {
-        for (slide.items.items) |item, i| {
-            switch (item.kind) {
-                .background => {
-                    if (item.img_path) |p| {
-                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| blk: {
-                            std.log.err("Img render error: {any}", .{err});
-                            break :blk null;
-                        };
-
-                        if (texptr) |t| {
-                            slideImg(ImVec2{}, G.internal_render_size, t, G.img_tint_col, G.img_border_col);
-                        }
-                    } else {
-                        if (item.color) |color| {
-                            setSlideBgColor(color);
-                        }
-                    }
-                },
-                .textbox => {
-                    renderTextItem(&item, slide) catch |err| {
-                        std.log.err("Text render error {any}", .{err});
-                    };
-                },
-                .img => {
-                    if (item.img_path) |p| {
-                        var texptr = tcache.getImg(p, G.slideshow_filp) catch |err| blk: {
-                            std.log.err("Img render error: {any}", .{err});
-                            break :blk null;
-                        };
-                        if (texptr) |t| {
-                            slideImg(item.position, item.size, t, G.img_tint_col, G.img_border_col);
-                        }
-                    } else {
-                        std.log.err("No img path!?!?!?", .{});
-                    }
-                },
-            }
-        }
-    }
-
-    // .
-    // button row
-    // .
-    showBottomPanel();
-
-    showStatusMsgV(G.status_msg);
-}
-
-fn renderTextItem(item: *const SlideItem, slide: *const Slide) !void {
-    if (item.text) |t| {
-        var pos = item.position;
-        pos.x += item.size.x;
-        igPushTextWrapPos(trxyToSlideXY(pos).x);
-        const fs = item.fontSize orelse slide.fontsize;
-        const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slideSizeInWindow().y / G.internal_render_size.y);
-        my_fonts.pushFontScaled(fsize);
-        const col = item.color orelse slide.text_color;
-
-        // diplay the text
-        // replace $slide_number by the slide number
-        // TODO: FIXME : maybe need more buffer -- or be more flexible here
-        var tt_buf: [1024]u8 = undefined;
-        var tt: []u8 = tt_buf[0..];
-        if (std.mem.lenZ(t) < tt_buf.len) {
-            // pass 1: replace all `^-` with `> `
-            // replace $slide_number first
-            _ = std.mem.replace(u8, t, "$slide_number", "1", tt);
-            _ = std.mem.replace(u8, tt, "\n- ", "\n", tt);
-            // special case: 1st char is bullet
-            const ttt = if (std.mem.startsWith(u8, tt, "- ")) tt[2..] else tt[0..];
-
-            igSetCursorPos(trxyToSlideXY(.{ .x = item.position.x + 25, .y = item.position.y }));
-            igPushStyleColorVec4(ImGuiCol_Text, col);
-            igText(sliceToCforImguiText(ttt)); // TODO: store item texts as [*:0] -- see ParserErrorContext.getFormattedStr for inspiration
-            igPopStyleColor(1);
-
-            // pass 2: render only the bullet symbols
-            const bullet_color = item.bullet_color orelse slide.bullet_color;
-            igPushStyleColorVec4(ImGuiCol_Text, bullet_color);
-            if (std.mem.startsWith(u8, tt, "- ")) {
-                tt[0] = '>';
-            }
-            var newline: bool = true;
-            for (t) |c, i| {
-                if (c == '\n') {
-                    newline = true;
-                    tt[i] = c;
-                } else {
-                    if (c == '-' and newline) {
-                        tt[i] = '>';
-                        continue;
-                    }
-                    newline = false;
-                    tt[i] = ' ';
-                }
-            }
-
-            igSetCursorPos(trxyToSlideXY(item.position));
-            igText(sliceToCforImguiText(tt));
-            igPopStyleColor(1);
-        }
-        my_fonts.popFontScaled();
-        igPopTextWrapPos();
-    }
-}
-
-fn setSlideBgColor(color: ImVec4) void {
-    igSetCursorPos(trxyToSlideXY(ImVec2{}));
-    var drawlist = igGetForegroundDrawListNil();
-    if (drawlist == null) {
-        std.log.warn("drawlist is null!", .{});
-    } else {
-        const tl = slideAreaTL();
-        var br = tl;
-        const rsize = scaleToSlide(G.internal_render_size);
-        br.x = tl.x + rsize.x;
-        br.y = tl.y + rsize.y;
-        const bgcol = igGetColorU32Vec4(color);
-        igRenderFrame(slideAreaTL(), br, bgcol, true, 0.0);
-    }
-}
-
 const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: bool = false };
 
 fn showBottomPanel() void {
@@ -608,14 +447,6 @@ fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     // }
 }
 
-fn trx(x: f32) f32 {
-    return x * G.internal_render_size.x / G.content_window_size.x;
-}
-
-fn trxy(pos: ImVec2) ImVec2 {
-    return ImVec2{ .x = pos.x * G.content_window_size.x / G.internal_render_size.x, .y = pos.y * G.content_window_size.y / G.internal_render_size.y };
-}
-
 fn slideSizeInWindow() ImVec2 {
     var ret = ImVec2{};
     var new_content_window_size = G.content_window_size;
@@ -638,37 +469,6 @@ fn slideAreaTL() ImVec2 {
 
     ret.y = (G.content_window_size.y - ss.y) / 2.0;
     return ret;
-}
-
-// translate pos in internal_render_size coords onto projection of slide in window
-fn trxyToSlideXY(pos: ImVec2) ImVec2 {
-    var ss = slideSizeInWindow();
-    var tl = slideAreaTL();
-    var ret = scaleToSlide(pos);
-    ret.y += tl.y;
-    return ret;
-}
-
-fn scaleToSlide(size: ImVec2) ImVec2 {
-    var ss = slideSizeInWindow();
-    var ret = ImVec2{};
-
-    ret.x = size.x * ss.x / G.internal_render_size.x;
-    ret.y = size.y * ss.y / G.internal_render_size.y;
-    return ret;
-}
-
-// render an image into the slide
-fn slideImg(pos: ImVec2, size: ImVec2, texture: *Texture, tint_color: ImVec4, border_color: ImVec4) void {
-    var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
-    var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
-
-    // position the img in the slide
-    igSetCursorPos(trxyToSlideXY(pos));
-
-    var imgsize_translated = scaleToSlide(size);
-
-    igImage(texture.*.imTextureID(), imgsize_translated, uv_min, uv_max, tint_color, border_color);
 }
 
 fn showMainMenu(app_data: *AppData) void {
@@ -817,21 +617,6 @@ fn loadSlideshow(filp: []const u8) !void {
         setStatusMsg("Loading failed!");
         std.log.err("Loading failed: {any}", .{err});
     }
-}
-
-// TODO: get rid of this!
-var bigslicetocbuf: [10240]u8 = undefined;
-
-fn sliceToCforImguiText(input: []const u8) [:0]u8 {
-    var input_cut = input;
-    if (input.len > bigslicetocbuf.len) {
-        input_cut = input[0 .. bigslicetocbuf.len - 1];
-    }
-    std.mem.copy(u8, bigslicetocbuf[0..], input_cut);
-    bigslicetocbuf[input_cut.len] = 0;
-    const xx = bigslicetocbuf[0 .. input_cut.len + 1];
-    const yy = xx[0..input_cut.len :0];
-    return yy;
 }
 
 fn isEditorDirty() bool {
