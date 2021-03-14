@@ -149,7 +149,7 @@ var bt_grow_anim = ButtonAnim{};
 var bt_shrink_anim = ButtonAnim{};
 
 // returns true if editor is active
-pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
+pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2, internal_render_size: ImVec2) !bool {
     var fromSize = ImVec2{};
     var toSize = ImVec2{};
     var anim_duration: i32 = 0;
@@ -157,8 +157,8 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
 
     var size = anim.desired_size;
 
-    var editor_pos = ImVec2{};
-    var pos = ImVec2{};
+    var editor_pos = ImVec2{ .y = start_y };
+    var pos = ImVec2{ .y = start_y };
     pos.x = internal_render_size.x - anim.current_size.x;
     pos.x *= content_window_size.x / internal_render_size.x;
     editor_pos = pos;
@@ -248,8 +248,9 @@ pub fn animatedEditor(anim: *EditAnim, content_window_size: ImVec2, internal_ren
         var flags = ImGuiInputTextFlags_Multiline | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways;
         var x_anim: *EditAnim = anim;
         igPushStyleColorVec4(ImGuiCol_TextSelectedBg, .{ .x = 1, .w = 0.9 });
+        igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 1, .y = 1, .z = 1, .w = 1 });
         const ret = igInputTextMultiline("editor", anim.textbuf, anim.textbuf_size, ImVec2{ .x = s.x, .y = s.y }, flags, my_callback, @ptrCast(*c_void, x_anim));
-        igPopStyleColor(1);
+        igPopStyleColor(2);
 
         // show the resize button
         //

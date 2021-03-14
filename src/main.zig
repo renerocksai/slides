@@ -54,11 +54,6 @@ fn initEditorContent() !void {
     ed_anim.textbuf = G.editor_memory.ptr;
     std.mem.set(u8, G.editor_memory, 0);
     std.mem.set(u8, G.loaded_content, 0);
-
-    ed_anim.textbuf[0] = 0;
-
-    // dummy slides
-    //makeDemoSlides(&G.slideshow.slides, G.allocator);
 }
 
 // .
@@ -321,11 +316,15 @@ fn showSlide(slide: *const Slide) !void {
     // optionally show editor
     my_fonts.pushFontScaled(16);
 
-    ed_anim.desired_size.y = G.content_window_size.y - 37;
-    if (anim_bottom_panel.visible == false) {
+    var start_y: f32 = 22;
+    if (sapp_is_fullscreen()) {
+        start_y = 0;
+    }
+    ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
+    if (!anim_bottom_panel.visible) {
         ed_anim.desired_size.y += 20.0;
     }
-    const editor_active = try animatedEditor(&ed_anim, G.content_window_size, G.internal_render_size);
+    const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
     if (!editor_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
             cmdToggleEditor();
@@ -472,7 +471,7 @@ fn showBottomPanel() void {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
-        igNextColumn();
+        // igNextColumn();
         //        if (animatedButton("[m]ain menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
         //            G.app_state = .mainmenu;
         //        }
@@ -780,6 +779,8 @@ fn sliceToCforImguiText(input: []const u8) [:0]u8 {
 }
 
 fn isEditorDirty() bool {
+    //    std.log.debug("ED: {any}", .{G.editor_memory});
+    //    std.log.debug("ED: {any}", .{G.loaded_content});
     return !std.mem.eql(u8, G.editor_memory, G.loaded_content);
 }
 
