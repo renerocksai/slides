@@ -119,6 +119,7 @@ pub const SlideshowRenderer = struct {
                     .kind = .image,
                     .position = item.position,
                     .size = item.size,
+                    .texture = t,
                 });
             }
         }
@@ -136,19 +137,19 @@ pub const SlideshowRenderer = struct {
             return;
         }
 
+        // TODO: pass that in from G
+        const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
+        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }; // 50% opaque black
         for (slide.elements.items) |element| {
             switch (element.kind) {
                 .background => {
                     if (element.texture) |txt| {
-                        const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
-                        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }; // 50% opaque black
                         renderImg(.{}, internal_render_size, txt, img_tint_col, img_border_col, pos, size, internal_render_size);
                     } else {
-                        std.log.debug("bg: no texture", .{});
                         if (element.color) |color| {
                             renderBgColor(color, internal_render_size, pos, size, internal_render_size);
                         } else {
-                            std.log.debug("bg: no color", .{});
+                            //. empty
                         }
                     }
                 },
@@ -156,7 +157,7 @@ pub const SlideshowRenderer = struct {
                     renderText(&element, pos, size, internal_render_size);
                 },
                 .image => {
-                    std.log.debug("not rendering image", .{});
+                    renderImg(element.position, element.size, element.texture.?, img_tint_col, img_border_col, pos, size, internal_render_size);
                 },
                 .bulleted_text => {
                     std.log.debug("not bulleted text", .{});
@@ -192,7 +193,6 @@ fn renderImg(pos: ImVec2, size: ImVec2, texture: *upaya.Texture, tint_color: ImV
 
     igSetCursorPos(my_tl);
     igImage(texture.*.imTextureID(), my_size, uv_min, uv_max, tint_color, border_color);
-    std.log.debug("rendering img at {} size {}", .{ my_tl, my_size });
 }
 
 fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
