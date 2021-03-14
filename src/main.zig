@@ -602,7 +602,6 @@ fn trxyToSlideXY(pos: ImVec2) ImVec2 {
 
 fn scaleToSlide(size: ImVec2) ImVec2 {
     var ss = slideSizeInWindow();
-    var tl = slideAreaTL();
     var ret = ImVec2{};
 
     ret.x = size.x * ss.x / G.internal_render_size.x;
@@ -752,14 +751,22 @@ fn loadSlideshow(filp: []const u8) !void {
                         item.printToLog();
                     }
                 }
+                if (G.slide_renderer.preRender(G.slideshow, filp)) |_| {
+                    // . empty
+                } else |err| {
+                    std.log.err("Pre-rendering failed: {any}", .{err});
+                }
             } else |err| {
                 setStatusMsg("Loading failed!");
+                std.log.err("Loading failed: {any}", .{err});
             }
         } else |err| {
             setStatusMsg("Loading failed!");
+            std.log.err("Loading failed: {any}", .{err});
         }
     } else |err| {
         setStatusMsg("Loading failed!");
+        std.log.err("Loading failed: {any}", .{err});
     }
 }
 
@@ -992,9 +999,9 @@ fn showMenu() void {
             if (igMenuItemBool("New", "Ctrl + N", false, true)) {
                 cmdNewSlideshow();
             }
-            if (igMenuItemBool("New from template...", "", false, true)) {
-                cmdNewFromTemplate();
-            }
+            // if (igMenuItemBool("New from template...", "", false, true)) {
+            //     cmdNewFromTemplate();
+            // }
             if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {
                 cmdLoadSlideshow();
             }
