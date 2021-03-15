@@ -25,6 +25,9 @@ fixed? @pop: parse context AFTER popping!
 - [x] slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
 - [x] Menus - bring back the menus!
 - [x] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
+- [x] parse markdown (dialect) subset
+- [ ] load (and cache) bold, italic, bolditalic fonts
+- [ ] render markdown
 - [ ] **cache all font sizes**
   - [ ] cache **fullscreen** font sizes (cause they matter most!)
 - [ ] Themes

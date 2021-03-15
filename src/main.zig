@@ -26,25 +26,16 @@ pub fn main() !void {
     try G.init(allocator);
     defer G.deinit();
 
-    if (false) {
-        upaya.run(.{
-            .init = init,
-            .update = update,
-            .app_name = "Slides",
-            .window_title = "Slides",
-            .ini_file_storage = .none,
-            .swap_interval = 1, // ca 16ms
-            .width = 1200,
-            .height = 800,
-        });
-    }
-
-    var p: MdLineParser = .{};
-    p.init(allocator);
-    const line = "    - <#10201020>Hello</> **~~world**, Caro~~!";
-    _ = try p.parseLine(line);
-    std.log.debug("{s}", .{line});
-    p.logSpans();
+    upaya.run(.{
+        .init = init,
+        .update = update,
+        .app_name = "Slides",
+        .window_title = "Slides",
+        .ini_file_storage = .none,
+        .swap_interval = 1, // ca 16ms
+        .width = 1200,
+        .height = 800,
+    });
 }
 
 fn init() void {
