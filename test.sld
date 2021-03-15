@@ -99,10 +99,12 @@ The big picture
 here come the sources
 
 @pop leftbox 
+this is soooo coool
 - here comes the text
 - and so on
 - here comes the text
 - and so on
+- now let us wrap, let's wrap the shit out of this bullet point which is far too long to be good
 - here comes the text
 - and so on
 

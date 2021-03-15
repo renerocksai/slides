@@ -10,7 +10,6 @@ usingnamespace slides;
 const RenderElementKind = enum {
     background,
     text,
-    bulleted_text,
     image,
 };
 
@@ -19,7 +18,8 @@ const RenderElement = struct {
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
     color: ?ImVec4 = ImVec4{},
-    text: ?[:0]const u8 = null,
+    //text: ?[:0]const u8 = null,
+    text: ?[*:0]const u8 = null,
     fontSize: ?i32 = null,
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
@@ -93,7 +93,7 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    fn createTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
+    fn createTextBlock2(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
         // Split text:
         // Append lines
         // if line starts with - : terminate text block and create bulleted_text
@@ -109,6 +109,139 @@ pub const SlideshowRenderer = struct {
                 .bullet_color = item.bullet_color,
             });
         }
+    }
+
+    fn createTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
+        var current_line_y: f32 = item.position.y;
+        var current_available_height = item.size.y;
+        var line_height_bullet_width: ImVec2 = .{};
+
+        const spaces_per_indent: usize = 4;
+
+        var fontSize: i32 = 0;
+        if (item.fontSize) |fs| {
+            line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
+            fontSize = fs;
+        } else {
+            // no fontsize  - error!
+            std.log.err("No fontsize for text {s}", .{item.text});
+            return;
+        }
+        var bulletColor: ImVec4 = .{};
+        if (item.bullet_color) |bc| {
+            bulletColor = bc;
+        } else {
+            // no bullet color - error!
+            std.log.err("No bullet color for text {s}", .{item.text});
+            return;
+        }
+
+        if (item.text) |t| {
+            // split into lines
+            var it = std.mem.split(t, "\n");
+            while (it.next()) |line| {
+                if (line.len == 0) {
+                    // empty line
+                    current_line_y += line_height_bullet_width.y;
+                    continue;
+                }
+                // find out, if line is a list item:
+                //    - starts with `-` or `>`
+                var bullet_indent_in_spaces: usize = 0;
+                const is_bulleted = self.countIndentOfBullet(line, &bullet_indent_in_spaces);
+
+                const indent_level = bullet_indent_in_spaces / spaces_per_indent;
+                const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
+                var available_width = item.size.x - indent_in_pixels;
+                var text_block_height: f32 = 0;
+
+                if (is_bulleted) {
+                    const render_text = std.mem.trimLeft(u8, line, " \t->");
+                    const render_text_c = try self.heightOfTextblock_toCstring(render_text, fontSize, available_width, &text_block_height);
+                    // 1. add indented bullet symbol at the current pos
+                    try renderSlide.elements.append(RenderElement{
+                        .kind = .text,
+                        .position = .{ .x = item.position.x + indent_in_pixels, .y = current_line_y },
+                        .size = .{ .x = available_width, .y = current_available_height },
+                        .fontSize = fontSize,
+                        .underline_width = item.underline_width,
+                        .text = ">",
+                        .color = bulletColor,
+                    });
+                    // 2. increase indent by 1 and add indented text block
+                    available_width -= line_height_bullet_width.x;
+                    try renderSlide.elements.append(RenderElement{
+                        .kind = .text,
+                        .position = .{ .x = item.position.x + indent_in_pixels + line_height_bullet_width.x, .y = current_line_y },
+                        .size = .{ .x = available_width, .y = current_available_height },
+                        .fontSize = fontSize,
+                        .underline_width = item.underline_width,
+                        .text = render_text_c,
+                        .color = item.color,
+                    });
+                } else {
+                    // normal text line
+                    const render_text_c = try self.heightOfTextblock_toCstring(line, fontSize, available_width, &text_block_height);
+                    try renderSlide.elements.append(RenderElement{
+                        .kind = .text,
+                        .position = .{ .x = item.position.x, .y = current_line_y },
+                        .size = .{ .x = available_width, .y = current_available_height },
+                        .fontSize = fontSize,
+                        .underline_width = item.underline_width,
+                        .text = render_text_c,
+                        .color = item.color,
+                    });
+                }
+                current_available_height -= text_block_height;
+                current_line_y += text_block_height;
+            }
+        }
+    }
+
+    fn lineHightAndBulletWidthForFontSize(self: *SlideshowRenderer, fontsize: i32) ImVec2 {
+        var size = ImVec2{};
+        var ret = ImVec2{};
+        my_fonts.pushFontScaled(fontsize);
+        const text: [*c]const u8 = "FontCheck";
+        igCalcTextSize(&size, text, text + 5, false, 8000);
+        ret.y = size.y;
+        var bullet_text: [*c]const u8 = undefined;
+        bullet_text = "> ";
+        igCalcTextSize(&size, bullet_text, bullet_text + std.mem.lenZ(bullet_text), false, 8000);
+        ret.x = size.x;
+        my_fonts.popFontScaled();
+        return ret;
+    }
+
+    fn countIndentOfBullet(self: *SlideshowRenderer, line: []const u8, indent_out: *usize) bool {
+        var indent: usize = 0;
+        for (line) |c, i| {
+            if (c == '-' or c == '>') {
+                indent_out.* = indent;
+                return true;
+            }
+            if (c != ' ' and c != '\t') {
+                return false;
+            }
+            if (c == ' ') {
+                indent += 1;
+            }
+            if (c == '\t') {
+                indent += 4;
+                // TODO: make tab to spaces ratio configurable
+            }
+        }
+        return false;
+    }
+
+    fn heightOfTextblock_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, block_width: f32, height_out: *f32) ![*c]const u8 {
+        var size = ImVec2{};
+        my_fonts.pushFontScaled(fontsize);
+        const ctext = try self.allocator.dupeZ(u8, text);
+        igCalcTextSize(&size, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
+        my_fonts.popFontScaled();
+        height_out.* = size.y;
+        return ctext;
     }
 
     fn createImg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
@@ -140,6 +273,7 @@ pub const SlideshowRenderer = struct {
         // TODO: pass that in from G
         const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
         const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }; // 50% opaque black
+
         for (slide.elements.items) |element| {
             switch (element.kind) {
                 .background => {
@@ -158,9 +292,6 @@ pub const SlideshowRenderer = struct {
                 },
                 .image => {
                     renderImg(element.position, element.size, element.texture.?, img_tint_col, img_border_col, pos, size, internal_render_size);
-                },
-                .bulleted_text => {
-                    std.log.debug("not bulleted text", .{});
                 },
             }
         }
