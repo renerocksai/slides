@@ -35,11 +35,11 @@ pub const MdParsingError = error{color};
 
 fn parseColorLiteral(colorstr: []const u8) !ImVec4 {
     var ret = ImVec4{};
-    if (colorstr.len != 9 or colorstr[0] != '#') {
+    if (colorstr[0] != '#') {
         return MdParsingError.color;
     }
     var temp: ImVec4 = undefined;
-    var coloru32 = std.fmt.parseInt(c_uint, colorstr[1..], 16) catch |err| {
+    var coloru32 = std.fmt.parseInt(c_uint, colorstr[1..9], 16) catch |err| {
         return MdParsingError.color;
     };
     igColorConvertU32ToFloat4(&temp, coloru32);
@@ -72,6 +72,10 @@ pub const MdLineParser = struct {
     // bold, italic, underline ends must not be preceded by a space.
     pub fn parseLine(self: *MdLineParser, line: []const u8) !bool {
         var pos: usize = 0;
+
+        if (std.mem.startsWith(u8, std.mem.trimLeft(u8, line, " \t"), "-")) {
+            self.currentSpan.styleflags |= StyleFlags.line_bulleted;
+        }
 
         while (pos < line.len) {
             switch (line[pos]) {
@@ -206,6 +210,56 @@ pub const MdLineParser = struct {
                         }
                     }
                 },
+
+                '<' => {
+                    if (self.currentSpan.styleflags & StyleFlags.colored > 0) {
+                        // try to terminate color
+                        if (std.mem.startsWith(u8, line[pos..], "</>")) {
+                            // make sure we weren't preceded by a space
+                            if (peekBack(line, pos, 1)) |prev| {
+                                if (prev != ' ') {
+                                    // emit current span
+                                    self.currentSpan.endpos = pos;
+                                    try self.emitCurrentSpan(line);
+
+                                    // clear color
+                                    self.currentSpan.styleflags &= 0xff - StyleFlags.colored;
+                                    self.currentSpan.startpos = pos + 3;
+                                    self.currentSpan.endpos = 0;
+                                    self.currentSpan.color_override = null;
+                                    pos += 2;
+                                }
+                            }
+                        }
+                    } else {
+                        // try to start color:
+                        if (peekAhead(line, pos, 1)) |next| {
+                            if (next == '#') {
+                                const color_opt: ?ImVec4 = parseColorLiteral(line[pos + 1 ..]) catch null;
+                                if (color_opt) |color| {
+                                    if (std.mem.indexOf(u8, line[pos + 1 ..], "</>")) |term_pos_relative| {
+                                        // check if terminator is preceded by space
+                                        if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
+                                            if (nospace != ' ') {
+                                                self.currentSpan.endpos = pos;
+                                                try self.emitCurrentSpan(line);
+
+                                                // change style of new span
+                                                self.currentSpan.styleflags |= StyleFlags.colored;
+                                                self.currentSpan.color_override = color;
+                                                self.currentSpan.startpos = pos + 11;
+                                                self.currentSpan.endpos = 0;
+                                                pos += 10;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    std.log.warn("no color `{s}`", .{line[pos + 1 ..]});
+                                }
+                            }
+                        }
+                    }
+                },
                 else => {},
             }
             pos += 1;
@@ -257,8 +311,9 @@ pub const MdLineParser = struct {
             }
 
             var colored: []const u8 = "";
+
             if (span.styleflags & StyleFlags.colored > 0) {
-                colored = "colored";
+                colored = std.fmt.allocPrint(self.allocator, "color: {}", .{span.color_override}) catch "color";
             }
 
             std.log.debug("[{}:{}] `{s}` : {s} {s} {s} {s} {s}", .{ span.startpos, span.endpos, span.text, bold, italic, underline, line_bulleted, colored });

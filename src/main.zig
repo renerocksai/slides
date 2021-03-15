@@ -41,7 +41,7 @@ pub fn main() !void {
 
     var p: MdLineParser = .{};
     p.init(allocator);
-    const line = "Hello **~~world**, Caro~~!";
+    const line = "    - <#10201020>Hello</> **~~world**, Caro~~!";
     _ = try p.parseLine(line);
     std.log.debug("{s}", .{line});
     p.logSpans();
