@@ -100,6 +100,8 @@ here come the sources
 
 @pop leftbox 
 this is soooo coool
+_
+empty lines are marked with just an _ underscore
 - here comes the text
 - and so on
 - here comes the text
