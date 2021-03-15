@@ -104,6 +104,9 @@ _
 empty lines are marked with just an _ underscore
 - here comes the text
 - and so on
+    - the need to indent
+        - even more
+            - and let's wrap one more time into a nicely aligned textbox
 - here comes the text
 - and so on
 - now let us wrap, let's wrap the shit out of this bullet point which is far too long to be good

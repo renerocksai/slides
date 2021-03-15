@@ -3,9 +3,11 @@ const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const upaya = @import("upaya");
 const my_fonts = @import("myscalingfonts.zig");
+const markdownlineparser = @import("markdownlineparser.zig");
 
 usingnamespace upaya.imgui;
 usingnamespace slides;
+usingnamespace markdownlineparser;
 
 const RenderElementKind = enum {
     background,
@@ -18,7 +20,6 @@ const RenderElement = struct {
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
     color: ?ImVec4 = ImVec4{},
-    //text: ?[:0]const u8 = null,
     text: ?[*:0]const u8 = null,
     fontSize: ?i32 = null,
     underline_width: ?i32 = null,
@@ -40,12 +41,14 @@ const RenderedSlide = struct {
 pub const SlideshowRenderer = struct {
     renderedSlides: std.ArrayList(*RenderedSlide) = undefined,
     allocator: *std.mem.Allocator = undefined,
+    md_parser: MdLineParser = .{},
 
     pub fn new(allocator: *std.mem.Allocator) !*SlideshowRenderer {
         var self: *SlideshowRenderer = try allocator.create(SlideshowRenderer);
         self.* = .{};
         self.*.allocator = allocator;
         self.renderedSlides = std.ArrayList(*RenderedSlide).init(allocator);
+        self.md_parser.init(self.allocator);
         return self;
     }
 

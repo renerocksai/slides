@@ -8,6 +8,9 @@ const slides = @import("slides.zig");
 const parser = @import("parser.zig");
 const render = @import("sliderenderer.zig");
 
+const md = @import("markdownlineparser.zig");
+usingnamespace md;
+
 usingnamespace upaya.imgui;
 usingnamespace sokol;
 usingnamespace uianim;
@@ -23,16 +26,25 @@ pub fn main() !void {
     try G.init(allocator);
     defer G.deinit();
 
-    upaya.run(.{
-        .init = init,
-        .update = update,
-        .app_name = "Slides",
-        .window_title = "Slides",
-        .ini_file_storage = .none,
-        .swap_interval = 1, // ca 16ms
-        .width = 1200,
-        .height = 800,
-    });
+    if (false) {
+        upaya.run(.{
+            .init = init,
+            .update = update,
+            .app_name = "Slides",
+            .window_title = "Slides",
+            .ini_file_storage = .none,
+            .swap_interval = 1, // ca 16ms
+            .width = 1200,
+            .height = 800,
+        });
+    }
+
+    var p: MdLineParser = .{};
+    p.init(allocator);
+    const line = "Hello **~~world**, Caro~~!";
+    _ = try p.parseLine(line);
+    std.log.debug("{s}", .{line});
+    p.logSpans();
 }
 
 fn init() void {
