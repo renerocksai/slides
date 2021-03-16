@@ -149,7 +149,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     context.slideshow = slideshow;
 
     context.input = try allocator.dupeZ(u8, input);
-    std.log.info("input len: {d}, context.input len: {d}", .{ input.len, context.input.len });
+    // std.log.info("input len: {d}, context.input len: {d}", .{ input.len, context.input.len });
 
     var start: usize = if (std.mem.startsWith(u8, context.input, "\xEF\xBB\xBF")) 3 else 0;
     var it = std.mem.split(context.input[start..], "\n");
@@ -166,7 +166,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                 continue;
             }
 
-            std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
+            // std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
             if (context.input[context.parsed_line_offset] != line[0]) {
                 std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
                 return error.Overflow;
@@ -252,9 +252,9 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     };
 
     if (context.parser_errors.items.len == 0) {
-        std.log.info("OK. There were no errors.", .{});
+        // std.log.info("OK. There were no errors.", .{});
     } else {
-        std.log.info("There were errors!", .{});
+        // std.log.info("There were errors!", .{});
         context.logAllErrors();
     }
     return context;
@@ -381,7 +381,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
     if (std.mem.eql(u8, item_context.directive, "@push") or std.mem.eql(u8, item_context.directive, "@pop") or std.mem.eql(u8, item_context.directive, "@pushslide") or std.mem.eql(u8, item_context.directive, "@popslide")) {
         if (word_it.next()) |name| {
             item_context.context_name = name;
-            std.log.info("context name : {s}", .{item_context.context_name.?});
+            // std.log.info("context name : {s}", .{item_context.context_name.?});
         } else {
             reportErrorInContext(ParserError.Syntax, context, "context name missing!");
             return ParserError.Syntax;
@@ -647,7 +647,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         // - slideshow defaults
         const slide_item = try commitItemToSlide(parsing_item_context, context);
         var text = slide_item.text orelse "";
-        std.log.info("added a box item: `{s}`", .{text});
+        // std.log.info("added a box item: `{s}`", .{text});
 
         return;
     }
@@ -675,7 +675,7 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
     } else {
         slide_item.kind = .textbox;
     }
-    std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
+    // std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
     try parser_context.current_slide.items.append(slide_item.*);
 
     slide_item.sanityCheck() catch |err| {

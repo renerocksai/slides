@@ -551,16 +551,18 @@ fn loadSlideshow(filp: []const u8) !void {
                     setStatusMsg("Loading failed!");
                 }
 
-                std.log.info("=================================", .{});
-                std.log.info("          Load Summary:", .{});
-                std.log.info("=================================", .{});
-                std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
-                for (G.slideshow.slides.items) |slide, i| {
-                    std.log.info("================================================", .{});
-                    std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
-                    std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
-                    for (slide.items.items) |item| {
-                        item.printToLog();
+                if (false) {
+                    std.log.info("=================================", .{});
+                    std.log.info("          Load Summary:", .{});
+                    std.log.info("=================================", .{});
+                    std.log.info("Constructed {d} slides:", .{G.slideshow.slides.items.len});
+                    for (G.slideshow.slides.items) |slide, i| {
+                        std.log.info("================================================", .{});
+                        std.log.info("   slide {d} pos in editor: {}", .{ i, slide.pos_in_editor });
+                        std.log.info("   slide {d} has {d} items", .{ i, slide.items.items.len });
+                        for (slide.items.items) |item| {
+                            item.printToLog();
+                        }
                     }
                 }
                 if (G.slide_renderer.preRender(G.slideshow, filp)) |_| {

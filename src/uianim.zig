@@ -201,9 +201,10 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
     } else {
         if (anim.in_flash_editor_animation) {
             anim.ticker_ms += 1;
-            anim.activate();
-            // std.log.debug("flashing editor {}", .{anim.ticker_ms});
-            if (anim.ticker_ms > anim.flash_editor_duration) {
+            if (anim.ticker_ms < anim.flash_editor_duration) {
+                anim.activate();
+                // std.log.debug("flashing editor {}", .{anim.ticker_ms});
+            } else {
                 anim.in_flash_editor_animation = false;
                 igActivateItem(igGetIDStr("dummy"));
                 // std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
@@ -288,7 +289,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
 
             my_fonts.pushFontScaled(error_panel_fontsize);
             if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
-                // TODO: an error was selected
+                // an error was selected
                 anim.jumpToPosAndHighlightLine(parser_errors.items[@intCast(usize, anim.selected_error)].line_offset, true);
             }
             my_fonts.popFontScaled();
@@ -315,7 +316,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
                 anim.shrink();
             }
         }
-        igSetCursorPos(.{ .x = pos.x, .y = 0 });
+        igSetCursorPos(.{ .x = pos.x, .y = 20 }); // below menu bar
         _ = igButton("dummy", .{ .x = 2, .y = 2 });
         return ret;
     }
