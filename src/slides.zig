@@ -85,14 +85,14 @@ pub const SlideItemError = error{
 
 pub const SlideItem = struct {
     kind: SlideItemKind = .background,
-    text: ?[]const u8 = undefined,
-    fontSize: ?i32 = undefined,
+    text: ?[]const u8 = null,
+    fontSize: ?i32 = null,
     color: ?ImVec4 = ImVec4{},
-    img_path: ?[]const u8 = undefined,
+    img_path: ?[]const u8 = null,
     position: ImVec2 = ImVec2{},
     size: ImVec2 = ImVec2{},
-    underline_width: ?i32 = undefined,
-    bullet_color: ?ImVec4 = undefined,
+    underline_width: ?i32 = null,
+    bullet_color: ?ImVec4 = null,
 
     pub fn new(a: *std.mem.Allocator) !*SlideItem {
         var self = try a.create(SlideItem);
@@ -189,15 +189,15 @@ pub const SlideItem = struct {
 
 pub const ItemContext = struct {
     directive: []const u8 = undefined, // @push, @slide, ...
-    context_name: ?[]const u8 = undefined,
-    text: ?[]const u8 = undefined,
-    fontSize: ?i32 = undefined,
-    color: ?ImVec4 = undefined,
-    img_path: ?[]const u8 = undefined,
-    position: ?ImVec2 = undefined,
-    size: ?ImVec2 = undefined,
-    underline_width: ?i32 = undefined,
-    bullet_color: ?ImVec4 = undefined,
+    context_name: ?[]const u8 = null,
+    text: ?[]const u8 = null,
+    fontSize: ?i32 = null,
+    color: ?ImVec4 = null,
+    img_path: ?[]const u8 = null,
+    position: ?ImVec2 = null,
+    size: ?ImVec2 = null,
+    underline_width: ?i32 = null,
+    bullet_color: ?ImVec4 = null,
     line_number: usize = 0,
     line_offset: usize = 0,
 

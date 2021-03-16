@@ -5,14 +5,53 @@ const std = @import("std");
 usingnamespace upaya.imgui;
 usingnamespace sokol;
 
-var my_fonts = std.AutoHashMap(i32, *ImFont).init(std.heap.page_allocator);
+pub const FontStyle = enum {
+    normal,
+    bold,
+    italic,
+    bolditalic,
+};
 
-const baked_font_sizes = [_]i32{ 14, 16, 32, 64, 128, 256 };
+const FontMap = std.AutoHashMap(i32, *ImFont);
+// const FontFileSpec = struct {
+//     style: FontStyles = undefined,
+//     filename: []const u8 = undefined,
+//     size2font: ?*FontMap = null,
+// };
+//
+// const FontNames = [_]FontFileSpec{
+//     FontFileSpec{ .style = .normal, .filename = "../assets/Calibri Light.ttf" },
+//     FontFileSpec{ .style = .bold, .filename = "../assets/Calibri Regular.ttf" }, // Calibri is the bold version of Calibri Light for us
+//     FontFileSpec{ .style = .italic, .filename = "../assets/Calibri Light Italic.ttf" },
+//     FontFileSpec{ .style = .bolditalic, .filename = "../assets/Calibri Italic.ttf" }, // Calibri is the bold version of Calibri Light for us
+// };
+
+const baked_font_sizes = [_]i32{ 14, 16, 36, 64, 128, 256 };
+
+const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
+
+const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
+const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
+const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
+const fontdata_bolditalic = @embedFile("../assets/Calibri Italic.ttf"); // Calibri is the bold version of Calibri Light for us
+
+var allFonts: StyledFontMap = StyledFontMap.init(std.heap.page_allocator);
+var my_fonts = FontMap.init(std.heap.page_allocator);
+var my_fonts_bold = FontMap.init(std.heap.page_allocator);
+var my_fonts_italic = FontMap.init(std.heap.page_allocator);
+var my_fonts_bolditalic = FontMap.init(std.heap.page_allocator);
 
 pub fn loadFonts() error{OutOfMemory}!void {
     var io = igGetIO();
     _ = ImFontAtlas_AddFontDefault(io.Fonts, null);
 
+    // init stuff
+    try allFonts.put(.normal, &my_fonts);
+    try allFonts.put(.bold, &my_fonts_bold);
+    try allFonts.put(.italic, &my_fonts_italic);
+    try allFonts.put(.bolditalic, &my_fonts_bolditalic);
+
+    // actual font loading
     var font_config = ImFontConfig_ImFontConfig();
     font_config[0].MergeMode = true;
     font_config[0].PixelSnapH = true;
@@ -20,12 +59,20 @@ pub fn loadFonts() error{OutOfMemory}!void {
     font_config[0].OversampleV = 1;
     font_config[0].FontDataOwnedByAtlas = false;
 
-    var data = @embedFile("../assets/Calibri Regular.ttf");
     //my_font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, data, data.len, 14, icons_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
 
     for (baked_font_sizes) |fsize, i| {
-        var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, data, data.len, @intToFloat(f32, fsize), 0, 0);
+        var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), 0, 0);
         try my_fonts.put(fsize, font);
+
+        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bold, fontdata_bold.len, @intToFloat(f32, fsize), 0, 0);
+        try my_fonts_bold.put(fsize, font);
+
+        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_italic, fontdata_italic.len, @intToFloat(f32, fsize), 0, 0);
+        try my_fonts_italic.put(fsize, font);
+
+        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), 0, 0);
+        try my_fonts_bolditalic.put(fsize, font);
     }
 
     var w: i32 = undefined;
@@ -56,6 +103,17 @@ pub fn pushFontScaled(pixels: i32) void {
     igPushFont(font_info.font);
     last_font = font_info.font;
 }
+pub fn pushStyledFontScaled(pixels: i32, style: FontStyle) void {
+    const font_info = getStyledFontScaled(pixels, style);
+
+    // we assume we have a font, now scale it
+    last_scale = font_info.font.*.Scale;
+    const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, font_info.size);
+    //std.log.debug("--> Requested font size: {}, scaling from size: {} with scale: {}\n", .{ pixels, font_info.size, new_scale });
+    font_info.font.*.Scale = new_scale;
+    igPushFont(font_info.font);
+    last_font = font_info.font;
+}
 
 pub fn getFontScaled(pixels: i32) bakedFontInfo {
     var min_diff: i32 = 1000;
@@ -77,6 +135,38 @@ pub fn getFontScaled(pixels: i32) bakedFontInfo {
                 // std.log.debug("  diff={} is < than {}, so our new temp found_font_size={}", .{ diff, min_diff, fsize });
                 min_diff = diff;
                 font = my_fonts.get(fsize).?;
+                found_font_size = fsize;
+            }
+        }
+    }
+
+    const ret = bakedFontInfo{ .font = font, .size = found_font_size };
+
+    return ret;
+}
+
+pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
+    var min_diff: i32 = 1000;
+    var found_font_size: i32 = baked_font_sizes[0];
+
+    var the_map = allFonts.get(style).?;
+    var font: *ImFont = the_map.get(baked_font_sizes[0]).?; // we don't ever down-scale. hence, default to minimum font size
+
+    // the bloody hash map says it doesn't support field access when trying to iterate:
+    //    var it = my_fonts.iterator();
+    //     for (it.next()) |item| {
+    for (baked_font_sizes) |fsize, i| {
+        var diff = pixels - fsize;
+
+        // std.log.debug("diff={}, pixels={}, fsize={}", .{ diff, pixels, fsize });
+
+        // we only ever upscale, hence we look for positive differences only
+        if (diff >= 0) {
+            // we try to find the minimum difference
+            if (diff < min_diff) {
+                // std.log.debug("  diff={} is < than {}, so our new temp found_font_size={}", .{ diff, min_diff, fsize });
+                min_diff = diff;
+                font = the_map.get(fsize).?;
                 found_font_size = fsize;
             }
         }

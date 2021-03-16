@@ -474,46 +474,6 @@ fn slideAreaTL() ImVec2 {
     return ret;
 }
 
-fn showMainMenu(app_data: *AppData) void {
-    // we don't want the button size to be scaled shittily. Hence we look for the nearest (lower bound) font size.
-    my_fonts.pushFontScaled(my_fonts.getNearestFontSize(32));
-    var line_height = app_data.content_window_size.y / 7;
-
-    var bt_width = app_data.content_window_size.x / 3;
-    var bt_size = ImVec2{ .x = bt_width, .y = line_height };
-
-    if (bt_size.y > 200.0) {
-        bt_size.y = 200;
-    }
-
-    {
-        igSetCursorPos(ImVec2{ .x = bt_width, .y = line_height });
-        if (animatedButton("[L]oad ...", bt_size, &bt_anim_1) == .released or igIsKeyReleased(SAPP_KEYCODE_L)) {}
-
-        igSetCursorPos(ImVec2{ .x = bt_width, .y = 3 * line_height });
-        // New or present - depends on whether we have stuff loaded or not
-        var lbl: [*:0]const u8 = undefined;
-        if (G.slideshow_filp) |_| {
-            lbl = "[P]resent!";
-        } else {
-            lbl = "New [P]resentation";
-        }
-
-        if (animatedButton(lbl, bt_size, &bt_anim_2) == .released or igIsKeyReleased(SAPP_KEYCODE_P)) {
-            G.app_state = .presenting;
-            const input = std.fs.path.basename(G.slideshow_filp orelse "empty.sld");
-            setStatusMsg(sliceToC(input));
-        }
-
-        igSetCursorPos(ImVec2{ .x = bt_width, .y = 5 * line_height });
-        if (animatedButton("[Q]uit", bt_size, &bt_anim_3) == .released or igIsKeyReleased(SAPP_KEYCODE_Q)) {
-            std.process.exit(0);
-        }
-    }
-    my_fonts.popFontScaled();
-    showStatusMsgV(G.status_msg);
-}
-
 fn showStatusMsgV(msg: [*c]const u8) void {
     var tsize = ImVec2{};
     my_fonts.pushFontScaled(64);
