@@ -26,7 +26,7 @@ fixed? @pop: parse context AFTER popping!
 - [x] Menus - bring back the menus!
 - [x] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [x] parse markdown (dialect) subset
-- [ ] load (and cache) bold, italic, bolditalic fonts
+- [x] load (and cache) bold, italic, bolditalic fonts
 - [ ] render markdown
 - [ ] laserpointer
 - [ ] **cache all font sizes**
