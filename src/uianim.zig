@@ -317,7 +317,9 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             }
         }
         igSetCursorPos(.{ .x = pos.x, .y = 20 }); // below menu bar
+        igPushStyleColorVec4(ImGuiCol_Button, .{ .w = 0 });
         _ = igButton("dummy", .{ .x = 2, .y = 2 });
+        igPopStyleColor(1);
         return ret;
     }
     return false;
