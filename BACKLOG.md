@@ -28,10 +28,10 @@ fixed? @pop: parse context AFTER popping!
 - [x] parse markdown (dialect) subset
 - [ ] load (and cache) bold, italic, bolditalic fonts
 - [ ] render markdown
+- [ ] laserpointer
 - [ ] **cache all font sizes**
   - [ ] cache **fullscreen** font sizes (cause they matter most!)
 - [ ] Themes
-- [ ] laserpointer
 - [ ] hide mouse cursor in full-screen mode
 - [ ] nicer (image?) buttons
 - [ ] presenter mode - with notes? multi-monitor-support?
