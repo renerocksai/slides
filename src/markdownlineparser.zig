@@ -70,7 +70,7 @@ pub const MdLineParser = struct {
 
     // bold, italic, underline starts must be preceded by one of " _*~"
     // bold, italic, underline ends must not be preceded by a space.
-    pub fn parseLine(self: *MdLineParser, line: []const u8) !bool {
+    pub fn parseLine(self: *MdLineParser, line: []const u8) !void {
         var pos: usize = 0;
 
         if (std.mem.startsWith(u8, std.mem.trimLeft(u8, line, " \t"), "-")) {
@@ -267,7 +267,7 @@ pub const MdLineParser = struct {
         self.currentSpan.endpos = pos;
         try self.emitCurrentSpan(line);
 
-        return true;
+        return;
     }
 
     fn emitCurrentSpan(self: *MdLineParser, line: []const u8) !void {

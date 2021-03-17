@@ -57,7 +57,6 @@ pub const SlideshowRenderer = struct {
             return;
         }
 
-        // TODO: is this a good choice? Keeping the array but emptying it?
         self.renderedSlides.shrinkRetainingCapacity(0);
 
         for (slideshow.slides.items) |slide, i| {
@@ -73,7 +72,8 @@ pub const SlideshowRenderer = struct {
             for (slide.items.items) |item, j| {
                 switch (item.kind) {
                     .background => try self.createBg(renderSlide, item, slideshow_filp),
-                    .textbox => try self.createTextBlock(renderSlide, item),
+                    .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number),
+                    // .textbox => try self.createTextBlock(renderSlide, item),
                     .img => try self.createImg(renderSlide, item, slideshow_filp),
                 }
             }
@@ -96,21 +96,184 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    fn createTextBlock2(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
-        // Split text:
-        // Append lines
-        // if line starts with - : terminate text block and create bulleted_text
+    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize) !void {
+        // for line in lines:
+        //     if line is bulleted: emit bullet, adjust x pos
+        //     render spans
+        const spaces_per_indent: usize = 4;
+        var fontSize: i32 = 0;
+
+        if (item.fontSize) |fs| {
+            line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
+            fontSize = fs;
+        } else {
+            // no fontsize  - error!
+            std.log.err("No fontsize for text {s}", .{item.text});
+            return;
+        }
+        var bulletColor: ImVec4 = .{};
+        if (item.bullet_color) |bc| {
+            bulletColor = bc;
+        } else {
+            // no bullet color - error!
+            std.log.err("No bullet color for text {s}", .{item.text});
+            return;
+        }
+
+        const color = item.color orelse return;
+        const underline_width = item.underline_width orelse 0;
+
         if (item.text) |t| {
-            try renderSlide.elements.append(RenderElement{
-                .kind = .text,
-                .position = item.position,
-                .size = item.size,
-                .color = item.color,
-                .text = try std.mem.dupeZ(self.allocator, u8, t),
-                .fontSize = item.fontSize,
-                .underline_width = item.underline_width,
-                .bullet_color = item.bullet_color,
-            });
+            const tl_pos = ImVec2{ .x = item.position.x, .y = item.position.y };
+            var layoutContext = TextLayoutContext{
+                .size = .{ .x = item.size.x, .y = item.size.y },
+                .pos = tl_pos,
+                .fontSize = fontSize,
+                .underline_width = underline_width,
+                .color = color,
+                .text = "", // will be overridden immediately
+                .current_line_height = line_height_bullet_width.y, // will be overridden immediately but needed if text starts with empty line(s)
+            };
+
+            // split into lines
+            var it = std.mem.split(t, "\n");
+            while (it.next()) |line| {
+                if (line.len == 0) {
+                    // empty line
+                    layoutContext.pos.y += layoutContext.current_line_height;
+                    continue;
+                }
+                // find out, if line is a list item:
+                //    - starts with `-` or `>`
+                var bullet_indent_in_spaces: usize = 0;
+                const is_bulleted = self.countIndentOfBullet(line, &bullet_indent_in_spaces);
+                const indent_level = bullet_indent_in_spaces / spaces_per_indent;
+                const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
+                const available_width = item.size.x - indent_in_pixels;
+                layoutContext.available_size.x = available_width;
+                layoutContext.pos.x = tl_pos.x + indent_in_pixels;
+                layoutContext.fontSize = fontSize;
+                layoutContext.underline_width = underline_width;
+                layoutContext.color = color;
+                layoutContext.text = line;
+
+                if (is_bulleted) {
+                    // 1. add indented bullet symbol at the current pos
+                    try renderSlide.elements.append(RenderElement{
+                        .kind = .text,
+                        .position = .{ .x = tl_pos.x + indent_in_pixels, .y = layoutContext.pos.y },
+                        .size = .{ .x = available_width, .y = layoutContext.available_size.y },
+                        .fontSize = fontSize,
+                        .underline_width = underline_width,
+                        .text = ">",
+                        .color = bulletColor,
+                    });
+                    // 2. increase indent by 1 and add indented text block
+                    available_width -= line_height_bullet_width.x;
+                    layoutContext.pos.x += line_height_bullet_width.x;
+                    layoutContext.size.x = available_width;
+                    layoutContext.text = std.mem.trimLeft(u8, line, " \t->");
+                }
+
+                try self.renderMdBlock(renderSlide, &layoutContext);
+
+                // advance to the next line
+                layoutContext.pos.x = tl_pos.x;
+                layoutContext.pos.y += layoutContext.current_line_height.y;
+
+                // don't render (much) beyond size
+                //
+                // with this check, we will not render anything that would start outside the size rect.
+                // Also, lines using the regular font will not exceed the size rect.
+                // however,
+                // - if a line uses a bigger font (more pixels) than the regular font, we might still exceed the size rect by the delta
+                // - we might still draw underlines beyond the size.y if the last line fits perfectly.
+                if (layoutContext.pos.y >= tl_pos.y + item.size.y - lineHightAndBulletWidthForFontSize.y) {
+                    break;
+                }
+            }
+        }
+    }
+
+    const TextLayoutContext = struct {
+        pos: ImVec2 = .{},
+        available_size: ImVec2 = .{},
+        current_line_height: f32 = 0,
+        fontSize: i32 = 0,
+        underline_width: usize = 0,
+        color: ImVec4 = .{},
+        text: []const u8 = undefined,
+    };
+
+    fn renderMdBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, layoutContext: *TextLayoutContext) !void {
+        //     remember original pos. its X will need to be reset at every line wrap
+        //     for span in spans:
+        //         calc size.x of span
+        //         if width > available_width:
+        //             reduce width by chopping of words to the right until it fits
+        //             repeat that for the remainding shit
+        //             for split in splits:
+        //                # treat them as lines.
+        //             if lastsplit did not end with newline
+        //                 we continue the next span right after the last split
+        //
+        //  the visible line hight is determined by the highest text span in the visible line!
+
+        self.md_parser.init(self.allocator);
+        try self.md_parser.parseLine(layoutContext.text);
+        if (self.md_parser.result_spans) |spans| {
+            if (spans.items.len == 0) {
+                return;
+            }
+            self.md_parser.logSpans();
+
+            const default_color = layoutContext.color;
+
+            for (spans.items) |span| {
+                // work out and push the font
+                var fontstyle: FontStyle = .normal;
+                var is_underlined = span.styleflags & StyleFlags.underline > 0;
+                var is_colored = span.styleflags & StyleFlags.colored > 0;
+
+                if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) > 0) {
+                    fontstyle = .bolditalic;
+                } else if (span.styleflags & StyleFlags.bold > 0) {
+                    fontstyle = .bold;
+                } else if (span.styleflags & StyleFlags.italic > 0) {
+                    fontstyle = italic;
+                }
+
+                my_fonts.pushStyledFontScaled(px, fontstyle);
+                defer my_fonts.popFontScaled();
+
+                // work out and push the color
+                if (is_colored) {
+                    igPushStyleColorVec4(default_color);
+                } else {
+                    igPushStyleColorVec4(span.color);
+                }
+                defer igPopStyleColor(1);
+
+                // check if whole span fits width. - let's be opportunistic!
+                // if not, start chopping off from the right until it fits
+                // keep rest for later
+                // Q: is it better to try to pop words from the left until
+                //    the text doesn't fit anymore?
+                // A: probably yes. Lines can be pretty long and hence wrap
+                //    multiple times. Trying to find the max amount of words
+                //    that fit until the first break is necessary is faster
+                //    in that case.
+                //    Also, doing it this way makes it pretty straight-forward
+                //    to wrap superlong words that wouldn't even fit the
+                //    current line width - and can be broken down easily.
+
+                // TODO: you are here!
+                // check if whole line fits
+                // orelse start wrapping (see above)
+            }
+        } else {
+            // no spans
+            return;
         }
     }
 
@@ -130,6 +293,7 @@ pub const SlideshowRenderer = struct {
             std.log.err("No fontsize for text {s}", .{item.text});
             return;
         }
+
         var bulletColor: ImVec4 = .{};
         if (item.bullet_color) |bc| {
             bulletColor = bc;
@@ -237,10 +401,14 @@ pub const SlideshowRenderer = struct {
         return false;
     }
 
+    fn toCString(self: *SlideshowRenderer, text: []const u8) ![*c]const u8 {
+        return try self.allocator.dupeZ(u8, text);
+    }
+
     fn heightOfTextblock_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, block_width: f32, height_out: *f32) ![*c]const u8 {
         var size = ImVec2{};
         my_fonts.pushFontScaled(fontsize);
-        const ctext = try self.allocator.dupeZ(u8, text);
+        const ctext = try self.toCString(text);
         igCalcTextSize(&size, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
         my_fonts.popFontScaled();
         height_out.* = size.y;
