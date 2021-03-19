@@ -22,6 +22,8 @@ const RenderElement = struct {
     color: ?ImVec4 = ImVec4{},
     text: ?[*:0]const u8 = null,
     fontSize: ?i32 = null,
+    fontStyle: my_fonts.FontStyle = .normal,
+    underlined: bool = false,
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
     texture: ?*upaya.Texture = null,
@@ -102,6 +104,7 @@ pub const SlideshowRenderer = struct {
         //     render spans
         const spaces_per_indent: usize = 4;
         var fontSize: i32 = 0;
+        var line_height_bullet_width: ImVec2 = .{};
 
         if (item.fontSize) |fs| {
             line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
@@ -126,10 +129,11 @@ pub const SlideshowRenderer = struct {
         if (item.text) |t| {
             const tl_pos = ImVec2{ .x = item.position.x, .y = item.position.y };
             var layoutContext = TextLayoutContext{
-                .size = .{ .x = item.size.x, .y = item.size.y },
-                .pos = tl_pos,
+                .available_size = .{ .x = item.size.x, .y = item.size.y },
+                .origin_pos = tl_pos,
+                .current_pos = tl_pos,
                 .fontSize = fontSize,
-                .underline_width = underline_width,
+                .underline_width = @intCast(usize, underline_width),
                 .color = color,
                 .text = "", // will be overridden immediately
                 .current_line_height = line_height_bullet_width.y, // will be overridden immediately but needed if text starts with empty line(s)
@@ -140,7 +144,7 @@ pub const SlideshowRenderer = struct {
             while (it.next()) |line| {
                 if (line.len == 0) {
                     // empty line
-                    layoutContext.pos.y += layoutContext.current_line_height;
+                    layoutContext.current_pos.y += layoutContext.current_line_height;
                     continue;
                 }
                 // find out, if line is a list item:
@@ -149,11 +153,11 @@ pub const SlideshowRenderer = struct {
                 const is_bulleted = self.countIndentOfBullet(line, &bullet_indent_in_spaces);
                 const indent_level = bullet_indent_in_spaces / spaces_per_indent;
                 const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
-                const available_width = item.size.x - indent_in_pixels;
+                var available_width = item.size.x - indent_in_pixels;
                 layoutContext.available_size.x = available_width;
-                layoutContext.pos.x = tl_pos.x + indent_in_pixels;
+                layoutContext.current_pos.x = tl_pos.x + indent_in_pixels;
                 layoutContext.fontSize = fontSize;
-                layoutContext.underline_width = underline_width;
+                layoutContext.underline_width = @intCast(usize, underline_width);
                 layoutContext.color = color;
                 layoutContext.text = line;
 
@@ -161,7 +165,7 @@ pub const SlideshowRenderer = struct {
                     // 1. add indented bullet symbol at the current pos
                     try renderSlide.elements.append(RenderElement{
                         .kind = .text,
-                        .position = .{ .x = tl_pos.x + indent_in_pixels, .y = layoutContext.pos.y },
+                        .position = .{ .x = tl_pos.x + indent_in_pixels, .y = layoutContext.origin_pos.y },
                         .size = .{ .x = available_width, .y = layoutContext.available_size.y },
                         .fontSize = fontSize,
                         .underline_width = underline_width,
@@ -170,16 +174,17 @@ pub const SlideshowRenderer = struct {
                     });
                     // 2. increase indent by 1 and add indented text block
                     available_width -= line_height_bullet_width.x;
-                    layoutContext.pos.x += line_height_bullet_width.x;
-                    layoutContext.size.x = available_width;
+                    layoutContext.origin_pos.x += line_height_bullet_width.x;
+                    layoutContext.current_pos.x = layoutContext.origin_pos.x;
+                    layoutContext.available_size.x = available_width;
                     layoutContext.text = std.mem.trimLeft(u8, line, " \t->");
                 }
 
                 try self.renderMdBlock(renderSlide, &layoutContext);
 
                 // advance to the next line
-                layoutContext.pos.x = tl_pos.x;
-                layoutContext.pos.y += layoutContext.current_line_height.y;
+                layoutContext.current_pos.x = tl_pos.x;
+                layoutContext.current_pos.y += layoutContext.current_line_height;
 
                 // don't render (much) beyond size
                 //
@@ -188,7 +193,7 @@ pub const SlideshowRenderer = struct {
                 // however,
                 // - if a line uses a bigger font (more pixels) than the regular font, we might still exceed the size rect by the delta
                 // - we might still draw underlines beyond the size.y if the last line fits perfectly.
-                if (layoutContext.pos.y >= tl_pos.y + item.size.y - lineHightAndBulletWidthForFontSize.y) {
+                if (layoutContext.current_pos.y >= tl_pos.y + item.size.y - line_height_bullet_width.y) {
                     break;
                 }
             }
@@ -196,7 +201,8 @@ pub const SlideshowRenderer = struct {
     }
 
     const TextLayoutContext = struct {
-        pos: ImVec2 = .{},
+        origin_pos: ImVec2 = .{},
+        current_pos: ImVec2 = .{},
         available_size: ImVec2 = .{},
         current_line_height: f32 = 0,
         fontSize: i32 = 0,
@@ -229,30 +235,38 @@ pub const SlideshowRenderer = struct {
 
             const default_color = layoutContext.color;
 
+            var element = RenderElement{
+                .kind = .text,
+                .size = layoutContext.available_size,
+                .color = default_color,
+                .fontSize = layoutContext.fontSize,
+                .underline_width = @intCast(i32, layoutContext.underline_width),
+            };
+
             for (spans.items) |span| {
-                // work out and push the font
-                var fontstyle: FontStyle = .normal;
-                var is_underlined = span.styleflags & StyleFlags.underline > 0;
-                var is_colored = span.styleflags & StyleFlags.colored > 0;
+                // work out the font
+                element.fontStyle = .normal;
+                element.underlined = span.styleflags & StyleFlags.underline > 0;
 
                 if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) > 0) {
-                    fontstyle = .bolditalic;
+                    element.fontStyle = .bolditalic;
                 } else if (span.styleflags & StyleFlags.bold > 0) {
-                    fontstyle = .bold;
+                    element.fontStyle = .bold;
                 } else if (span.styleflags & StyleFlags.italic > 0) {
-                    fontstyle = italic;
+                    element.fontStyle = .italic;
                 }
-
-                my_fonts.pushStyledFontScaled(px, fontstyle);
-                defer my_fonts.popFontScaled();
 
                 // work out and push the color
-                if (is_colored) {
-                    igPushStyleColorVec4(default_color);
+                if (span.styleflags & StyleFlags.colored > 0) {
+                    element.color = default_color;
                 } else {
-                    igPushStyleColorVec4(span.color);
+                    element.color = span.color_override;
                 }
-                defer igPopStyleColor(1);
+
+                // check the line hight of this span's fontstyle so we can check whether it wrapped
+                const ig_span_fontsize_text: [*c]const u8 = "XXX";
+                var ig_span_fontsize: ImVec2 = .{};
+                igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 300);
 
                 // check if whole span fits width. - let's be opportunistic!
                 // if not, start chopping off from the right until it fits
@@ -266,10 +280,91 @@ pub const SlideshowRenderer = struct {
                 //    Also, doing it this way makes it pretty straight-forward
                 //    to wrap superlong words that wouldn't even fit the
                 //    current line width - and can be broken down easily.
+                //    --
+                //    One more thing: as we're looping through the spans,
+                //        we don't render from the start of the line but
+                //        from the end of the last span.
 
                 // TODO: you are here!
                 // check if whole line fits
                 // orelse start wrapping (see above)
+                //
+                //
+
+                var attempted_span_size: ImVec2 = .{};
+                var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
+                var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                if (attempted_span_size.y < ig_span_fontsize.y * 1.5) {
+                    // we did not wrap so the entire span can be output!
+                    element.text = render_text_c;
+                    element.position = layoutContext.current_pos;
+                    element.size = attempted_span_size;
+                    try renderSlide.elements.append(element);
+                    // advance render pos
+                    layoutContext.current_pos.x += attempted_span_size.x;
+                    // if something is rendered into the currend line, then adjust the line height if necessary
+                    if (attempted_span_size.y > layoutContext.current_line_height) {
+                        layoutContext.current_line_height = attempted_span_size.y;
+                    }
+                } else {
+                    // we need to check with how many words  we can get away with:
+
+                    // first, let's pseudo-split into words:
+                    // we find the first index of word-separator, then the 2nd, ...
+                    // and use it to determine the length of the slice
+                    var lastIdxOfSpace: usize = 0;
+                    var lastConsumedIdx: usize = 0;
+                    var currentIdxOfSpace: usize = 0;
+                    // TODO: FIXME: we don't like tabs
+                    while (true) {
+                        if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
+                            currentIdxOfSpace = idx;
+                        } else {
+                            // no more space found, render the rest and then break
+                            if (lastConsumedIdx < span.text.?.len - 1) {
+                                // render the remainder
+                                currentIdxOfSpace = span.text.?.len - 1;
+                            } else {
+                                break;
+                            }
+                        }
+                        // try if we fit. if we don't -> render up until last idx
+                        var render_text = span.text.?[lastIdxOfSpace..currentIdxOfSpace];
+                        render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                        if (attempted_span_size.y > ig_span_fontsize.y * 1.5) {
+                            // we wrapped!
+                            // so render everything up until the last word
+                            // then, render the new word in the new line?
+                            if (lastIdxOfSpace == 0) {
+                                // special case: the first word wrapped, so we need to split it
+                                // TODO: implement me
+                            } else {
+                                available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
+                                render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
+                                render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                                lastConsumedIdx = lastIdxOfSpace;
+                                lastIdxOfSpace = currentIdxOfSpace;
+                                element.text = render_text_c;
+                                element.position = layoutContext.current_pos;
+                                element.size = attempted_span_size;
+                                try renderSlide.elements.append(element);
+                                // advance render pos
+                                layoutContext.current_pos.x += attempted_span_size.x;
+                                // something is rendered into the currend line, so adjust the line height if necessary
+                                if (attempted_span_size.y > layoutContext.current_line_height) {
+                                    layoutContext.current_line_height = attempted_span_size.y;
+                                }
+
+                                // we line break here and render the remaining word
+                                //    hmmm. if we render the remaining word - further words are likely to be rendered, too
+                                //    so maybe skip it?
+                                layoutContext.current_pos.x = layoutContext.origin_pos.x;
+                                layoutContext.current_pos.y += layoutContext.current_line_height;
+                                layoutContext.current_line_height = 0;
+                            }
+                        }
+                    }
+                }
             }
         } else {
             // no spans
@@ -415,6 +510,14 @@ pub const SlideshowRenderer = struct {
         return ctext;
     }
 
+    fn styledTextblockSize_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, fontstyle: my_fonts.FontStyle, block_width: f32, size_out: *ImVec2) ![*c]const u8 {
+        my_fonts.pushStyledFontScaled(fontsize, fontstyle);
+        const ctext = try self.toCString(text);
+        igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
+        my_fonts.popFontScaled();
+        return ctext;
+    }
+
     fn createImg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
         if (item.img_path) |p| {
             var texptr = try tcache.getImg(p, slideshow_filp);
@@ -517,8 +620,10 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     igPushTextWrapPos(slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size).x);
     const fs = item.fontSize.?;
     const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slide_size.y / internal_render_size.y);
-    my_fonts.pushFontScaled(fsize);
     const col = item.color;
+
+    my_fonts.pushStyledFontScaled(fsize, item.fontStyle);
+    defer my_fonts.popFontScaled();
 
     // diplay the text
     const t = item.text.?;
@@ -527,6 +632,5 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     igPushStyleColorVec4(ImGuiCol_Text, col.?);
     igText(t);
     igPopStyleColor(1);
-    my_fonts.popFontScaled();
     igPopTextWrapPos();
 }

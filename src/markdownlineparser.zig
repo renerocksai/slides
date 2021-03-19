@@ -15,12 +15,12 @@ usingnamespace upaya.imgui;
 /// ~**_underlined bold italic text_**~.
 ///
 pub const StyleFlags = struct {
-    const none = 0;
-    const bold = 1;
-    const italic = 2;
-    const underline = 4;
-    const line_bulleted = 8;
-    const colored = 16;
+    pub const none = 0;
+    pub const bold = 1;
+    pub const italic = 2;
+    pub const underline = 4;
+    pub const line_bulleted = 8;
+    pub const colored = 16;
 };
 
 pub const MdTextSpan = struct {
@@ -28,7 +28,7 @@ pub const MdTextSpan = struct {
     endpos: usize = 0,
     styleflags: u8 = 0,
     color_override: ?ImVec4 = null,
-    text: ?[*:0]const u8 = null,
+    text: ?[]const u8 = null,
 };
 
 pub const MdParsingError = error{color};
@@ -64,8 +64,8 @@ pub const MdLineParser = struct {
         self.allocator = allocator;
     }
 
-    fn makeCstr(self: *MdLineParser, t: []const u8) ![*c]const u8 {
-        return try std.fmt.allocPrintZ(self.allocator, "{s}", .{t});
+    fn makeCstr(self: *MdLineParser, t: []const u8) ![]const u8 {
+        return try std.fmt.allocPrint(self.allocator, "{s}", .{t});
     }
 
     // bold, italic, underline starts must be preceded by one of " _*~"
