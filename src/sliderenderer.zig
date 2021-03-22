@@ -55,6 +55,7 @@ pub const SlideshowRenderer = struct {
     }
 
     pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8) !void {
+        std.log.debug("ENTER preRender", .{});
         if (slideshow.slides.items.len == 0) {
             return;
         }
@@ -83,6 +84,7 @@ pub const SlideshowRenderer = struct {
             // now add the slide
             try self.renderedSlides.append(renderSlide);
         }
+        std.log.debug("LEAVE preRender", .{});
     }
 
     fn createBg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
@@ -102,6 +104,7 @@ pub const SlideshowRenderer = struct {
         // for line in lines:
         //     if line is bulleted: emit bullet, adjust x pos
         //     render spans
+        std.log.debug("ENTER preRenderTextBlock for slide {d}", .{slide_number});
         const spaces_per_indent: usize = 4;
         var fontSize: i32 = 0;
         var line_height_bullet_width: ImVec2 = .{};
@@ -198,6 +201,7 @@ pub const SlideshowRenderer = struct {
                 }
             }
         }
+        std.log.debug("LEAVE preRenderTextBlock for slide {d}", .{slide_number});
     }
 
     const TextLayoutContext = struct {
@@ -224,11 +228,12 @@ pub const SlideshowRenderer = struct {
         //                 we continue the next span right after the last split
         //
         //  the visible line hight is determined by the highest text span in the visible line!
-
+        std.log.debug("ENTER renderMdBlock ", .{});
         self.md_parser.init(self.allocator);
         try self.md_parser.parseLine(layoutContext.text);
         if (self.md_parser.result_spans) |spans| {
             if (spans.items.len == 0) {
+                std.log.debug("LEAVE1 preRenderTextBlock ", .{});
                 return;
             }
             self.md_parser.logSpans();
@@ -244,6 +249,7 @@ pub const SlideshowRenderer = struct {
             };
 
             for (spans.items) |span| {
+                std.log.debug("new span, len=: `{d}`", .{span.text.?.len});
                 // work out the font
                 element.fontStyle = .normal;
                 element.underlined = span.styleflags & StyleFlags.underline > 0;
@@ -314,20 +320,22 @@ pub const SlideshowRenderer = struct {
                     // and use it to determine the length of the slice
                     var lastIdxOfSpace: usize = 0;
                     var lastConsumedIdx: usize = 0;
-                    var currentIdxOfSpace: usize = 0;
+                    var currentIdxOfSpace: usize = 1;
                     // TODO: FIXME: we don't like tabs
                     while (true) {
                         if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
                             currentIdxOfSpace = idx;
                         } else {
+                            std.log.debug("no more space found", .{});
                             // no more space found, render the rest and then break
                             if (lastConsumedIdx < span.text.?.len - 1) {
                                 // render the remainder
-                                currentIdxOfSpace = span.text.?.len - 1;
+                                currentIdxOfSpace = span.text.?.len; //- 1;
                             } else {
                                 break;
                             }
                         }
+                        std.log.debug("current idx of spc {d}", .{currentIdxOfSpace});
                         // try if we fit. if we don't -> render up until last idx
                         var render_text = span.text.?[lastIdxOfSpace..currentIdxOfSpace];
                         render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
@@ -362,14 +370,26 @@ pub const SlideshowRenderer = struct {
                                 layoutContext.current_pos.y += layoutContext.current_line_height;
                                 layoutContext.current_line_height = 0;
                             }
+                        } else {
+                            // we don't wrap!
+                        }
+                        // we start searching for the next space 1 after the last found one
+                        if (currentIdxOfSpace + 1 < span.text.?.len) {
+                            currentIdxOfSpace += 1;
+                        } else {
+                            break;
                         }
                     }
+                    // we could have run out of text to check for wrapping
+                    // if that's the case: render the remainder
                 }
             }
         } else {
             // no spans
+            std.log.debug("LEAVE2 renderMdBlock ", .{});
             return;
         }
+        std.log.debug("LEAVE3 renderMdBlock ", .{});
     }
 
     fn createTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
@@ -512,9 +532,15 @@ pub const SlideshowRenderer = struct {
 
     fn styledTextblockSize_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, fontstyle: my_fonts.FontStyle, block_width: f32, size_out: *ImVec2) ![*c]const u8 {
         my_fonts.pushStyledFontScaled(fontsize, fontstyle);
+        defer my_fonts.popFontScaled();
         const ctext = try self.toCString(text);
+        std.log.debug("cstring: `{s}`", .{ctext});
+        if (ctext[0] == 0) {
+            size_out.x = 0;
+            size_out.y = 0;
+            return ctext;
+        }
         igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
-        my_fonts.popFontScaled();
         return ctext;
     }
 
@@ -615,6 +641,10 @@ fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVe
 }
 
 fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+    std.log.debug("renderText {any}: `{s}`", .{ item.*, item.*.text });
+    if (item.*.text.?[0] == 0) {
+        return;
+    }
     var pos = item.position;
     pos.x += item.size.x;
     igPushTextWrapPos(slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size).x);
