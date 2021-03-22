@@ -164,7 +164,6 @@ pub const MdLineParser = struct {
                                                 self.currentSpan.styleflags |= StyleFlags.underline;
                                                 self.currentSpan.startpos = pos + 2;
                                                 self.currentSpan.endpos = 0;
-                                                pos += 1;
                                             }
                                         }
                                     }
@@ -191,7 +190,7 @@ pub const MdLineParser = struct {
                         }
                     } else {
                         // try to start italic:
-                        if (std.mem.indexOf(u8, line[pos + 1 ..], "~")) |term_pos_relative| {
+                        if (std.mem.indexOf(u8, line[pos + 1 ..], "_")) |term_pos_relative| {
                             if (term_pos_relative > 1) {
                                 // check if terminator is preceded by space
                                 if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
@@ -201,7 +200,7 @@ pub const MdLineParser = struct {
 
                                         // change style of new span
                                         self.currentSpan.styleflags |= StyleFlags.italic;
-                                        self.currentSpan.startpos = pos + 2;
+                                        self.currentSpan.startpos = pos + 1;
                                         self.currentSpan.endpos = 0;
                                         pos += 1;
                                     }
@@ -290,22 +289,22 @@ pub const MdLineParser = struct {
             return;
         }
         for (self.result_spans.?.items) |span| {
-            var bold: []const u8 = "";
+            var bold: []const u8 = "(not bold)";
             if (span.styleflags & StyleFlags.bold > 0) {
                 bold = "bold";
             }
 
-            var italic: []const u8 = "";
+            var italic: []const u8 = "(not italic)";
             if (span.styleflags & StyleFlags.italic > 0) {
                 italic = "italic";
             }
 
-            var underline: []const u8 = "";
+            var underline: []const u8 = "(not underlined)";
             if (span.styleflags & StyleFlags.underline > 0) {
                 underline = "underlined";
             }
 
-            var line_bulleted: []const u8 = "";
+            var line_bulleted: []const u8 = "(not bulleted)";
             if (span.styleflags & StyleFlags.line_bulleted > 0) {
                 line_bulleted = "bulleted";
             }
