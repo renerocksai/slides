@@ -164,6 +164,7 @@ pub const MdLineParser = struct {
                                                 self.currentSpan.styleflags |= StyleFlags.underline;
                                                 self.currentSpan.startpos = pos + 2;
                                                 self.currentSpan.endpos = 0;
+                                                pos += 1;
                                             }
                                         }
                                     }
@@ -183,9 +184,8 @@ pub const MdLineParser = struct {
 
                                 // clear italic
                                 self.currentSpan.styleflags &= 0xff - StyleFlags.italic;
-                                self.currentSpan.startpos = pos + 2;
+                                self.currentSpan.startpos = pos + 1;
                                 self.currentSpan.endpos = 0;
-                                pos += 1; // skip the 2nd terminator
                             }
                         }
                     } else {
@@ -202,7 +202,6 @@ pub const MdLineParser = struct {
                                         self.currentSpan.styleflags |= StyleFlags.italic;
                                         self.currentSpan.startpos = pos + 1;
                                         self.currentSpan.endpos = 0;
-                                        pos += 1;
                                     }
                                 }
                             }
