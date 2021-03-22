@@ -62,6 +62,7 @@ pub const MdLineParser = struct {
             self.result_spans = std.ArrayList(MdTextSpan).init(allocator);
         }
         self.allocator = allocator;
+        self.currentSpan = .{};
     }
 
     fn makeCstr(self: *MdLineParser, t: []const u8) ![]const u8 {
