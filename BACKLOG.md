@@ -1,11 +1,9 @@
 # Backlog
 
-fixed? @pop: parse context AFTER popping!
+* bold font ?!?
+* available_width 
+* color flag set but no color?!?!?
 
-* overview mode
-* pdf export (png?)
-* native pdf export
-* markdown support + underline and colors
 
 
 - [x] jump to editor cursor pos on error
@@ -29,11 +27,16 @@ fixed? @pop: parse context AFTER popping!
 - [x] load (and cache) bold, italic, bolditalic fonts
 - [ ] render markdown
 - [ ] laserpointer
-- [ ] **cache all font sizes**
-  - [ ] cache **fullscreen** font sizes (cause they matter most!)
+- [ ] FONTS
+  - [ ] **cache all font sizes**
+    - [ ] cache **fullscreen** font sizes (cause they matter most!)
+  - [ ] allow user-defined fonts
+- [ ] Overview Mode
+- [ ] PDF export
+  - [ ] via png?
+  - [ ] native?
 - [ ] Themes
 - [ ] hide mouse cursor in full-screen mode
-- [ ] nicer (image?) buttons
 - [ ] presenter mode - with notes? multi-monitor-support?
   - interesting idea: compagnion website: shows slideshow notes, timer, etc -- instead of 2nd monitor
   - when in home office, we aren't connected to a beamer - and don't have a 2nd monitor
@@ -41,6 +44,7 @@ fixed? @pop: parse context AFTER popping!
 - [ ] **export to bullets** 
   - [ ] dockerized exports for web, win, linux
 - [ ] dockerized builds of slides, incl windows !!! (provide missing libs) -- is this possible?
+- [ ] nicer (image?) buttons
 
 ## Themes
 - Load `default.theme` if present next to executable
