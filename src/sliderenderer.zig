@@ -236,7 +236,9 @@ pub const SlideshowRenderer = struct {
                 std.log.debug("LEAVE1 preRenderTextBlock ", .{});
                 return;
             }
+            std.log.debug("SPANS:", .{});
             self.md_parser.logSpans();
+            std.log.debug("ENDSPANS", .{});
 
             const default_color = layoutContext.color;
 
