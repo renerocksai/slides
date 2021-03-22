@@ -266,13 +266,20 @@ pub const SlideshowRenderer = struct {
                 if (span.styleflags & StyleFlags.colored > 0) {
                     element.color = default_color;
                 } else {
-                    element.color = span.color_override;
+                    if (span.color_override) |co| {
+                        element.color = co;
+                    } else {
+                        std.log.debug("  ************************* NO COLOR OVERRIDE", .{});
+                        element.color = default_color;
+                    }
                 }
 
                 // check the line hight of this span's fontstyle so we can check whether it wrapped
                 const ig_span_fontsize_text: [*c]const u8 = "XXX";
                 var ig_span_fontsize: ImVec2 = .{};
+                my_fonts.pushStyledFontScaled(element.fontSize.?, element.fontStyle);
                 igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 300);
+                my_fonts.popFontScaled();
 
                 // check if whole span fits width. - let's be opportunistic!
                 // if not, start chopping off from the right until it fits
@@ -300,11 +307,13 @@ pub const SlideshowRenderer = struct {
                 var attempted_span_size: ImVec2 = .{};
                 var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                 var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                std.log.debug("available_width: {d}, available_height: {d} (based on {d}), attempted_span_size: {}", .{ available_width, ig_span_fontsize.y * 1.5, ig_span_fontsize.y, attempted_span_size });
                 if (attempted_span_size.y < ig_span_fontsize.y * 1.5) {
                     // we did not wrap so the entire span can be output!
                     element.text = render_text_c;
                     element.position = layoutContext.current_pos;
                     element.size = attempted_span_size;
+                    std.log.debug(">>>>>>> appending non-wrapping text element: {s}", .{element.text});
                     try renderSlide.elements.append(element);
                     // advance render pos
                     layoutContext.current_pos.x += attempted_span_size.x;
@@ -355,6 +364,7 @@ pub const SlideshowRenderer = struct {
                                 element.text = render_text_c;
                                 element.position = layoutContext.current_pos;
                                 element.size = attempted_span_size;
+                                std.log.debug(">>>>>>> appending wrapping text element: {s}", .{element.text});
                                 try renderSlide.elements.append(element);
                                 // advance render pos
                                 layoutContext.current_pos.x += attempted_span_size.x;
@@ -372,6 +382,24 @@ pub const SlideshowRenderer = struct {
                             }
                         } else {
                             // we don't wrap!
+                            available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
+                            render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
+                            render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                            lastConsumedIdx = lastIdxOfSpace;
+                            lastIdxOfSpace = currentIdxOfSpace;
+                            element.text = render_text_c;
+                            element.position = layoutContext.current_pos;
+                            element.size = attempted_span_size;
+                            std.log.debug(">>>>>>> appending non-wrapping text element in wrapped block: {s}", .{element.text});
+                            try renderSlide.elements.append(element);
+                            // advance render pos
+                            layoutContext.current_pos.x += attempted_span_size.x;
+                            // something is rendered into the currend line, so adjust the line height if necessary
+                            if (attempted_span_size.y > layoutContext.current_line_height) {
+                                layoutContext.current_line_height = attempted_span_size.y;
+                            }
+
+                            layoutContext.current_pos.x = layoutContext.origin_pos.x;
                         }
                         // we start searching for the next space 1 after the last found one
                         if (currentIdxOfSpace + 1 < span.text.?.len) {
@@ -641,7 +669,6 @@ fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVe
 }
 
 fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
-    std.log.debug("renderText {any}: `{s}`", .{ item.*, item.*.text });
     if (item.*.text.?[0] == 0) {
         return;
     }
