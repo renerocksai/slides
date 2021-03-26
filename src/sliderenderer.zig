@@ -54,7 +54,7 @@ pub const SlideshowRenderer = struct {
         return self;
     }
 
-    pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8) !void {
+    pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
         std.log.debug("ENTER preRender", .{});
         if (slideshow.slides.items.len == 0) {
             return;
@@ -75,8 +75,7 @@ pub const SlideshowRenderer = struct {
             for (slide.items.items) |item, j| {
                 switch (item.kind) {
                     .background => try self.createBg(renderSlide, item, slideshow_filp),
-                    .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number),
-                    // .textbox => try self.createTextBlock(renderSlide, item),
+                    .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number, current_surface_size, internal_render_size),
                     .img => try self.createImg(renderSlide, item, slideshow_filp),
                 }
             }
@@ -100,7 +99,14 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize) !void {
+    fn scaleFromSurfaceToInternal(input_size: ImVec2, current_surface_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
+        return .{
+            .x = input_size.x * internal_render_size.x / current_surface_size.x,
+            .y = input_size.y * internal_render_size.y / current_surface_size.y,
+        };
+    }
+
+    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
         // for line in lines:
         //     if line is bulleted: emit bullet, adjust x pos
         //     render spans
@@ -110,7 +116,7 @@ pub const SlideshowRenderer = struct {
         var line_height_bullet_width: ImVec2 = .{};
 
         if (item.fontSize) |fs| {
-            line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
+            line_height_bullet_width = scaleFromSurfaceToInternal(self.lineHightAndBulletWidthForFontSize(fs), current_surface_size, internal_render_size);
             fontSize = fs;
         } else {
             // no fontsize  - error!
@@ -183,7 +189,7 @@ pub const SlideshowRenderer = struct {
                     layoutContext.text = std.mem.trimLeft(u8, line, " \t->");
                 }
 
-                try self.renderMdBlock(renderSlide, &layoutContext);
+                try self.renderMdBlock(renderSlide, &layoutContext, current_surface_size, internal_render_size);
 
                 // advance to the next line
                 layoutContext.current_pos.x = tl_pos.x;
@@ -215,7 +221,7 @@ pub const SlideshowRenderer = struct {
         text: []const u8 = undefined,
     };
 
-    fn renderMdBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, layoutContext: *TextLayoutContext) !void {
+    fn renderMdBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, layoutContext: *TextLayoutContext, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
         //     remember original pos. its X will need to be reset at every line wrap
         //     for span in spans:
         //         calc size.x of span
@@ -264,14 +270,13 @@ pub const SlideshowRenderer = struct {
                     element.fontStyle = .italic;
                 }
 
-                // work out and push the color
+                // work out the color
+                element.color = default_color;
                 if (span.styleflags & StyleFlags.colored > 0) {
-                    element.color = default_color;
-                } else {
                     if (span.color_override) |co| {
                         element.color = co;
                     } else {
-                        std.log.debug("  ************************* NO COLOR OVERRIDE", .{});
+                        std.log.debug("  ************************* NO COLOR OVERRIDE (styleflags: {x:02})", .{span.styleflags});
                         element.color = default_color;
                     }
                 }
@@ -280,7 +285,8 @@ pub const SlideshowRenderer = struct {
                 const ig_span_fontsize_text: [*c]const u8 = "XXX";
                 var ig_span_fontsize: ImVec2 = .{};
                 my_fonts.pushStyledFontScaled(element.fontSize.?, element.fontStyle);
-                igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 300);
+                igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 2000);
+                ig_span_fontsize = scaleFromSurfaceToInternal(ig_span_fontsize, current_surface_size, internal_render_size);
                 my_fonts.popFontScaled();
 
                 // check if whole span fits width. - let's be opportunistic!
@@ -300,7 +306,6 @@ pub const SlideshowRenderer = struct {
                 //        we don't render from the start of the line but
                 //        from the end of the last span.
 
-                // TODO: you are here!
                 // check if whole line fits
                 // orelse start wrapping (see above)
                 //
@@ -309,6 +314,7 @@ pub const SlideshowRenderer = struct {
                 var attempted_span_size: ImVec2 = .{};
                 var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                 var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
                 std.log.debug("available_width: {d}, available_height: {d} (based on {d}), attempted_span_size: {}", .{ available_width, ig_span_fontsize.y * 1.5, ig_span_fontsize.y, attempted_span_size });
                 if (attempted_span_size.y < ig_span_fontsize.y * 1.5) {
                     // we did not wrap so the entire span can be output!
@@ -325,6 +331,7 @@ pub const SlideshowRenderer = struct {
                     }
                 } else {
                     // we need to check with how many words  we can get away with:
+                    std.log.debug("  -> we need to check where to wrap!", .{});
 
                     // first, let's pseudo-split into words:
                     // we find the first index of word-separator, then the 2nd, ...
@@ -350,6 +357,7 @@ pub const SlideshowRenderer = struct {
                         // try if we fit. if we don't -> render up until last idx
                         var render_text = span.text.?[lastIdxOfSpace..currentIdxOfSpace];
                         render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                        attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
                         if (attempted_span_size.y > ig_span_fontsize.y * 1.5) {
                             // we wrapped!
                             // so render everything up until the last word
@@ -361,6 +369,7 @@ pub const SlideshowRenderer = struct {
                                 available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                                 render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
                                 render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
                                 lastConsumedIdx = lastIdxOfSpace;
                                 lastIdxOfSpace = currentIdxOfSpace;
                                 element.text = render_text_c;
@@ -387,6 +396,7 @@ pub const SlideshowRenderer = struct {
                             available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                             render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
                             render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                            attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
                             lastConsumedIdx = lastIdxOfSpace;
                             lastIdxOfSpace = currentIdxOfSpace;
                             element.text = render_text_c;
@@ -420,94 +430,6 @@ pub const SlideshowRenderer = struct {
             return;
         }
         std.log.debug("LEAVE3 renderMdBlock ", .{});
-    }
-
-    fn createTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem) !void {
-        var current_line_y: f32 = item.position.y;
-        var current_available_height = item.size.y;
-        var line_height_bullet_width: ImVec2 = .{};
-
-        const spaces_per_indent: usize = 4;
-
-        var fontSize: i32 = 0;
-        if (item.fontSize) |fs| {
-            line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
-            fontSize = fs;
-        } else {
-            // no fontsize  - error!
-            std.log.err("No fontsize for text {s}", .{item.text});
-            return;
-        }
-
-        var bulletColor: ImVec4 = .{};
-        if (item.bullet_color) |bc| {
-            bulletColor = bc;
-        } else {
-            // no bullet color - error!
-            std.log.err("No bullet color for text {s}", .{item.text});
-            return;
-        }
-
-        if (item.text) |t| {
-            // split into lines
-            var it = std.mem.split(t, "\n");
-            while (it.next()) |line| {
-                if (line.len == 0) {
-                    // empty line
-                    current_line_y += line_height_bullet_width.y;
-                    continue;
-                }
-                // find out, if line is a list item:
-                //    - starts with `-` or `>`
-                var bullet_indent_in_spaces: usize = 0;
-                const is_bulleted = self.countIndentOfBullet(line, &bullet_indent_in_spaces);
-
-                const indent_level = bullet_indent_in_spaces / spaces_per_indent;
-                const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
-                var available_width = item.size.x - indent_in_pixels;
-                var text_block_height: f32 = 0;
-
-                if (is_bulleted) {
-                    const render_text = std.mem.trimLeft(u8, line, " \t->");
-                    const render_text_c = try self.heightOfTextblock_toCstring(render_text, fontSize, available_width, &text_block_height);
-                    // 1. add indented bullet symbol at the current pos
-                    try renderSlide.elements.append(RenderElement{
-                        .kind = .text,
-                        .position = .{ .x = item.position.x + indent_in_pixels, .y = current_line_y },
-                        .size = .{ .x = available_width, .y = current_available_height },
-                        .fontSize = fontSize,
-                        .underline_width = item.underline_width,
-                        .text = ">",
-                        .color = bulletColor,
-                    });
-                    // 2. increase indent by 1 and add indented text block
-                    available_width -= line_height_bullet_width.x;
-                    try renderSlide.elements.append(RenderElement{
-                        .kind = .text,
-                        .position = .{ .x = item.position.x + indent_in_pixels + line_height_bullet_width.x, .y = current_line_y },
-                        .size = .{ .x = available_width, .y = current_available_height },
-                        .fontSize = fontSize,
-                        .underline_width = item.underline_width,
-                        .text = render_text_c,
-                        .color = item.color,
-                    });
-                } else {
-                    // normal text line
-                    const render_text_c = try self.heightOfTextblock_toCstring(line, fontSize, available_width, &text_block_height);
-                    try renderSlide.elements.append(RenderElement{
-                        .kind = .text,
-                        .position = .{ .x = item.position.x, .y = current_line_y },
-                        .size = .{ .x = available_width, .y = current_available_height },
-                        .fontSize = fontSize,
-                        .underline_width = item.underline_width,
-                        .text = render_text_c,
-                        .color = item.color,
-                    });
-                }
-                current_available_height -= text_block_height;
-                current_line_y += text_block_height;
-            }
-        }
     }
 
     fn lineHightAndBulletWidthForFontSize(self: *SlideshowRenderer, fontsize: i32) ImVec2 {
