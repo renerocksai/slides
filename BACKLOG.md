@@ -1,10 +1,7 @@
 # Backlog
 
 * bold font ?!?
-* available_width 
-* color flag set but no color?!?!?
-
-
+* `available_width` ?! translated?!?!?
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff

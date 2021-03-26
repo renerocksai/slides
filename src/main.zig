@@ -215,7 +215,7 @@ fn makeDefaultSlideshow() !void {
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
     try empty.items.append(bg);
     try G.slideshow.slides.append(empty);
-    try G.slide_renderer.preRender(G.slideshow, "");
+    try G.slide_renderer.preRender(G.slideshow, "", G.content_window_size, G.internal_render_size);
     std.log.debug("created empty slideshow", .{});
 }
 
@@ -565,7 +565,7 @@ fn loadSlideshow(filp: []const u8) !void {
                         }
                     }
                 }
-                if (G.slide_renderer.preRender(G.slideshow, filp)) |_| {
+                if (G.slide_renderer.preRender(G.slideshow, filp, G.content_window_size, G.internal_render_size)) |_| {
                     // . empty
                 } else |err| {
                     std.log.err("Pre-rendering failed: {any}", .{err});
