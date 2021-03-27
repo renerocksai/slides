@@ -391,27 +391,6 @@ pub const SlideshowRenderer = struct {
                                 layoutContext.current_pos.y += layoutContext.current_line_height;
                                 layoutContext.current_line_height = 0;
                             }
-                        } else {
-                            // we don't wrap!
-                            available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
-                            render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
-                            render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
-                            attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
-                            lastConsumedIdx = lastIdxOfSpace;
-                            lastIdxOfSpace = currentIdxOfSpace;
-                            element.text = render_text_c;
-                            element.position = layoutContext.current_pos;
-                            element.size = attempted_span_size;
-                            std.log.debug(">>>>>>> appending non-wrapping text element in wrapped block: {s}", .{element.text});
-                            try renderSlide.elements.append(element);
-                            // advance render pos
-                            layoutContext.current_pos.x += attempted_span_size.x;
-                            // something is rendered into the currend line, so adjust the line height if necessary
-                            if (attempted_span_size.y > layoutContext.current_line_height) {
-                                layoutContext.current_line_height = attempted_span_size.y;
-                            }
-
-                            layoutContext.current_pos.x = layoutContext.origin_pos.x;
                         }
                         // we start searching for the next space 1 after the last found one
                         if (currentIdxOfSpace + 1 < span.text.?.len) {
