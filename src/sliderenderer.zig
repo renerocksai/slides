@@ -392,6 +392,7 @@ pub const SlideshowRenderer = struct {
                                 layoutContext.current_line_height = 0;
                             }
                         }
+
                         // we start searching for the next space 1 after the last found one
                         if (currentIdxOfSpace + 1 < span.text.?.len) {
                             currentIdxOfSpace += 1;
