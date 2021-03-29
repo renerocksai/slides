@@ -256,6 +256,11 @@ pub const SlideshowRenderer = struct {
                 .underline_width = @intCast(i32, layoutContext.underline_width),
             };
 
+            // when we check if a piece of text fits into the available width, we calculate its size, giving it an infinite width
+            // so we can check the returned width against the available_width. Theoretically, Infinity_Width could be maxed out at
+            // current_surface_size.x - since widths beyond that one would make no sense
+            const Infinity_Width: f32 = 1000000;
+
             for (spans.items) |span| {
                 std.log.debug("new span, len=: `{d}`", .{span.text.?.len});
                 // work out the font
@@ -313,10 +318,10 @@ pub const SlideshowRenderer = struct {
 
                 var attempted_span_size: ImVec2 = .{};
                 var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
-                var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, Infinity_Width, &attempted_span_size);
                 attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
-                std.log.debug("available_width: {d}, available_height: {d} (based on {d}), attempted_span_size: {}", .{ available_width, ig_span_fontsize.y * 1.5, ig_span_fontsize.y, attempted_span_size });
-                if (attempted_span_size.y < ig_span_fontsize.y * 1.5) {
+                std.log.debug("available_width: {d}, attempted_span_size: {d:3.0}", .{ available_width, attempted_span_size.x });
+                if (attempted_span_size.x < available_width) {
                     // we did not wrap so the entire span can be output!
                     element.text = render_text_c;
                     element.position = layoutContext.current_pos;
@@ -338,34 +343,44 @@ pub const SlideshowRenderer = struct {
                     // and use it to determine the length of the slice
                     var lastIdxOfSpace: usize = 0;
                     var lastConsumedIdx: usize = 0;
-                    var currentIdxOfSpace: usize = 1;
+                    var currentIdxOfSpace: usize = 0;
+                    var wordCount: usize = 0;
                     // TODO: FIXME: we don't like tabs
                     while (true) {
+                        std.log.debug("lastConsumedIdx: {}, lastIdxOfSpace: {}, currentIdxOfSpace: {}", .{ lastConsumedIdx, lastIdxOfSpace, currentIdxOfSpace });
                         if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
                             currentIdxOfSpace = idx;
+                            wordCount += 1;
                         } else {
                             std.log.debug("no more space found", .{});
+                            if (wordCount == 0) {
+                                wordCount = 1;
+                            }
                             // no more space found, render the rest and then break
                             if (lastConsumedIdx < span.text.?.len - 1) {
                                 // render the remainder
                                 currentIdxOfSpace = span.text.?.len; //- 1;
+                                std.log.debug("Trying with the remainder", .{});
                             } else {
                                 break;
                             }
                         }
                         std.log.debug("current idx of spc {d}", .{currentIdxOfSpace});
                         // try if we fit. if we don't -> render up until last idx
-                        var render_text = span.text.?[lastIdxOfSpace..currentIdxOfSpace];
-                        render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                        var render_text = span.text.?[lastConsumedIdx..currentIdxOfSpace];
+                        render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, Infinity_Width, &attempted_span_size);
                         attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
-                        if (attempted_span_size.y > ig_span_fontsize.y * 1.5) {
+                        std.log.debug("   current available_width: {d}, attempted_span_size: {d:3.0}", .{ available_width, attempted_span_size.x });
+                        if (attempted_span_size.x > available_width and wordCount > 1) {
                             // we wrapped!
                             // so render everything up until the last word
                             // then, render the new word in the new line?
-                            if (lastIdxOfSpace == 0) {
+                            if (wordCount == 1 and false) {
                                 // special case: the first word wrapped, so we need to split it
                                 // TODO: implement me
+                                std.log.debug(">>>>>>>>>>>>> FIRST WORD !!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<", .{});
                             } else {
+                                // we check how large the current string (without that last word that caused wrapping) really is, to adjust our new current_pos.x:
                                 available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                                 render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
                                 render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
@@ -386,18 +401,47 @@ pub const SlideshowRenderer = struct {
 
                                 // we line break here and render the remaining word
                                 //    hmmm. if we render the remaining word - further words are likely to be rendered, too
-                                //    so maybe skip it?
+                                //    so maybe skip rendering it now?
+                                std.log.debug(">>> BREAKING THE LINE, height: {}", .{layoutContext.current_line_height});
                                 layoutContext.current_pos.x = layoutContext.origin_pos.x;
                                 layoutContext.current_pos.y += layoutContext.current_line_height;
                                 layoutContext.current_line_height = 0;
                             }
+                        } else {
+                            // if it's the last, uncommitted word
+                            if (lastIdxOfSpace >= currentIdxOfSpace) {
+                                available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
+                                render_text = span.text.?[lastConsumedIdx..currentIdxOfSpace];
+                                render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
+                                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
+                                lastConsumedIdx = lastIdxOfSpace;
+                                lastIdxOfSpace = currentIdxOfSpace;
+                                element.text = render_text_c;
+                                element.position = layoutContext.current_pos;
+                                element.size = attempted_span_size;
+                                std.log.debug(">>>>>>> appending final text element: {s}", .{element.text});
+                                try renderSlide.elements.append(element);
+                                // advance render pos
+                                layoutContext.current_pos.x += attempted_span_size.x;
+                                // something is rendered into the currend line, so adjust the line height if necessary
+                                if (attempted_span_size.y > layoutContext.current_line_height) {
+                                    layoutContext.current_line_height = attempted_span_size.y;
+                                }
+
+                                std.log.debug(">>> BREAKING THE LINE, height: {}", .{layoutContext.current_line_height});
+                                layoutContext.current_pos.x = layoutContext.origin_pos.x;
+                                layoutContext.current_pos.y += layoutContext.current_line_height;
+                                layoutContext.current_line_height = 0;
+                                break; // it's the last word after all
+                            }
                         }
 
+                        lastIdxOfSpace = currentIdxOfSpace + 1;
                         // we start searching for the next space 1 after the last found one
                         if (currentIdxOfSpace + 1 < span.text.?.len) {
                             currentIdxOfSpace += 1;
                         } else {
-                            break;
+                            //break;
                         }
                     }
                     // we could have run out of text to check for wrapping

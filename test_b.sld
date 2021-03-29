@@ -18,7 +18,7 @@
 # -------------------------------------------------------------
 @bg img=assets/bgwater.jpg
 # @push intro_title    x=219 y=481 w=950 h=100 fontsize=96 color=#000000ff
-@push intro_title    x=219 y=500 w=836 h=223 fontsize=96 color=#000000ff
+@push intro_title    x=219 y=500 w=950  h=223 fontsize=96 color=#000000ff
 @push intro_subtitle x=219 y=728 w=836 h=246 fontsize=45 color=#cd0f2dff
 @push intro_authors  x=219 y=818 w=836 h=246 fontsize=45 color=#993366ff
 # the following pushslide will the slide cause to be pushed, not rendered
