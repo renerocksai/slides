@@ -25,8 +25,9 @@
   - [ ] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
         manual line break solves it, though.
 - [x] laserpointer
-- [ ] Overview Mode
+- [ ] implement ~~underline~~ - and do we have ==highlight==?
 - [ ] formatting: center
+- [ ] Overview Mode
 - [ ] PDF export
   - [ ] via png?
   - [ ] native?
