@@ -215,7 +215,7 @@ fn makeDefaultSlideshow() !void {
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
     try empty.items.append(bg);
     try G.slideshow.slides.append(empty);
-    try G.slide_renderer.preRender(G.slideshow, "", G.content_window_size, G.internal_render_size);
+    try G.slide_renderer.preRender(G.slideshow, "");
     std.log.debug("created empty slideshow", .{});
 }
 
@@ -565,7 +565,7 @@ fn loadSlideshow(filp: []const u8) !void {
                         }
                     }
                 }
-                if (G.slide_renderer.preRender(G.slideshow, filp, G.content_window_size, G.internal_render_size)) |_| {
+                if (G.slide_renderer.preRender(G.slideshow, filp)) |_| {
                     // . empty
                 } else |err| {
                     std.log.err("Pre-rendering failed: {any}", .{err});
@@ -755,9 +755,9 @@ fn savePopup(reason: SaveAsReason) bool {
         igText("The slideshow has unsaved changes.\nSave it?");
         igColumns(2, "id-x", true);
 
-        var yes = igButton("YES", .{ .x = -1, .y = 30 });
-        igNextColumn();
         var no = igButton("No", .{ .x = -1, .y = 30 });
+        igNextColumn();
+        var yes = igButton("YES", .{ .x = -1, .y = 30 });
         doit = yes or no;
         if (doit) {
             if (yes) {
