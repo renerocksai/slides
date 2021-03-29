@@ -53,7 +53,7 @@ pub fn loadFonts() error{OutOfMemory}!void {
 
     // actual font loading
     var font_config = ImFontConfig_ImFontConfig();
-    font_config[0].MergeMode = true;
+    font_config[0].MergeMode = false;
     font_config[0].PixelSnapH = true;
     font_config[0].OversampleH = 1;
     font_config[0].OversampleV = 1;
@@ -62,17 +62,35 @@ pub fn loadFonts() error{OutOfMemory}!void {
     //my_font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, data, data.len, 14, icons_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
 
     for (baked_font_sizes) |fsize, i| {
-        var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), 0, 0);
+        var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), font_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
         try my_fonts.put(fsize, font);
 
-        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bold, fontdata_bold.len, @intToFloat(f32, fsize), 0, 0);
-        try my_fonts_bold.put(fsize, font);
+        var font_config_bold = ImFontConfig_ImFontConfig();
+        font_config_bold[0].MergeMode = false;
+        font_config_bold[0].PixelSnapH = true;
+        font_config_bold[0].OversampleH = 1;
+        font_config_bold[0].OversampleV = 1;
+        font_config_bold[0].FontDataOwnedByAtlas = false;
+        var font_bold = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bold, fontdata_bold.len, @intToFloat(f32, fsize), font_config_bold, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+        try my_fonts_bold.put(fsize, font_bold);
 
-        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_italic, fontdata_italic.len, @intToFloat(f32, fsize), 0, 0);
-        try my_fonts_italic.put(fsize, font);
+        var font_config_italic = ImFontConfig_ImFontConfig();
+        font_config_italic[0].MergeMode = false;
+        font_config_italic[0].PixelSnapH = true;
+        font_config_italic[0].OversampleH = 1;
+        font_config_italic[0].OversampleV = 1;
+        font_config_italic[0].FontDataOwnedByAtlas = false;
+        var font_italic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_italic, fontdata_italic.len, @intToFloat(f32, fsize), font_config_italic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+        try my_fonts_italic.put(fsize, font_italic);
 
-        font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), 0, 0);
-        try my_fonts_bolditalic.put(fsize, font);
+        var font_config_bolditalic = ImFontConfig_ImFontConfig();
+        font_config_bolditalic[0].MergeMode = false;
+        font_config_bolditalic[0].PixelSnapH = true;
+        font_config_bolditalic[0].OversampleH = 1;
+        font_config_bolditalic[0].OversampleV = 1;
+        font_config_bolditalic[0].FontDataOwnedByAtlas = false;
+        var font_bolditalic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), font_config_bolditalic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+        try my_fonts_bolditalic.put(fsize, font_bolditalic);
     }
 
     var w: i32 = undefined;
