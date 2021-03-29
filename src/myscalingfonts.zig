@@ -26,7 +26,28 @@ const FontMap = std.AutoHashMap(i32, *ImFont);
 //     FontFileSpec{ .style = .bolditalic, .filename = "../assets/Calibri Italic.ttf" }, // Calibri is the bold version of Calibri Light for us
 // };
 
-const baked_font_sizes = [_]i32{ 14, 16, 36, 64, 128, 256 };
+//const baked_font_sizes = [_]i32{ 14, 20, 28, 36, 40, 45, 52, 60, 68, 72, 90, 96, 104, 128, 136, 144, 192, 300, 600 };
+const baked_font_sizes = [_]i32{
+    14,
+    20,
+    22,
+    28,
+    32,
+    36,
+    40,
+    45,
+    52,
+    60,
+    68,
+    72,
+    90,
+    96,
+    104,
+    136,
+    144,
+    192,
+    300,
+};
 
 const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
 
@@ -43,6 +64,7 @@ var my_fonts_bolditalic = FontMap.init(std.heap.page_allocator);
 
 pub fn loadFonts() error{OutOfMemory}!void {
     var io = igGetIO();
+    ImFontAtlas_Clear(io.Fonts);
     _ = ImFontAtlas_AddFontDefault(io.Fonts, null);
 
     // init stuff
@@ -52,47 +74,53 @@ pub fn loadFonts() error{OutOfMemory}!void {
     try allFonts.put(.bolditalic, &my_fonts_bolditalic);
 
     // actual font loading
+    for (baked_font_sizes) |fsize, i| {
+        try addFont(fsize);
+    }
+    commitFonts();
+}
+
+pub fn addFont(fsize: i32) !void {
+    var io = igGetIO();
     var font_config = ImFontConfig_ImFontConfig();
     font_config[0].MergeMode = false;
     font_config[0].PixelSnapH = true;
     font_config[0].OversampleH = 1;
     font_config[0].OversampleV = 1;
     font_config[0].FontDataOwnedByAtlas = false;
+    var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), font_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    try my_fonts.put(fsize, font);
 
-    //my_font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, data, data.len, 14, icons_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    var font_config_bold = ImFontConfig_ImFontConfig();
+    font_config_bold[0].MergeMode = false;
+    font_config_bold[0].PixelSnapH = true;
+    font_config_bold[0].OversampleH = 1;
+    font_config_bold[0].OversampleV = 1;
+    font_config_bold[0].FontDataOwnedByAtlas = false;
+    var font_bold = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bold, fontdata_bold.len, @intToFloat(f32, fsize), font_config_bold, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    try my_fonts_bold.put(fsize, font_bold);
 
-    for (baked_font_sizes) |fsize, i| {
-        var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), font_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
-        try my_fonts.put(fsize, font);
+    var font_config_italic = ImFontConfig_ImFontConfig();
+    font_config_italic[0].MergeMode = false;
+    font_config_italic[0].PixelSnapH = true;
+    font_config_italic[0].OversampleH = 1;
+    font_config_italic[0].OversampleV = 1;
+    font_config_italic[0].FontDataOwnedByAtlas = false;
+    var font_italic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_italic, fontdata_italic.len, @intToFloat(f32, fsize), font_config_italic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    try my_fonts_italic.put(fsize, font_italic);
 
-        var font_config_bold = ImFontConfig_ImFontConfig();
-        font_config_bold[0].MergeMode = false;
-        font_config_bold[0].PixelSnapH = true;
-        font_config_bold[0].OversampleH = 1;
-        font_config_bold[0].OversampleV = 1;
-        font_config_bold[0].FontDataOwnedByAtlas = false;
-        var font_bold = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bold, fontdata_bold.len, @intToFloat(f32, fsize), font_config_bold, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
-        try my_fonts_bold.put(fsize, font_bold);
+    var font_config_bolditalic = ImFontConfig_ImFontConfig();
+    font_config_bolditalic[0].MergeMode = false;
+    font_config_bolditalic[0].PixelSnapH = true;
+    font_config_bolditalic[0].OversampleH = 1;
+    font_config_bolditalic[0].OversampleV = 1;
+    font_config_bolditalic[0].FontDataOwnedByAtlas = false;
+    var font_bolditalic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), font_config_bolditalic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    try my_fonts_bolditalic.put(fsize, font_bolditalic);
+}
 
-        var font_config_italic = ImFontConfig_ImFontConfig();
-        font_config_italic[0].MergeMode = false;
-        font_config_italic[0].PixelSnapH = true;
-        font_config_italic[0].OversampleH = 1;
-        font_config_italic[0].OversampleV = 1;
-        font_config_italic[0].FontDataOwnedByAtlas = false;
-        var font_italic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_italic, fontdata_italic.len, @intToFloat(f32, fsize), font_config_italic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
-        try my_fonts_italic.put(fsize, font_italic);
-
-        var font_config_bolditalic = ImFontConfig_ImFontConfig();
-        font_config_bolditalic[0].MergeMode = false;
-        font_config_bolditalic[0].PixelSnapH = true;
-        font_config_bolditalic[0].OversampleH = 1;
-        font_config_bolditalic[0].OversampleV = 1;
-        font_config_bolditalic[0].FontDataOwnedByAtlas = false;
-        var font_bolditalic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), font_config_bolditalic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
-        try my_fonts_bolditalic.put(fsize, font_bolditalic);
-    }
-
+pub fn commitFonts() void {
+    var io = igGetIO();
     var w: i32 = undefined;
     var h: i32 = undefined;
     var bytes_per_pixel: i32 = undefined;
@@ -121,14 +149,31 @@ pub fn pushFontScaled(pixels: i32) void {
     igPushFont(font_info.font);
     last_font = font_info.font;
 }
+
 pub fn pushStyledFontScaled(pixels: i32, style: FontStyle) void {
     const font_info = getStyledFontScaled(pixels, style);
+
+    // TURN THIS ON to see what font sizes you need
+    // std.log.info("fontsize {}", .{pixels});
 
     // we assume we have a font, now scale it
     last_scale = font_info.font.*.Scale;
     const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, font_info.size);
     //std.log.debug("--> Requested font size: {}, scaling from size: {} with scale: {}\n", .{ pixels, font_info.size, new_scale });
     font_info.font.*.Scale = new_scale;
+    igPushFont(font_info.font);
+    last_font = font_info.font;
+}
+
+pub fn notLikeThispushStyledFontScaled(pixels: i32, style: FontStyle) void {
+    var font_info = getStyledFontScaled(pixels, style);
+    if (font_info.size != pixels) {
+        addFont(pixels) catch unreachable;
+        commitFonts();
+    }
+
+    font_info = getStyledFontScaled(pixels, style);
+
     igPushFont(font_info.font);
     last_font = font_info.font;
 }

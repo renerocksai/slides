@@ -60,7 +60,7 @@
 # -------------------------------------------------------------
 @bg img=assets/nim/thankyou.png
 @box                    x=219  y=469  w=750  h=223 fontsize=68 color=#cd0f2dff text=THANK YOU FOR YOUR ATTENTION
-@push thankyou_title    x=219  y=655  w=918  h=223 fontsize=53 color=#000000ff 
+@push thankyou_title    x=219  y=655  w=918  h=223 fontsize=52 color=#000000ff 
 @push thankyou_subtitle x=219  y=749  w=836  h=246 fontsize=45 color=#cd0f2dff
 @push thankyou_authors  x=219  y=836  w=836  h=243 fontsize=45 color=#993366ff
 @pushslide thankyou
@@ -99,7 +99,7 @@ The big picture
 here come the sources
 
 @pop leftbox 
-this is soooo coool
+this is soooo coool _**ta-dah**_, **tah**, _dah_
 _
 empty lines are marked with just an _ underscore
 - here comes the text
@@ -111,7 +111,7 @@ empty lines are marked with just an _ underscore
 - and so on
 - now let us wrap, let's wrap the shit out of this bullet point which is far too long to be good
 - here comes the text
-- and so on
+- **and so on**, _and on_
 
 @pop rightbox 
 - here is text in the right box
@@ -120,7 +120,7 @@ empty lines are marked with just an _ underscore
 - here comes the text
 - and so on
 - here comes the text
-- and so on
+- and **so on** isn't it?
 
 
 # -------------------------------------------------------------

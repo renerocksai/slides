@@ -60,22 +60,6 @@ fn initEditorContent() !void {
 }
 
 // .
-// UI scaling
-// .
-var global_scale: f32 = 1.0;
-
-fn relativeScaleForAbsoluteScale(new_scale: f32) f32 {
-    return new_scale / global_scale;
-}
-
-fn scaleUI(new_scale: f32) void {
-    var new_relative_scale = relativeScaleForAbsoluteScale(new_scale);
-    ImGuiStyle_ScaleAllSizes(igGetStyle(), new_relative_scale);
-    igGetIO().*.FontGlobalScale = new_scale;
-    global_scale = new_scale;
-}
-
-// .
 // App State
 // .
 const AppState = enum {
@@ -91,13 +75,14 @@ const AppData = struct {
     app_state: AppState = .mainmenu,
     editor_memory: []u8 = undefined,
     loaded_content: []u8 = undefined, // we will check for dirty editor against this
-    content_window_size: ImVec2 = ImVec2{},
-    internal_render_size: ImVec2 = ImVec2{ .x = 1920.0, .y = 1080.0 },
+    last_window_size: ImVec2 = .{},
+    content_window_size: ImVec2 = .{},
+    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1080.0 },
     slide_render_width: f32 = 1920.0,
     slide_render_height: f32 = 1080.0,
     slide_renderer: *render.SlideshowRenderer = undefined,
-    img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
-    img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
+    img_tint_col: ImVec4 = .{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
+    img_border_col: ImVec4 = .{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
     slideshow_filp: ?[]const u8 = undefined,
     status_msg: [*c]const u8 = "",
     slideshow: *SlideShow = undefined,
@@ -154,6 +139,11 @@ var anim_status_msg = MsgAnim{};
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
     igGetWindowContentRegionMax(&G.content_window_size);
+    if (G.content_window_size.x != G.last_window_size.x or G.content_window_size.y != G.last_window_size.y) {
+        // window size changed
+        std.log.debug("win size changed from {} to {}", .{ G.last_window_size, G.content_window_size });
+        G.last_window_size = G.content_window_size;
+    }
 
     var flags: c_int = 0;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;

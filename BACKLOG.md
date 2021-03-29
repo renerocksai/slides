@@ -22,12 +22,10 @@
 - [x] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [x] parse markdown (dialect) subset
 - [x] load (and cache) bold, italic, bolditalic fonts
-- [ ] render markdown
+- [x] render markdown
+  - [ ] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
+        manual line break solves it, though.
 - [ ] laserpointer
-- [ ] FONTS
-  - [ ] **cache all font sizes**
-    - [ ] cache **fullscreen** font sizes (cause they matter most!)
-  - [ ] allow user-defined fonts
 - [ ] Overview Mode
 - [ ] PDF export
   - [ ] via png?
@@ -42,6 +40,11 @@
   - [ ] dockerized exports for web, win, linux
 - [ ] dockerized builds of slides, incl windows !!! (provide missing libs) -- is this possible?
 - [ ] nicer (image?) buttons
+- [ ] FONTS
+  - [ ] **cache all font sizes**
+    - [ ] cache **fullscreen** font sizes (cause they matter most!)
+  - [ ] allow user-defined fonts
+  - see below
 
 
 
@@ -106,3 +109,5 @@ GitHub CI - if it provides windows builds
 Check if we can provide the missing windows links and cross-compile / cross-build it in just one Docker container.
 
 
+## Fonts
+We cannot add fonts to the font atlas while in a render call. However, with upaya, we never get outside of a render call. Hence, we adapted the default baked font sizes so they look good on our monitor, both in default window size and full screen
