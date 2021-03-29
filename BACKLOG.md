@@ -112,3 +112,13 @@ Check if we can provide the missing windows links and cross-compile / cross-buil
 
 ## Fonts
 We cannot add fonts to the font atlas while in a render call. However, with upaya, we never get outside of a render call. Hence, we adapted the default baked font sizes so they look good on our monitor, both in default window size and full screen
+
+### Workarounds
+
+#### Adapt sokol
+To give us a callback before rendering a frame. 
+
+#### Write font baking info to file 
+... and allow to load it from the command line
+
+a default baked_fonts.config could replace our fixed list - the list would only be used if no baked_fonts.config is present.
