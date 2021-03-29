@@ -54,7 +54,7 @@ pub const SlideshowRenderer = struct {
         return self;
     }
 
-    pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
+    pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8) !void {
         std.log.debug("ENTER preRender", .{});
         if (slideshow.slides.items.len == 0) {
             return;
@@ -75,7 +75,7 @@ pub const SlideshowRenderer = struct {
             for (slide.items.items) |item, j| {
                 switch (item.kind) {
                     .background => try self.createBg(renderSlide, item, slideshow_filp),
-                    .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number, current_surface_size, internal_render_size),
+                    .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number),
                     .img => try self.createImg(renderSlide, item, slideshow_filp),
                 }
             }
@@ -99,14 +99,7 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    fn scaleFromSurfaceToInternal(input_size: ImVec2, current_surface_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
-        return .{
-            .x = input_size.x * internal_render_size.x / current_surface_size.x,
-            .y = input_size.y * internal_render_size.y / current_surface_size.y,
-        };
-    }
-
-    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
+    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize) !void {
         // for line in lines:
         //     if line is bulleted: emit bullet, adjust x pos
         //     render spans
@@ -116,7 +109,7 @@ pub const SlideshowRenderer = struct {
         var line_height_bullet_width: ImVec2 = .{};
 
         if (item.fontSize) |fs| {
-            line_height_bullet_width = scaleFromSurfaceToInternal(self.lineHightAndBulletWidthForFontSize(fs), current_surface_size, internal_render_size);
+            line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
             fontSize = fs;
         } else {
             // no fontsize  - error!
@@ -164,6 +157,7 @@ pub const SlideshowRenderer = struct {
                 const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
                 var available_width = item.size.x - indent_in_pixels;
                 layoutContext.available_size.x = available_width;
+                layoutContext.origin_pos.x = tl_pos.x + indent_in_pixels;
                 layoutContext.current_pos.x = tl_pos.x + indent_in_pixels;
                 layoutContext.fontSize = fontSize;
                 layoutContext.underline_width = @intCast(usize, underline_width);
@@ -174,7 +168,7 @@ pub const SlideshowRenderer = struct {
                     // 1. add indented bullet symbol at the current pos
                     try renderSlide.elements.append(RenderElement{
                         .kind = .text,
-                        .position = .{ .x = tl_pos.x + indent_in_pixels, .y = layoutContext.origin_pos.y },
+                        .position = .{ .x = tl_pos.x + indent_in_pixels, .y = layoutContext.current_pos.y },
                         .size = .{ .x = available_width, .y = layoutContext.available_size.y },
                         .fontSize = fontSize,
                         .underline_width = underline_width,
@@ -189,7 +183,7 @@ pub const SlideshowRenderer = struct {
                     layoutContext.text = std.mem.trimLeft(u8, line, " \t->");
                 }
 
-                try self.renderMdBlock(renderSlide, &layoutContext, current_surface_size, internal_render_size);
+                try self.renderMdBlock(renderSlide, &layoutContext);
 
                 // advance to the next line
                 layoutContext.current_pos.x = tl_pos.x;
@@ -221,7 +215,7 @@ pub const SlideshowRenderer = struct {
         text: []const u8 = undefined,
     };
 
-    fn renderMdBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, layoutContext: *TextLayoutContext, current_surface_size: ImVec2, internal_render_size: ImVec2) !void {
+    fn renderMdBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, layoutContext: *TextLayoutContext) !void {
         //     remember original pos. its X will need to be reset at every line wrap
         //     for span in spans:
         //         calc size.x of span
@@ -262,6 +256,10 @@ pub const SlideshowRenderer = struct {
             const Infinity_Width: f32 = 1000000;
 
             for (spans.items) |span| {
+                if (span.text.?[0] == 0) {
+                    std.log.debug("SKIPPING ZERO LENGTH SPAN", .{});
+                    continue;
+                }
                 std.log.debug("new span, len=: `{d}`", .{span.text.?.len});
                 // work out the font
                 element.fontStyle = .normal;
@@ -289,9 +287,8 @@ pub const SlideshowRenderer = struct {
                 // check the line hight of this span's fontstyle so we can check whether it wrapped
                 const ig_span_fontsize_text: [*c]const u8 = "XXX";
                 var ig_span_fontsize: ImVec2 = .{};
-                my_fonts.pushStyledFontScaled(element.fontSize.?, element.fontStyle);
+                my_fonts.pushStyledFontScaled(layoutContext.fontSize, element.fontStyle);
                 igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 2000);
-                ig_span_fontsize = scaleFromSurfaceToInternal(ig_span_fontsize, current_surface_size, internal_render_size);
                 my_fonts.popFontScaled();
 
                 // check if whole span fits width. - let's be opportunistic!
@@ -318,15 +315,14 @@ pub const SlideshowRenderer = struct {
 
                 var attempted_span_size: ImVec2 = .{};
                 var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
-                var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, element.fontSize.?, element.fontStyle, Infinity_Width, &attempted_span_size);
-                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
+                var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, layoutContext.fontSize, element.fontStyle, Infinity_Width, &attempted_span_size);
                 std.log.debug("available_width: {d}, attempted_span_size: {d:3.0}", .{ available_width, attempted_span_size.x });
                 if (attempted_span_size.x < available_width) {
                     // we did not wrap so the entire span can be output!
                     element.text = render_text_c;
                     element.position = layoutContext.current_pos;
-                    element.size = attempted_span_size;
-                    std.log.debug(">>>>>>> appending non-wrapping text element: {s}", .{element.text});
+                    //element.size = attempted_span_size;
+                    std.log.debug(">>>>>>> appending non-wrapping text element: {s}@{d:3.0},{d:3.0}", .{ element.text, element.position.x, element.position.y });
                     try renderSlide.elements.append(element);
                     // advance render pos
                     layoutContext.current_pos.x += attempted_span_size.x;
@@ -339,6 +335,7 @@ pub const SlideshowRenderer = struct {
                     std.log.debug("  -> we need to check where to wrap!", .{});
 
                     // first, let's pseudo-split into words:
+                    //   (what's so pseudo about that? we don't actually split, we just remember separator positions)
                     // we find the first index of word-separator, then the 2nd, ...
                     // and use it to determine the length of the slice
                     var lastIdxOfSpace: usize = 0;
@@ -350,6 +347,9 @@ pub const SlideshowRenderer = struct {
                         std.log.debug("lastConsumedIdx: {}, lastIdxOfSpace: {}, currentIdxOfSpace: {}", .{ lastConsumedIdx, lastIdxOfSpace, currentIdxOfSpace });
                         if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
                             currentIdxOfSpace = idx;
+                            if (span.text.?[currentIdxOfSpace + 1] == ' ') {
+                                continue;
+                            }
                             wordCount += 1;
                         } else {
                             std.log.debug("no more space found", .{});
@@ -368,8 +368,7 @@ pub const SlideshowRenderer = struct {
                         std.log.debug("current idx of spc {d}", .{currentIdxOfSpace});
                         // try if we fit. if we don't -> render up until last idx
                         var render_text = span.text.?[lastConsumedIdx..currentIdxOfSpace];
-                        render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, Infinity_Width, &attempted_span_size);
-                        attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
+                        render_text_c = try self.styledTextblockSize_toCstring(render_text, layoutContext.fontSize, element.fontStyle, Infinity_Width, &attempted_span_size);
                         std.log.debug("   current available_width: {d}, attempted_span_size: {d:3.0}", .{ available_width, attempted_span_size.x });
                         if (attempted_span_size.x > available_width and wordCount > 1) {
                             // we wrapped!
@@ -383,14 +382,13 @@ pub const SlideshowRenderer = struct {
                                 // we check how large the current string (without that last word that caused wrapping) really is, to adjust our new current_pos.x:
                                 available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                                 render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
-                                render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
-                                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
+                                render_text_c = try self.styledTextblockSize_toCstring(render_text, layoutContext.fontSize, element.fontStyle, available_width, &attempted_span_size);
                                 lastConsumedIdx = lastIdxOfSpace;
                                 lastIdxOfSpace = currentIdxOfSpace;
                                 element.text = render_text_c;
                                 element.position = layoutContext.current_pos;
-                                element.size = attempted_span_size;
-                                std.log.debug(">>>>>>> appending wrapping text element: {s}", .{element.text});
+                                // element.size = attempted_span_size;
+                                std.log.debug(">>>>>>> appending wrapping text element: {s} width={d:3.0}", .{ element.text, attempted_span_size.x });
                                 try renderSlide.elements.append(element);
                                 // advance render pos
                                 layoutContext.current_pos.x += attempted_span_size.x;
@@ -412,14 +410,13 @@ pub const SlideshowRenderer = struct {
                             if (lastIdxOfSpace >= currentIdxOfSpace) {
                                 available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                                 render_text = span.text.?[lastConsumedIdx..currentIdxOfSpace];
-                                render_text_c = try self.styledTextblockSize_toCstring(render_text, element.fontSize.?, element.fontStyle, available_width, &attempted_span_size);
-                                attempted_span_size = scaleFromSurfaceToInternal(attempted_span_size, current_surface_size, internal_render_size);
+                                render_text_c = try self.styledTextblockSize_toCstring(render_text, layoutContext.fontSize, element.fontStyle, available_width, &attempted_span_size);
                                 lastConsumedIdx = lastIdxOfSpace;
                                 lastIdxOfSpace = currentIdxOfSpace;
                                 element.text = render_text_c;
                                 element.position = layoutContext.current_pos;
-                                element.size = attempted_span_size;
-                                std.log.debug(">>>>>>> appending final text element: {s}", .{element.text});
+                                // element.size = attempted_span_size;
+                                std.log.debug(">>>>>>> appending final text element: {s} width={d:3.0}", .{ element.text, attempted_span_size.x });
                                 try renderSlide.elements.append(element);
                                 // advance render pos
                                 layoutContext.current_pos.x += attempted_span_size.x;
@@ -516,7 +513,7 @@ pub const SlideshowRenderer = struct {
             size_out.y = 0;
             return ctext;
         }
-        igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
+        igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext)], false, block_width);
         return ctext;
     }
 
@@ -632,8 +629,9 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
 
     // diplay the text
     const t = item.text.?;
+    // std.log.debug("rendering Text `{s}` with fontsize {d} ({d}), wrap pos {d:3.0}", .{ t, fs, fsize, item.size.x });
     // special case: 1st char is bullet
-    igSetCursorPos(slidePosToRenderPos(.{ .x = item.position.x + 25, .y = item.position.y }, slide_tl, slide_size, internal_render_size));
+    igSetCursorPos(slidePosToRenderPos(.{ .x = item.position.x, .y = item.position.y }, slide_tl, slide_size, internal_render_size));
     igPushStyleColorVec4(ImGuiCol_Text, col.?);
     igText(t);
     igPopStyleColor(1);
