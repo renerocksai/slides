@@ -26,6 +26,7 @@
         manual line break solves it, though.
 - [x] laserpointer
 - [ ] Overview Mode
+- [ ] formatting: center
 - [ ] PDF export
   - [ ] via png?
   - [ ] native?
