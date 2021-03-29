@@ -265,12 +265,14 @@ pub const SlideshowRenderer = struct {
                 element.fontStyle = .normal;
                 element.underlined = span.styleflags & StyleFlags.underline > 0;
 
-                if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) > 0) {
-                    element.fontStyle = .bolditalic;
-                } else if (span.styleflags & StyleFlags.bold > 0) {
+                if (span.styleflags & StyleFlags.bold > 0) {
                     element.fontStyle = .bold;
-                } else if (span.styleflags & StyleFlags.italic > 0) {
+                }
+                if (span.styleflags & StyleFlags.italic > 0) {
                     element.fontStyle = .italic;
+                }
+                if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) == (StyleFlags.bold | StyleFlags.italic)) {
+                    element.fontStyle = .bolditalic;
                 }
 
                 // work out the color
