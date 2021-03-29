@@ -1,7 +1,6 @@
 # Backlog
 
-* bold font ?!?
-* `available_width` ?! translated?!?!?
+* re-introduce `$slide_number`
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
@@ -25,13 +24,15 @@
 - [x] render markdown
   - [ ] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
         manual line break solves it, though.
-- [ ] laserpointer
+- [x] laserpointer
 - [ ] Overview Mode
 - [ ] PDF export
   - [ ] via png?
   - [ ] native?
 - [ ] Themes
 - [ ] hide mouse cursor in full-screen mode
+  - at least in i3wm this does neither work with `sapp_show_mouse(false)` nor 
+    `igSetMouseCursor(ImGuiMouseCursor_None)`.
 - [ ] presenter mode - with notes? multi-monitor-support?
   - interesting idea: compagnion website: shows slideshow notes, timer, etc -- instead of 2nd monitor
   - when in home office, we aren't connected to a beamer - and don't have a 2nd monitor

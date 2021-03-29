@@ -132,12 +132,80 @@ var bt_save_anim = ButtonAnim{};
 var anim_bottom_panel = bottomPanelAnim{};
 var anim_status_msg = MsgAnim{};
 
+const LaserpointerAnim = struct {
+    frame_ticker: usize = 0,
+    anim_ticker: f32 = 0,
+    show_laserpointer: bool = false,
+    laserpointer_size: f32 = 15,
+    laserpointer_zoom: f32 = 1.0,
+    alpha_table: [6]f32 = [_]f32{ 0.875, 0.875, 0.85, 0.85, 0.825, 0.825 },
+    alpha_index_step: i32 = 1,
+    alpha_index: i32 = 0,
+    size_jiggle_table: [6]f32 = [_]f32{ 1.5, 1.4, 1.30, 1.2, 1.1, 1.0 },
+    size_jiggle_index_step: i32 = 1,
+    size_jiggle_index: i32 = 0,
+
+    fn anim(self: *LaserpointerAnim, mousepos: ImVec2) void {
+        if (self.show_laserpointer) {
+            igSetCursorPos(mousepos);
+            sapp_show_mouse(false);
+            var drawlist = igGetForegroundDrawListNil();
+            const colu32 = igGetColorU32Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
+            ImDrawList_AddCircleFilled(drawlist, mousepos, self.laserpointer_size * self.laserpointer_zoom + 10 * self.size_jiggle_table[@intCast(usize, self.size_jiggle_index)], colu32, 256);
+
+            self.frame_ticker += 1;
+
+            if (self.frame_ticker > 6) {
+                self.advance_anim();
+                self.anim_ticker += 1;
+                self.frame_ticker = 0;
+            }
+        }
+    }
+
+    fn advance_anim(self: *LaserpointerAnim) void {
+        if (self.alpha_index == self.alpha_table.len - 1) {
+            self.alpha_index_step = -1;
+        }
+        if (self.alpha_index == 0) {
+            self.alpha_index_step = 1;
+        }
+        if (self.size_jiggle_index == self.size_jiggle_table.len - 1) {
+            self.size_jiggle_index_step = -1;
+        }
+        if (self.size_jiggle_index == 0) {
+            self.size_jiggle_index_step = 1;
+        }
+        self.size_jiggle_index += self.size_jiggle_index_step;
+        self.alpha_index += self.alpha_index_step;
+    }
+
+    fn toggle(self: *LaserpointerAnim) void {
+        self.show_laserpointer = !self.show_laserpointer;
+        self.frame_ticker = 0;
+        self.anim_ticker = 0;
+        if (self.show_laserpointer) {
+            // igSetMouseCursor(ImGuiMouseCursor_TextInput);
+            sapp_show_mouse(false);
+            std.log.debug("Hiding mouse", .{});
+        } else {
+            //igSetMouseCursor(ImGuiMouseCursor_Arrow);
+            std.log.debug("Showing mouse", .{});
+            sapp_show_mouse(true);
+        }
+    }
+};
+
+var anim_laser = LaserpointerAnim{};
+
 // .
 // Main Update Frame Loop
 // .
 
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
+    var mousepos: ImVec2 = undefined;
+    igGetMousePos(&mousepos);
     igGetWindowContentRegionMax(&G.content_window_size);
     if (G.content_window_size.x != G.last_window_size.x or G.content_window_size.y != G.last_window_size.y) {
         // window size changed
@@ -195,6 +263,11 @@ fn update() void {
             G.show_saveas = false;
             G.show_saveas_reason = .none;
         }
+
+        // laser pointeer
+        if (mousepos.x > 0 and mousepos.y > 0) {
+            anim_laser.anim(mousepos);
+        }
     }
 }
 
@@ -222,6 +295,7 @@ fn jumpToSlide(slidenumber: i32) void {
 
 fn handleKeyboard() void {
     const ctrl = igIsKeyDown(SAPP_KEYCODE_LEFT_CONTROL) or igIsKeyDown(SAPP_KEYCODE_RIGHT_CONTROL);
+    const shift = igIsKeyDown(SAPP_KEYCODE_LEFT_SHIFT) or igIsKeyDown(SAPP_KEYCODE_RIGHT_SHIFT);
     if (igIsKeyReleased(SAPP_KEYCODE_Q) and ctrl) {
         cmdQuit();
         return;
@@ -236,6 +310,17 @@ fn handleKeyboard() void {
     }
     if (igIsKeyReleased(SAPP_KEYCODE_S) and ctrl) {
         cmdSave();
+        return;
+    }
+    if (igIsKeyReleased(SAPP_KEYCODE_L) and ctrl and !shift) {
+        anim_laser.toggle();
+        return;
+    }
+    if (igIsKeyReleased(SAPP_KEYCODE_L) and ctrl and shift) {
+        anim_laser.laserpointer_zoom *= 1.5;
+        if (anim_laser.laserpointer_zoom > 10) {
+            anim_laser.laserpointer_zoom = 1.0;
+        }
         return;
     }
     // don't consume keys while the editor is visible
@@ -813,6 +898,9 @@ fn showMenu() void {
                 cmdToggleFullscreen();
             }
             if (igMenuItemBool("Overview", "O", false, true)) {}
+            if (igMenuItemBool("Toggle Laserpointer", "Ctrl + L", false, true)) {
+                anim_laser.toggle();
+            }
             if (igMenuItemBool("Toggle on-screen menu buttons", "M", false, true)) {
                 cmdToggleBottomPanel();
             }
