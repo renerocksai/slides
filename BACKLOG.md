@@ -1,5 +1,6 @@
 # Backlog
 
+* SEARCH function
 * re-introduce `$slide_number`
 
 - [x] jump to editor cursor pos on error
@@ -25,7 +26,8 @@
   - [ ] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
         manual line break solves it, though.
 - [x] laserpointer
-- [ ] implement ~~underline~~ - and do we have ==highlight==?
+- [x] implement ~~underline~~ 
+    - and do we have ==highlight==? NO!
 - [ ] formatting: center
 - [ ] Overview Mode
 - [ ] PDF export
