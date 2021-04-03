@@ -323,6 +323,7 @@ pub const SlideshowRenderer = struct {
                     // we did not wrap so the entire span can be output!
                     element.text = render_text_c;
                     element.position = layoutContext.current_pos;
+                    element.size.x = attempted_span_size.x;
                     //element.size = attempted_span_size;
                     std.log.debug(">>>>>>> appending non-wrapping text element: {s}@{d:3.0},{d:3.0}", .{ element.text, element.position.x, element.position.y });
                     try renderSlide.elements.append(element);
@@ -389,6 +390,7 @@ pub const SlideshowRenderer = struct {
                                 lastIdxOfSpace = currentIdxOfSpace;
                                 element.text = render_text_c;
                                 element.position = layoutContext.current_pos;
+                                element.size.x = attempted_span_size.x;
                                 // element.size = attempted_span_size;
                                 std.log.debug(">>>>>>> appending wrapping text element: {s} width={d:3.0}", .{ element.text, attempted_span_size.x });
                                 try renderSlide.elements.append(element);
@@ -419,6 +421,7 @@ pub const SlideshowRenderer = struct {
                                 element.position = layoutContext.current_pos;
                                 // element.size = attempted_span_size;
                                 std.log.debug(">>>>>>> appending final text element: {s} width={d:3.0}", .{ element.text, attempted_span_size.x });
+                                element.size.x = attempted_span_size.x;
                                 try renderSlide.elements.append(element);
                                 // advance render pos
                                 layoutContext.current_pos.x += attempted_span_size.x;
@@ -621,6 +624,7 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     }
     var pos = item.position;
     pos.x += item.size.x;
+    pos.x += 10; // since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
     igPushTextWrapPos(slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size).x);
     const fs = item.fontSize.?;
     const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slide_size.y / internal_render_size.y);
@@ -638,4 +642,16 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     igText(t);
     igPopStyleColor(1);
     igPopTextWrapPos();
+
+    //   we need to rely on the size here, so better make sure, the width is correct
+    if (item.underlined) {
+        // how to draw the line?
+        var tl = item.position;
+        tl.y += @intToFloat(f32, fs) + 2;
+        var br = tl;
+        br.x += item.size.x;
+        br.y += 2;
+        const bgcolu32 = igGetColorU32Vec4(col.?);
+        igRenderFrame(slidePosToRenderPos(tl, slide_tl, slide_size, internal_render_size), slidePosToRenderPos(br, slide_tl, slide_size, internal_render_size), bgcolu32, true, 0.0);
+    }
 }
