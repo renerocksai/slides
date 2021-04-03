@@ -29,6 +29,7 @@ const FontMap = std.AutoHashMap(i32, *ImFont);
 //const baked_font_sizes = [_]i32{ 14, 20, 28, 36, 40, 45, 52, 60, 68, 72, 90, 96, 104, 128, 136, 144, 192, 300, 600 };
 const baked_font_sizes = [_]i32{
     14,
+    16, // editor font
     20,
     22,
     28,
