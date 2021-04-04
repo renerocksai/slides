@@ -43,10 +43,32 @@ pub fn my_callback(data: [*c]ImGuiInputTextCallbackData) callconv(.C) c_int {
             } else {
                 data.*.SelectionEnd = data.*.SelectionStart + 10;
             }
+        } else if (action.selection_size > 0) {
+            data.*.SelectionStart = data.*.CursorPos;
+            data.*.SelectionEnd = data.*.SelectionStart + @intCast(c_int, action.selection_size);
         }
         x.editAction = null;
-    }
+    } else {
+        if (x.editActionPost) |action| {
+            data.*.CursorPos = @intCast(c_int, action.jump_to_cursor_pos);
+            if (action.highlight_line) {
+                data.*.SelectionStart = data.*.CursorPos;
 
+                const buf = x.parser_context.?.input;
+                if (std.mem.indexOfPos(u8, buf, action.jump_to_cursor_pos, "\n")) |eol_pos| {
+                    data.*.SelectionEnd = @intCast(c_int, eol_pos);
+                } else {
+                    data.*.SelectionEnd = data.*.SelectionStart + 10;
+                }
+            } else if (action.selection_size > 0) {
+                data.*.SelectionStart = data.*.CursorPos;
+                data.*.SelectionEnd = data.*.SelectionStart + @intCast(c_int, action.selection_size);
+            }
+            x.editActionPost = null;
+        }
+
+        x.current_cursor_pos = @intCast(usize, data.*.CursorPos);
+    }
     return 0;
 }
 
@@ -68,9 +90,12 @@ pub const EditAnim = struct {
     parser_context: ?*parser.ParserContext = null,
     selected_error: c_int = 1000,
     editAction: ?EditActionData = null,
+    editActionPost: ?EditActionData = null,
     resize_button_anim: ButtonAnim = .{},
     resize_mouse_x: f32 = 0,
     in_resize_mode: bool = false,
+    scroll_lines_after_autosel: i32 = 5, // scroll down this number of lines after auto selecting (jump to slide, find)
+    current_cursor_pos: usize = 0,
 
     pub fn shrink(self: *EditAnim) void {
         if (self.desired_size.x > 300) {
@@ -89,10 +114,44 @@ pub const EditAnim = struct {
         }
     }
     pub fn jumpToPosAndHighlightLine(self: *EditAnim, pos: usize, activate_editor: bool) void {
+
+        // now honor the scroll_lines_after_autosel
+        var eol_pos: usize = pos;
+        var linecount: i32 = 0;
+
+        if (pos > self.current_cursor_pos) {
+            // search forwards
+            while (linecount < self.scroll_lines_after_autosel) {
+                if (std.mem.indexOfPos(u8, self.parser_context.?.input, eol_pos, "\n")) |neweol| {
+                    eol_pos = neweol + 1;
+                }
+                linecount += 1;
+            }
+        } else {
+            // search backwards
+            while (eol_pos > 0) {
+                if (self.parser_context.?.input[eol_pos] == '\n') {
+                    linecount += 1;
+                    if (linecount >= self.scroll_lines_after_autosel) {
+                        break;
+                    }
+                }
+                eol_pos -= 1;
+            }
+        }
+
+        // first, jump to fix scroll position
         self.editAction = .{
+            .jump_to_cursor_pos = eol_pos,
+            .highlight_line = false,
+        };
+
+        // then jump, sel, and highlight
+        self.editActionPost = .{
             .jump_to_cursor_pos = pos,
             .highlight_line = true,
         };
+
         if (activate_editor) {
             self.activate();
         } else {
@@ -110,6 +169,7 @@ pub const EditAnim = struct {
 
 const EditActionData = struct {
     jump_to_cursor_pos: usize = 0,
+    selection_size: usize = 0,
     highlight_line: bool = false,
 };
 
