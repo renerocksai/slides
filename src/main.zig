@@ -16,6 +16,8 @@ usingnamespace sokol;
 usingnamespace uianim;
 usingnamespace slides;
 
+pub extern "c" fn sched_getaffinity(pid: c_int, size: usize, set: *cpu_set_t) c_int;
+
 const my_fonts = @import("myscalingfonts.zig");
 
 pub fn main() !void {
@@ -39,6 +41,14 @@ pub fn main() !void {
 }
 
 fn init() void {
+    // Try to set the cpu affinity
+    //const my_pid = std.os.linux.getpid();
+    //std.log.debug("my pid is {}", .{my_pid});
+
+    //var my_affinity_mask = std.os.sched_getaffinity(my_pid) catch unreachable;
+    //var x: std.os.linux.cpu_set_t = my_affinity_mask;
+    //std.log.debug("my affinity mask is {x}", .{my_affinity_mask});
+    //my_affinity_mask[0] = 1;
     my_fonts.loadFonts() catch unreachable;
     if (std.builtin.os.tag == .windows) {
         std.log.info("on windows", .{});
@@ -202,8 +212,20 @@ var anim_laser = LaserpointerAnim{};
 // Main Update Frame Loop
 // .
 
+var time_prev: i64 = 0;
+var time_now: i64 = 0;
+
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
+
+    // debug update loop timing
+    if (false) {
+        time_now = std.time.milliTimestamp();
+        const time_delta = time_now - time_prev;
+        time_prev = time_now;
+        std.log.debug("delta_t: {}", .{time_delta});
+    }
+
     var mousepos: ImVec2 = undefined;
     igGetMousePos(&mousepos);
     igGetWindowContentRegionMax(&G.content_window_size);
@@ -324,7 +346,8 @@ fn handleKeyboard() void {
         return;
     }
     // don't consume keys while the editor is visible
-    if (igGetActiveID() == igGetIDStr("editor")) {
+    if ((igGetActiveID() == igGetIDStr("editor")) or (ed_anim.search_ed_active)) {
+        //        std.log.debug("search_ed_active: {}", .{ed_anim.search_ed_active});
         return;
     }
     var deltaindex: i32 = 0;
@@ -356,6 +379,7 @@ fn handleKeyboard() void {
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_F)) {
+        //        std.log.debug("fullscreen search_ed_active: {}", .{ed_anim.search_ed_active});
         cmdToggleFullscreen();
     }
 
@@ -405,7 +429,7 @@ fn showSlide2(slide_number: i32) !void {
         ed_anim.desired_size.y += 20.0;
     }
     const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
-    if (!editor_active) {
+    if (!editor_active and !ed_anim.search_ed_active) {
         if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
             cmdToggleEditor();
         }
@@ -586,19 +610,21 @@ fn sliceToC(input: []const u8) [:0]u8 {
 fn checkAutoReload() !bool {
     if (G.slideshow_filp) |filp| {
         G.hot_reload_ticker += 1;
-        if (G.hot_reload_ticker > G.hot_reload_interval_ticks) {
-            std.log.debug("Checking for auto-reload of {s}", .{filp});
-            G.hot_reload_ticker = 0;
-            var f = try std.fs.openFileAbsolute(filp, .{ .read = true });
-            defer f.close();
-            const x = try f.stat();
-            if (G.hot_reload_last_stat) |last| {
-                if (x.mtime != last.mtime) {
-                    std.log.debug("RELOAD {s}", .{filp});
-                    return true;
+        if (filp.len > 0) {
+            if (G.hot_reload_ticker > G.hot_reload_interval_ticks) {
+                std.log.debug("Checking for auto-reload of `{s}`", .{filp});
+                G.hot_reload_ticker = 0;
+                var f = try std.fs.openFileAbsolute(filp, .{ .read = true });
+                defer f.close();
+                const x = try f.stat();
+                if (G.hot_reload_last_stat) |last| {
+                    if (x.mtime != last.mtime) {
+                        std.log.debug("RELOAD {s}", .{filp});
+                        return true;
+                    }
+                } else {
+                    G.hot_reload_last_stat = x;
                 }
-            } else {
-                G.hot_reload_last_stat = x;
             }
         }
     } else {}
@@ -616,9 +642,11 @@ fn loadSlideshow(filp: []const u8) !void {
             const input = std.fs.path.basename(filp);
             setStatusMsg(sliceToC(input));
 
+            const new_is_old_name = try std.fmt.allocPrint(G.allocator, "{s}", .{filp});
             // parse the shit
             if (G.reinit()) |_| {
-                G.slideshow_filp = filp;
+                G.slideshow_filp = new_is_old_name;
+                std.log.debug("filp is now {s}", .{G.slideshow_filp});
                 if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.slideshow_allocator)) |pcontext| {
                     ed_anim.parser_context = pcontext;
                 } else |err| {

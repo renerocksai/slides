@@ -99,7 +99,7 @@ The big picture
 here come the sources
 
 @pop leftbox 
-this is soooo coool _**ta-dah**_, **tah**, _dah_
+this is soooo ~~coool~~ _**ta-dah**_, **tah**, _dah_
 _
 empty lines are marked with just an _ underscore
 - here comes the text
