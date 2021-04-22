@@ -30,6 +30,6 @@
 
 # -------------------------------------------------------------
 @popslide intro
-@pop intro_title text=Artificial Voices in Human Choices
+@pop intro_title text=This is ~~underlined~~ stuff.
 @pop intro_subtitle text=Milestone 3
 @pop intro_authors text=Dr. Carolin Kaiser, Rene Schallner

@@ -96,6 +96,9 @@ pub const EditAnim = struct {
     in_resize_mode: bool = false,
     scroll_lines_after_autosel: i32 = 5, // scroll down this number of lines after auto selecting (jump to slide, find)
     current_cursor_pos: usize = 0,
+    search_term: [*c]u8 = null,
+    search_term_size: usize = 25,
+    search_ed_active: bool = false,
 
     pub fn shrink(self: *EditAnim) void {
         if (self.desired_size.x > 300) {
@@ -230,6 +233,12 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
         anim.textbuf = memory.ptr;
         anim.textbuf[0] = 0;
     }
+    if (anim.search_term == null) {
+        var allocator = std.heap.page_allocator;
+        const search_mem = try allocator.alloc(u8, anim.search_term_size);
+        anim.search_term = search_mem.ptr;
+        anim.search_term[0] = 0;
+    }
     // only animate when transitioning
     if (anim.visible != anim.visible_prev) {
         if (anim.visible) {
@@ -280,8 +289,29 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
     if (show) {
         igSetCursorPos(editor_pos);
         var s: ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
+
+        // (optional) extra stuff
         const grow_shrink_button_panel_height = 0; // 22;
-        s.y = size.y - grow_shrink_button_panel_height;
+        const find_area_height = 50;
+        const find_area_button_size = 120;
+        const find_area_min_width = 70 + 70;
+
+        // show the find panel
+        const required_size: f32 = s.x - find_area_min_width;
+        if (required_size > 0) {
+            const gap = 5;
+            const textfield_width = s.x - find_area_button_size - gap * 2;
+            igPushItemWidth(textfield_width);
+            anim.search_ed_active = igInputTextWithHint("", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
+            //            std.log.debug("search active: {}", .{anim.search_ed_active});
+            igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
+            _ = igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 });
+        }
+
+        // on with the editor, shift it down by find_area_height
+        igSetCursorPos(.{ .x = editor_pos.x, .y = find_area_height + pos.y });
+
+        s.y = size.y - grow_shrink_button_panel_height - find_area_height;
         var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
         const error_panel_fontsize: i32 = 14;
 
