@@ -2,6 +2,9 @@
 
 * SEARCH function
 * re-introduce `$slide_number`
+* get markdown rendering right - there are some oddities where text seems to get cut off for bold/underlined and the position is off, if text wraps behind it - see below "... not perfect..."
+* get markdown parsing right - it might be we have a +/-1 offset bug with formatting.
+* (new) bug? consecutive @popslides get merged?!?! - are we not allocating new slides wtf?
 
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
@@ -33,7 +36,7 @@
 - [ ] PDF export
   - [ ] via png?
   - [ ] native?
-- [ ] Themes
+- [ ] GUI Themes
 - [ ] hide mouse cursor in full-screen mode
   - at least in i3wm this does neither work with `sapp_show_mouse(false)` nor 
     `igSetMouseCursor(ImGuiMouseCursor_None)`.
