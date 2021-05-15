@@ -60,10 +60,24 @@ To make the changes you made take effect, save the presentation using the save b
 enter fullscreen mode
 activate laser pointer
 
+## Keyboard Shortcuts
 
++----------+-------------+
+| shortcut | Description |
++----------+-------------+
+|<kbd>Ctrl</kbd> + <kbd>N</kbd> |New file|
+|<kbd>Ctrl</kbd> + <kbd>O</kbd> |Open file|
+|<kbd>Ctrl</kbd> + <kbd>S</kbd> |Save file|
+|<kbd>Ctrl</kbd> + <kbd>Q</kbd> |Quit|
+|<kbd>E</kbd>|Toggle editor|
+|<kbd>F</kbd>|Toggle fullscreen|
+|<kbd>Ctrl</kbd> + <kbd>L</kbd> |Toggle laserpointer|
+|<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> |cycle through laserpointer sizes|
+|<kbd>M</kbd>|Toggle on-screen menu buttons|
++----------+-------------+
 
 # Slideshow Text Format 
-Example of the current text format:
+Example of the current text format - see `test_public.sld` for a more realistic example:
 
 ```
 # -------------------------------------------------------------
@@ -110,7 +124,7 @@ Here come the bullets:
 - first
     - some details
 - second
-- third
+- <#808080ff>third</> in a different color
 
 ```
 
