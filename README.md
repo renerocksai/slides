@@ -62,9 +62,8 @@ activate laser pointer
 
 ## Keyboard Shortcuts
 
-+----------+-------------+
 | shortcut | Description |
-+----------+-------------+
+|----------|-------------|
 |<kbd>Ctrl</kbd> + <kbd>N</kbd> |New file|
 |<kbd>Ctrl</kbd> + <kbd>O</kbd> |Open file|
 |<kbd>Ctrl</kbd> + <kbd>S</kbd> |Save file|
@@ -74,7 +73,6 @@ activate laser pointer
 |<kbd>Ctrl</kbd> + <kbd>L</kbd> |Toggle laserpointer|
 |<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> |cycle through laserpointer sizes|
 |<kbd>M</kbd>|Toggle on-screen menu buttons|
-+----------+-------------+
 
 # Slideshow Text Format 
 Example of the current text format - see `test_public.sld` for a more realistic example:
