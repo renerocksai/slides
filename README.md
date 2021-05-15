@@ -58,7 +58,7 @@ To make the changes you made take effect, save the presentation using the save b
 
 **Note:** You can resize the editor pane by dragging it by the lighter blue handle that separates slide content from the editor in the vertical center of the editor:
 
-![](screenshots/resize_editor.png)
+![](screenshots/editor_resize.png)
 
 ## Presentation and Slide Navigation
 See the next section for keyboard shortcuts for slideshow control and slide navigation. In addition to using the keyboard, you can also use a "clicker" / "presenter" device.
