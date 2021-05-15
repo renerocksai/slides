@@ -33,3 +33,9 @@
 @pop intro_title text=This is ~~underlined~~ stuff.
 @pop intro_subtitle text=Milestone 3
 @pop intro_authors text=Dr. Carolin Kaiser, Rene Schallner
+
+
+@popslide intro
+@pop intro_title text=second slide
+@pop intro_subtitle text=second milestone
+@pop intro_authors text=sophilena und nene

@@ -66,6 +66,12 @@ pub const Slide = struct {
         if (ctx.bullet_color) |bul| self.bullet_color = bul;
         if (ctx.underline_width) |uw| self.underline_width = uw;
     }
+
+    pub fn fromSlide(orig: *Slide, a: *std.mem.Allocator) !*Slide {
+        var n = try new(a);
+        try n.items.appendSlice(orig.items.items);
+        return n;
+    }
 };
 
 pub const SlideItemKind = enum {
