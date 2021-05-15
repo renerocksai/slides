@@ -65,6 +65,9 @@ To make the changes you made take effect, save the presentation using the save b
 
 ![](screenshots/editor_resize.png)
 
+**Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic feartures of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
+
+
 ## Presentation and Slide Navigation
 See the next section for keyboard shortcuts for slideshow control and slide navigation. In addition to using the keyboard, you can also use a "clicker" / "presenter" device.
 
