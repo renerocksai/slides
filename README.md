@@ -2,13 +2,13 @@
 
 My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
-**Danger - this is pre-alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seems to have noticed that I hadn't been using Powerpoint.
+**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seems to have noticed that I hadn't been using Powerpoint.
 
 This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
  
 If you want to play with it you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
  
-**Highlights:**
+## Highlights:
 - Presentations are created in a simple text format, see below.
   - makes your slides totally GitHub-friendly
 - One single (mostly static) executable - no install required.
