@@ -2,7 +2,7 @@
 
 This project is both a case study and also marks my first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
-**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to notice that I didn't use Powerpoint.
+**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint.
 
 This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
  
