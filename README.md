@@ -2,35 +2,61 @@
 
 My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
-**Danger - this is pre-alpha stuff**
+**Danger - this is pre-alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seems to have noticed that I hadn't been using Powerpoint.
 
-This app will be much simpler for users than [Bûllets](https://github.com/renerocksai/bullets) while still being totally functional.
-
+This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
+ 
+If you want to play with it you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
+ 
 **Highlights:**
 - Presentations are created in a simple text format, see below.
   - makes your slides totally GitHub-friendly
-- One single (mostly static) executable - no install, no fuzz.
+- One single (mostly static) executable - no install required.
 - Built-in editor: create, edit, and present in one small EXE.
   - for Windows, Linux (and Mac, if you build it yourself)
+- support for clickers
+- virtual laser pointer in different sizes
 
-Example of the current format:
+
+![](screenshots/demo.gif)
+
+# Motivation 
+
+Apart from all the reasons to ditch Powerpoint that applied to my previous slideshow project [Bûllets](https://github.com/renerocksai/bullets) which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
+
+In addition, this project also serves as a case study for myself where I test out how feasible it is to develop GUI apps in zig, using OpenGL and an immediate mode GUI like dear imgui.
+
+This project achieves what I set out for in the following ways:
+
+- portability: zig allows for cross-platform development. If it weren't for OpenGL and SDL dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
+    - the result is a free-standing executable, only a few MB in size that needs no installer
+- easy to get started with: just download, start and go!
+- no external dependencies: all you need to create presentations is the program itself. No other software is required. The builtin editor is not the greatest but since slides watches your files, you can use an external editor, too. Changes will be loaded everytime you save.
+- super quick slide creation: a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
+    - you can also paste in Markdown from your note taking app, which is what I do frequently
+ 
+Example of the current text format:
 
 ```
 # -------------------------------------------------------------
 # --define intro slide template
 # -------------------------------------------------------------
 
-# Background
+# Background image
 @bg img=assets/nim/1.png
-# or
+
+# or for a simple colored background:
 # @bg color=#000000000
+
+# lines starting with a # sign are comments BTW
 
 # title, subtitle, authors
 @push intro_title    x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 @push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
 
-# the following pushslide will cause everything up to here to be "remembered as template" `intro`, not rendered
+# the following pushslide command will cause everything up to here to be 
+# "remembered as template" named `intro`, it will not be rendered immediately
 @pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
 
 
@@ -39,13 +65,16 @@ Example of the current format:
 # #############################################################
 
 # -------------------------------------------------------------
+# Intro slide
+# -------------------------------------------------------------
 @popslide intro
-@pop intro_title    text=Artificial Voices in Human Choices
-@pop intro_subtitle text=Milestone 3
-@pop intro_subtitle text=Dr. Carolin Kaiser, Rene Schallner
+@pop intro_title    text=**Slides** - Slideshows for Hackers
+@pop intro_subtitle text=A prototype
+@pop intro_authors text=@renerocksai
 
 # -------------------------------------------------------------
-# some slide without slide template
+# Some slide without slide template
+# -------------------------------------------------------------
 @slide
 
 @box x=100 y=100 w=1720 h=880
@@ -57,7 +86,33 @@ Here come the bullets:
 
 ```
 
-# prerequisites
+# Usage
+
+After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window. 
+
+![](screenshots/empty.png)
+
+Use the menu or keyboard shortcuts (see below) to load the sample presentation `test_public.sld`. Alternatively, go straight to the built-in editor as described further down.
+
+## Opening a Slideshow
+
+Usually, you want to open an existing slideshow for editing or presentation purposes. If you want to experiment with a new slideshow, just open the editor with the <key>E</key> key and fire away. To make the changes take effect, save the presentation using the save button or the keyboard shortcut <key>Ctrl</key> + <key>S<key>. 
+
+To open an existing slideshow, use the menu or the keyboard shortcut <key>Ctrl</key> + <key>B<key> and then pick a file from the file browser. 
+
+## Editing and Saving a Slideshow
+You open the built-in editor with the <key>E</key> key. Note that the editor will not be active for text input with a blinking cursor immediately. This allows you to navigate through the slides until you have reached the one you want to edit. As you navigate through the slides, the editor will follow by moving the current slide's `@popslide` or `@slide` command into the visible area and quickly flashing it with a red background once.
+
+You enter the editor by clicking somewhere into the text and leave it by clicking somewhere outside of the text. To hide the editor, just use the `[e] editor` button or press the <key>E<key> key again. 
+
+To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <key>Ctrl</key> + <key>S<key>. 
+
+## Presentation and Slide Navigation
+enter fullscreen mode
+activate laser pointer
+
+# Building it
+## prerequisites
 
 
 Clone [zig-upaya](https://github.com/prime31/zig-upaya):
@@ -93,7 +148,7 @@ const Texture = @import("../zig-upaya/src/texture.zig").Texture;
 
 Note: On Windows, you probably have to move the entire `zig-upaya` directory into the `slides` directory.
 
-# build and run
+## build and run
 
 ```bash
 $ zig build slides
