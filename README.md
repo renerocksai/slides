@@ -17,6 +17,9 @@ If you want to play with it you can download the current release from the releas
 - support for clickers
 - virtual laser pointer in different sizes
 
+https://user-images.githubusercontent.com/30892199/118370531-5deedb00-b5a8-11eb-883a-33fa5c3acdb0.mp4
+
+
 
 ![](screenshots/slides.mp4)
 
