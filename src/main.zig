@@ -363,6 +363,10 @@ fn handleKeyboard() void {
         deltaindex = 1;
     }
 
+    if (igIsKeyReleased(SAPP_KEYCODE_BACKSPACE)) {
+        deltaindex = -1;
+    }
+
     if (igIsKeyReleased(SAPP_KEYCODE_PAGE_UP)) {
         deltaindex = -1;
     }
