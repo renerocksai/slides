@@ -550,7 +550,7 @@ pub const SlideshowRenderer = struct {
 
         // TODO: pass that in from G
         const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
-        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }; // 50% opaque black
+        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.0 }; // 50% opaque black
 
         for (slide.elements.items) |element| {
             switch (element.kind) {

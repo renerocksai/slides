@@ -17,7 +17,10 @@
 # -------------------------------------------------------------
 
 @push slide_title  x=110  y=71   w=1712 h=73  fontsize=52 color=#000000ff
-@push slide_number x=1803 y=1021 w=40   h=40  fontsize=20 color=#000000ff text=$slide_number
+
+# this is broken at the moment 
+#@push slide_number x=1803 y=1021 w=40   h=40  fontsize=20 color=#000000ff text=$slide_number
+
 @push sources_info x=110  y=960  w=1758 h=129 fontsize=20 color=#bfbfbfff text=Sources:
 
 @push bigbox       x=110  y=181  w=1700 h=971 fontsize=36 color=#000000ff
@@ -28,7 +31,6 @@
 # -- intro slide template
 # -------------------------------------------------------------
 @bg img=assets/bgwater.jpg
-# @push intro_title    x=219 y=481 w=950 h=100 fontsize=96 color=#000000ff
 @push intro_title    x=219 y=500 w=836 h=223 fontsize=96 color=#000000ff
 @push intro_subtitle x=219 y=728 w=836 h=246 fontsize=45 color=#cd0f2dff
 @push intro_authors  x=219 y=818 w=836 h=246 fontsize=45 color=#993366ff
@@ -52,7 +54,7 @@
 # -- content slide template
 # -------------------------------------------------------------
 @bg img=assets/bglb.jpg
-@pop slide_number
+
 @pushslide content
 
 # -------------------------------------------------------------
@@ -74,12 +76,12 @@
 # -------------------------------------------------------------
 @popslide intro
 @pop intro_title text=**Slideshows in ZIG**
-@pop intro_subtitle text=_No Powerpoint anymore, thanks to ZIG_
-@pop intro_authors text=@renerocksai
+@pop intro_subtitle text=_**Easy text-based slideshows for Hackers**_
+@pop intro_authors text=_@renerocksai_
 
-@pop rightbox
-- _GitHub Link here, with underline -- maybe as graphics, well, we need the GitHub logo anyway_
-- _Zig Logo goes here, too_
+@pop rightbox x=1350 y=75
+<#0000ffff>_~~https://github.com/renerocksai/slides~~_</>
+@box img=assets/GitHub-Mark-64px.png x=1270 y=65 w=64 h=64
 
 # -------------------------------------------------------------
 @popslide chapter
@@ -94,15 +96,13 @@ The big picture
 
 # -------------------------------------------------------------
 @popslide content
-
 @pop slide_title text=The Big Plan
-
 
 @pop  sources_info 
 here come the sources
 
 @pop leftbox 
-this is soooo coool _**ta-dah**_, **tah**, _dah_
+this is Markdown _**ta-dah**_, **tah**, _dah_!
 _
 empty lines are marked with just an _ underscore
 - here comes the text
@@ -112,25 +112,56 @@ empty lines are marked with just an _ underscore
             - and let's wrap one more time into a nicely aligned textbox
 - here comes the text
 - and so on
-- now let us wrap, let's wrap the shit out of this bullet point which is far too long to be good
-- here comes the text
+_
+- now let us create a text that is very likely to need to be wrapped since it is too long to be rendered on a single line of text in the left box 
+- everything is still aligned properly
 - **and so on**, _and on_
 
 @pop rightbox 
+_
+_
+_
 - here is text in the right box
-- here comes the text
+_
+- here comes more text
+_
 - and so on
-- here comes the text
+_
+- here comes more text
+_
 - and so on
-- here comes the text
-- and **so on** isn't it?
+_
+- here comes more text
+_
+- and ~~**so on**~~
 
+# -------------------------------------------------------------
+@popslide content
+@pop slide_title text=Easier than Bullets
+
+@box img=assets/godotscr2.png x=400 y=150 w=1475 h=840
+
+@pop leftbox w=260 h=800
+- single executable
+    - for presenting and editing 
+_
+- text based slide format. no need to drag, click, and find and edit properties
+_
+- compare ------->
+_
+- however, simpler:
+    - no complex animationse
+    - no scripting
+    - ...
 
 # -------------------------------------------------------------
 @popslide thankyou
 @pop thankyou_title text=**Slideshows in ZIG**
-@pop thankyou_subtitle text=_No Powerpoint anymore, thanks to ZIG_
-@pop thankyou_authors text=@renerocksai
+@pop thankyou_subtitle text=_Easy text-based slideshows for Hackers_
+@pop thankyou_authors text=_@renerocksai_
 
+@pop rightbox x=1350 y=530
+<#0000ffff>_~~https://github.com/renerocksai/slides~~_</>
+@box img=assets/GitHub-Mark-64px.png x=1270 y=520 w=64 h=64
 # -------------------------------------------------------------
 # eof commits the slide

@@ -1,4 +1,4 @@
-# Slides
+# Slides - Slideshows for Hackers 
 
 My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
@@ -56,13 +56,16 @@ You enter the editor by clicking somewhere into the text and leave it by clickin
 
 To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
 
+**Note:** You can resize the editor pane by dragging it by the lighter blue handle that separates slide content from the editor in the vertical center of the editor:
+
+![](screenshots/resize_editor.png)
+
 ## Presentation and Slide Navigation
-enter fullscreen mode
-activate laser pointer
+See the next section for keyboard shortcuts for slideshow control and slide navigation. In addition to using the keyboard, you can also use a "clicker" / "presenter" device.
 
-## Keyboard Shortcuts
+## Keyboard Shortcuts 
 
-| shortcut | Description |
+| Shortcut | Description |
 | -------- | ----------- |
 | <kbd>Ctrl</kbd> + <kbd>N</kbd> | New file |
 | <kbd>Ctrl</kbd> + <kbd>O</kbd> | Open file |
@@ -73,6 +76,14 @@ activate laser pointer
 | <kbd>Ctrl</kbd> + <kbd>L</kbd> | Toggle laserpointer |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> | cycle through laserpointer sizes |
 | <kbd>M</kbd> | Toggle on-screen menu buttons |
+| <kbd><</kbd> | Goto previous slide |
+| <kbd>PgUp</kbd> | Goto previous slide |
+| <kbd>Backspace</kbd> | Goto previous slide |
+| <kbd>></kbd> | Goto next slide |
+| <kbd>PgDown</kbd> | Goto next slide |
+| <kbd>Space</kbd> | Goto next slide |
+| <kbd>1</kbd> | Goto first slide |
+| <kbd>0</kbd> | Goto last slide |
 
 # Slideshow Text Format 
 Example of the current text format - see `test_public.sld` for a more realistic example:
@@ -116,6 +127,9 @@ Example of the current text format - see `test_public.sld` for a more realistic 
 # Some slide without slide template
 # -------------------------------------------------------------
 @slide
+
+# some image on the slide 
+@box img=some_image.png x=800 y=100 w=320 h=200  
 
 @box x=100 y=100 w=1720 h=880
 Here come the bullets:
