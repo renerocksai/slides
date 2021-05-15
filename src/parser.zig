@@ -603,7 +603,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             const sld_opt = context.push_slides.get(context_name);
             if (sld_opt) |sld| {
-                context.current_slide = sld;
+                context.current_slide = try Slide.fromSlide(sld, context.allocator);
                 context.current_slide.pos_in_editor = parsing_item_context.line_offset;
                 context.current_slide.line_in_editor = parsing_item_context.line_number;
             } else {
