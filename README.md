@@ -1,6 +1,6 @@
 # Slides - Slideshows for Hackers 
 
-My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
+This project is both a case study and also marks my first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
 **Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to notice that I didn't use Powerpoint.
 
@@ -18,7 +18,7 @@ If you want to play with it you can download the current release from the releas
 - virtual laser pointer in different sizes
 
 
-![](screenshots/demo.gif)
+![](screenshots/slides.mp4)
 
 # Motivation 
 
