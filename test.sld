@@ -122,6 +122,9 @@ empty lines are marked with just an _ underscore
 - here comes the text
 - and **so on** isn't it?
 
+@popslide content
+@pop bigbox
+this is the second slide 
 
 # -------------------------------------------------------------
 @popslide thankyou

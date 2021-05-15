@@ -3,8 +3,9 @@
 * SEARCH function
 * re-introduce `$slide_number`
 * get markdown rendering right - there are some oddities where text seems to get cut off for bold/underlined and the position is off, if text wraps behind it - see below "... not perfect..."
-* get markdown parsing right - it might be we have a +/-1 offset bug with formatting.
+* get markdown parsing right - it might be we have a +/-1 offset bug with some formatting.
 
+- [x] kinesis-friendlyness: make backspace button go one slide back
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
 - [x] fix parser and initial slide rendering
