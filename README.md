@@ -2,7 +2,7 @@
 
 My first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
-**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seems to have noticed that I hadn't been using Powerpoint.
+**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to notice that I didn't use Powerpoint.
 
 This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
  
@@ -28,11 +28,11 @@ In addition, this project also serves as a case study for myself where I test ou
 
 This project achieves what I set out for in the following ways:
 
-- portability: zig allows for cross-platform development. If it weren't for OpenGL and SDL dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
+- **portability:** zig allows for cross-platform development. If it weren't for OpenGL and SDL dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
     - the result is a free-standing executable, only a few MB in size that needs no installer
-- easy to get started with: just download, start and go!
-- no external dependencies: all you need to create presentations is the program itself. No other software is required. The builtin editor is not the greatest but since slides watches your files, you can use an external editor, too. Changes will be loaded everytime you save.
-- super quick slide creation: a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
+- **easy to get started with:** just download, start and go!
+- **no external dependencies:** all you need to create presentations is the program itself. No other software is required. The builtin editor is not the greatest but since slides watches your files, you can use an external editor, too. Changes will be loaded everytime you save.
+- **super quick slide creation:** a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
     - you can also paste in Markdown from your note taking app, which is what I do frequently
  
 # Usage
