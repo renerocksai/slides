@@ -7,7 +7,9 @@ This project is both a case study and also marks my first steps in [Zig](https:/
 This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
  
 If you want to play with it you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
- 
+
+![](screenshots/slides_plus_ed.png)
+
 ## Highlights:
 - Presentations are created in a simple text format, see below.
   - makes your slides totally GitHub-friendly
@@ -18,10 +20,7 @@ If you want to play with it you can download the current release from the releas
 - virtual laser pointer in different sizes
 
 
-![](screenshots/slides.png)
-
-![](screenshots/slides_plus_ed.png)
-
+See it in action: We activate and resize the laserpointer, navigate to a slide, open the editor, make and save changes, undo the changes and navigate to the end of the slideshow.
 
 https://user-images.githubusercontent.com/30892199/118370531-5deedb00-b5a8-11eb-883a-33fa5c3acdb0.mp4
 
