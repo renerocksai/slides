@@ -35,6 +35,34 @@ This project achieves what I set out for in the following ways:
 - super quick slide creation: a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
     - you can also paste in Markdown from your note taking app, which is what I do frequently
  
+# Usage
+
+After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window. 
+
+![](screenshots/empty.png)
+
+Use the menu or keyboard shortcuts (see below) to load the sample presentation `test_public.sld`. Alternatively, go straight to the built-in editor as described further down.
+
+## Opening a Slideshow
+
+Usually, you want to open an existing slideshow for editing or presentation purposes. If you want to experiment with a new slideshow, just open the editor with the <kbd>E</kbd> key and fire away. To make the changes take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
+
+To open an existing slideshow, use the menu or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>B</kbd> and then pick a file from the file browser. 
+
+## Editing and Saving a Slideshow
+You open the built-in editor with the <kbd>E</kbd> key. Note that the editor will not be active for text input with a blinking cursor immediately. This allows you to navigate through the slides until you have reached the one you want to edit. As you navigate through the slides, the editor will follow by moving the current slide's `@popslide` or `@slide` command into the visible area and quickly flashing it with a red background once.
+
+You enter the editor by clicking somewhere into the text and leave it by clicking somewhere outside of the text. To hide the editor, just use the `[e] editor` button or press the <kbd>E</kbd> key again. 
+
+To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
+
+## Presentation and Slide Navigation
+enter fullscreen mode
+activate laser pointer
+
+
+
+# Slideshow Text Format 
 Example of the current text format:
 
 ```
@@ -86,30 +114,6 @@ Here come the bullets:
 
 ```
 
-# Usage
-
-After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window. 
-
-![](screenshots/empty.png)
-
-Use the menu or keyboard shortcuts (see below) to load the sample presentation `test_public.sld`. Alternatively, go straight to the built-in editor as described further down.
-
-## Opening a Slideshow
-
-Usually, you want to open an existing slideshow for editing or presentation purposes. If you want to experiment with a new slideshow, just open the editor with the <kbd>E</kbd> key and fire away. To make the changes take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
-
-To open an existing slideshow, use the menu or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>B</kbd> and then pick a file from the file browser. 
-
-## Editing and Saving a Slideshow
-You open the built-in editor with the <kbd>E</kbd> key. Note that the editor will not be active for text input with a blinking cursor immediately. This allows you to navigate through the slides until you have reached the one you want to edit. As you navigate through the slides, the editor will follow by moving the current slide's `@popslide` or `@slide` command into the visible area and quickly flashing it with a red background once.
-
-You enter the editor by clicking somewhere into the text and leave it by clicking somewhere outside of the text. To hide the editor, just use the `[e] editor` button or press the <kbd>E</kbd> key again. 
-
-To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
-
-## Presentation and Slide Navigation
-enter fullscreen mode
-activate laser pointer
 
 # Building it
 ## prerequisites
