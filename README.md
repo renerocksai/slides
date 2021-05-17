@@ -40,6 +40,12 @@ This project achieves what I set out for in the following ways:
 - **super quick slide creation:** a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
     - you can also paste in Markdown from your note taking app, which is what I do frequently
  
+## Interesting Observations 
+
+Using slides, I far more enjoy creating slideshow presentations. It seems to trick my mind into a more enjoyable, programming-like mode when I spend my time in neovim, using the slideshow description / markup language. It is a completely mouse-less way of creating presentations. I find it very effective. I also really like that I can put my presentations and supporting assets in a git reposiory and have them version-controlled. Lots of the contents of my slideshows is Markdown or very Markdown-friendly which makes re-use of information snippets really handy, e.g. from notes to presentation to blog post.  
+
+BTW, I use `imgtool.py`, also contained in the repo, for figuring out image sizes and placement.  Make sure you have some PIL installed.
+
 # Usage
 
 After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window. 
