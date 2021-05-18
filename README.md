@@ -22,7 +22,9 @@ If you want to play with it you can download the current release from the releas
 
 See it in action: We activate and resize the laserpointer, navigate to a slide, open the editor, make and save the changes, then close the editor.
 
-https://user-images.githubusercontent.com/30892199/118729429-32812000-b836-11eb-8f8e-83d6d7c5d87d.mp4
+
+https://user-images.githubusercontent.com/30892199/118730194-83dddf00-b837-11eb-988a-677a63f5d139.mp4
+
 
 
 
