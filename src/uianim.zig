@@ -227,6 +227,10 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
     editor_pos = pos;
     editor_pos.x += anim.slide_button_width;
 
+    if (!anim.visible) {
+        anim.current_size.x = 0;
+    }
+
     if (anim.textbuf == null) {
         var allocator = std.heap.page_allocator;
         const memory = try allocator.alloc(u8, anim.textbuf_size);
