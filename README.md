@@ -20,9 +20,10 @@ If you want to play with it you can download the current release from the releas
 - virtual laser pointer in different sizes
 
 
-See it in action: We activate and resize the laserpointer, navigate to a slide, open the editor, make and save changes, undo the changes and navigate to the end of the slideshow.
+See it in action: We activate and resize the laserpointer, navigate to a slide, open the editor, make and save the changes, then close the editor.
 
-https://user-images.githubusercontent.com/30892199/118370531-5deedb00-b5a8-11eb-883a-33fa5c3acdb0.mp4
+https://user-images.githubusercontent.com/30892199/118729429-32812000-b836-11eb-8f8e-83d6d7c5d87d.mp4
+
 
 
 # Motivation 
