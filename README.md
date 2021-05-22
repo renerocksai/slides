@@ -4,9 +4,9 @@ This project is both a case study and also marks my first steps in [Zig](https:/
 
 **Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint.
 
-This app will be much simpler for users than my more powerful take on the matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional.
+This app will is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/). 
  
-If you want to play with it you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
+If you want to play with _slides_ you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
 
 ![image](https://user-images.githubusercontent.com/30892199/119228360-f9d19700-bb12-11eb-9cc2-f04e7f18e8d9.png)
 
@@ -16,7 +16,7 @@ If you want to play with it you can download the current release from the releas
   - makes your slides totally GitHub-friendly
 - One single (mostly static) executable - no install required.
   - for Windows, Linux (and Mac, if you build it yourself)
-- Built-in editor: create, edit, and present with one small program
+- Built-in editor: create, edit, and present with one small program - or make last-minute changes while presenting
 - support for clickers
 - virtual laser pointer in different sizes
 
@@ -30,9 +30,9 @@ https://user-images.githubusercontent.com/30892199/119229946-73b94e80-bb1a-11eb-
 
 # Motivation 
 
-Apart from all the reasons to ditch Powerpoint that applied to my previous slideshow project [Bûllets](https://github.com/renerocksai/bullets) which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
+Apart from all the reasons for ditching Powerpoint that also applied to my previous slideshow project, [Bûllets](https://github.com/renerocksai/bullets), which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
 
-In addition, this project also serves as a case study for myself where I test out how feasible it is to develop GUI apps in zig, using OpenGL and an immediate mode GUI like dear imgui.
+In addition, this project also serves as a case study for myself where I test out how feasible it is to develop cross-platform GUI apps in zig, using OpenGL, SDL, and an immediate mode GUI like dear imgui.
 
 This project achieves what I set out for in the following ways:
 
