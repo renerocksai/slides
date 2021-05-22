@@ -8,7 +8,8 @@ This app will be much simpler for users than my more powerful take on the matter
  
 If you want to play with it you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
 
-![](screenshots/slides_plus_ed.png)
+![image](https://user-images.githubusercontent.com/30892199/119228360-f9d19700-bb12-11eb-9cc2-f04e7f18e8d9.png)
+
 
 ## Highlights:
 - Presentations are created in a simple text format, see below.
