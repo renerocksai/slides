@@ -423,6 +423,7 @@ pub const SlideshowRenderer = struct {
                                 layoutContext.current_pos.x = layoutContext.origin_pos.x;
                                 layoutContext.current_pos.y += layoutContext.current_line_height;
                                 layoutContext.current_line_height = 0;
+                                available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                             }
                         } else {
                             // if it's the last, uncommitted word
