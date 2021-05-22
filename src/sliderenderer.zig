@@ -639,10 +639,19 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     if (item.*.text.?[0] == 0) {
         return;
     }
-    var pos = item.position;
-    pos.x += item.size.x;
-    pos.x += 10; // since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
-    igPushTextWrapPos(slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size).x);
+    var wrap_pos = item.position;
+    wrap_pos.x += item.size.x;
+
+    // we need to make this larger :since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
+    // wrap_pos.x += 10; // since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
+
+    var wrap_offset = slidePosToRenderPos(.{ .x = 10, .y = 0 }, slide_tl, slide_size, internal_render_size).x;
+    if (wrap_offset < 10) {
+        wrap_offset = 10;
+    }
+    wrap_pos.x += wrap_offset;
+
+    igPushTextWrapPos(slidePosToRenderPos(wrap_pos, slide_tl, slide_size, internal_render_size).x);
     const fs = item.fontSize.?;
     const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slide_size.y / internal_render_size.y);
     const col = item.color;
@@ -654,7 +663,7 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     const t = item.text.?;
     // std.log.debug("rendering Text `{s}` with fontsize {d} ({d}), wrap pos {d:3.0}", .{ t, fs, fsize, item.size.x });
     // special case: 1st char is bullet
-    igSetCursorPos(slidePosToRenderPos(.{ .x = item.position.x, .y = item.position.y }, slide_tl, slide_size, internal_render_size));
+    igSetCursorPos(slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size));
     igPushStyleColorVec4(ImGuiCol_Text, col.?);
     igText(t);
     igPopStyleColor(1);
