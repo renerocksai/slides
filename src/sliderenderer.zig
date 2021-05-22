@@ -351,6 +351,7 @@ pub const SlideshowRenderer = struct {
                         if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
                             currentIdxOfSpace = idx;
                             if (span.text.?[currentIdxOfSpace + 1] == ' ') {
+                                currentIdxOfSpace += 1; // jump over consecutive spaces
                                 continue;
                             }
                             wordCount += 1;
