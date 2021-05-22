@@ -171,9 +171,6 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
             }
 
             std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
-            std.log.info("    line len: `{d}`", .{line.len});
-            std.log.info("    line[0] : `{d}`", .{line[0]});
-            std.log.info("        line: `{s}`", .{line});
             if (context.input[context.parsed_line_offset] != line[0]) {
                 std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
                 return error.Overflow;
