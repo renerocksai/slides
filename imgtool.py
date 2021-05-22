@@ -26,5 +26,5 @@ if __name__ == '__main__':
     print(f'Resized: {w:.0f}x{h:.0f}')
 
     center_x = (1920 - w) / 2
-    center_y = (1280 - h) / 2
+    center_y = (1080 - h) / 2
     print(f'Center : {center_x:.0f}, {center_y:.0f}')
