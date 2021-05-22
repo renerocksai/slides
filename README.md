@@ -75,7 +75,8 @@ To make the changes you made take effect, save the presentation using the save b
 
 **Note:** You can resize the editor pane by dragging it by the lighter blue handle that separates slide content from the editor in the vertical center of the editor:
 
-![](screenshots/editor_resize.png)
+![image](https://user-images.githubusercontent.com/30892199/119228517-9c8a1580-bb13-11eb-9e58-7ece3cf758a0.png)
+
 
 **Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic feartures of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
