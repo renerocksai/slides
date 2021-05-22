@@ -23,9 +23,9 @@
 
 @push sources_info x=110  y=960  w=1758 h=129 fontsize=20 color=#bfbfbfff text=Sources:
 
-@push bigbox       x=110  y=181  w=1700 h=971 fontsize=36 color=#000000ff
-@push leftbox      x=110  y=181  w=850  h=861 fontsize=36 color=#000000ff
-@push rightbox     x=1080 y=181  w=850  h=879 fontsize=36 color=#000000ff
+@push bigbox       x=110  y=181  w=1700 h=971 fontsize=45 color=#000000ff
+@push leftbox      x=110  y=181  w=850  h=861 fontsize=45 color=#000000ff
+@push rightbox     x=1080 y=181  w=850  h=879 fontsize=45 color=#000000ff
 
 # -------------------------------------------------------------
 # -- intro slide template
@@ -45,9 +45,9 @@
 #       That means, you will not inherit attributes from previous slides.
 
 @bg img=assets/bgwater.jpg
-@push chapter_number x=201 y=509 w=260 h=422 fontsize=300 color=#cd0f2dff 
+@push chapter_number x=201 y=509 w=260 h=362 fontsize=300 color=#cd0f2dff 
 @push chapter_title  x=757 y=673 w=949 h=114 fontsize=72  color=#000000ff 
-@push chapter_subtitle x=757 y=794 w=887 h=141 fontsize=36 color=#993366ff 
+@push chapter_subtitle x=757 y=794 w=887 h=141 fontsize=45 color=#993366ff 
 @pushslide chapter
 
 # -------------------------------------------------------------
@@ -79,9 +79,9 @@
 @pop intro_subtitle text=_**Easy text-based slideshows for Hackers**_
 @pop intro_authors text=_@renerocksai_
 
-@pop rightbox x=1350 y=75
+@pop rightbox x=1200 y=75
 <#0000ffff>_~~https://github.com/renerocksai/slides~~_</>
-@box img=assets/GitHub-Mark-64px.png x=1270 y=65 w=64 h=64
+@box img=assets/GitHub-Mark-64px.png x=1120 y=65 w=64 h=64
 
 # -------------------------------------------------------------
 @popslide chapter
@@ -102,19 +102,18 @@ The big picture
 here come the sources
 
 @pop leftbox 
-this is Markdown _**ta-dah**_, **tah**, _dah_!
+This is Markdown _**ta-dah**_, **tah**, _dah_!
 _
 empty lines are marked with just an _ underscore
+_
 - here comes the text
-- and so on
-    - the need to indent
-        - even more
-            - and let's wrap one more time into a nicely aligned textbox
-- here comes the text
+    - even more
+        - and let's wrap one more time into a nicely aligned textbox
+_
 - and so on
 _
 - now let us create a text that is very likely to need to be wrapped since it is too long to be rendered on a single line of text in the left box 
-- everything is still aligned properly
+_
 - **and so on**, _and on_
 
 @pop rightbox 
@@ -142,10 +141,11 @@ _
 @box img=assets/godotscr2.png x=400 y=150 w=1475 h=840
 
 @pop leftbox w=260 h=800
-- single executable
-    - for presenting and editing 
+- single executable for presenting and editing 
 _
-- text based slide format. no need to drag, click, and find and edit properties
+- text based slide format. 
+_
+- no need to drag, click, and find and edit properties
 _
 - compare ------->
 _
@@ -160,8 +160,8 @@ _
 @pop thankyou_subtitle text=_Slideshows for Hackers_
 @pop thankyou_authors text=_@renerocksai_
 
-@pop rightbox x=1350 y=530
+@pop rightbox x=1200 y=530
 <#0000ffff>_~~https://github.com/renerocksai/slides~~_</>
-@box img=assets/GitHub-Mark-64px.png x=1270 y=520 w=64 h=64
+@box img=assets/GitHub-Mark-64px.png x=1120 y=520 w=64 h=64
 # -------------------------------------------------------------
 # eof commits the slide
