@@ -104,6 +104,35 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>0</kbd> | Goto last slide |
 
 # Slideshow Text Format 
+
+
+## Markdown Format
+
+Bulleted items can be placed and nested like this:
+
+```markdown
+- first
+    - second (4 space indendation)
+        - third ...
+```
+
+Formatting is supported:
+
+```markdown
+Normal text.
+**Bold** text.
+_italic_ text. 
+_**Bold italic**_ text.
+~~Underlined~~ text.
+<#rrggbbaa>Colored with alpha</> text. E.g. <#ff0000ff>red full opacity</>
+```
+ 
+## Slideshow Format 
+
+Internal render buffer resolution is 1920x1080. So always use coordinates in this range.
+
+More documentation to follow.
+
 Example of the current text format - see `test_public.sld` for a more realistic example:
 
 ```
