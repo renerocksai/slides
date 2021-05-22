@@ -96,10 +96,10 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>Ctrl</kbd> + <kbd>L</kbd> | Toggle laserpointer |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> | cycle through laserpointer sizes |
 | <kbd>M</kbd> | Toggle on-screen menu buttons |
-| <kbd><</kbd> | Goto previous slide |
+| Cursor <kbd><-</kbd> | Goto previous slide |
 | <kbd>PgUp</kbd> | Goto previous slide |
 | <kbd>Backspace</kbd> | Goto previous slide |
-| <kbd>></kbd> | Goto next slide |
+| Cursor <kbd>-></kbd> | Goto next slide |
 | <kbd>PgDown</kbd> | Goto next slide |
 | <kbd>Space</kbd> | Goto next slide |
 | <kbd>1</kbd> | Goto first slide |
