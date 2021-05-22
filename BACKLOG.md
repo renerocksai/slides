@@ -2,9 +2,10 @@
 
 * SEARCH function
 * re-introduce `$slide_number`
-* get markdown rendering right - there are some oddities where text seems to get cut off for bold/underlined and the position is off, if text wraps behind it - see below "... not perfect..."
-* get markdown parsing right - it might be we have a +/-1 offset bug with some formatting.
+* get markdown rendering right - it might be we have a +/-1 offset bug with some formatting.
+    * parsing is OK - maybe calculating text sizes with trailing blanks is odd in imgui?
 
+- [x] get markdown rendering right 
 - [x] kinesis-friendlyness: make backspace button go one slide back
 - [x] jump to editor cursor pos on error
 - [x] dupe editor mem -> editing won't change slides stuff
@@ -26,10 +27,10 @@
 - [x] parse markdown (dialect) subset
 - [x] load (and cache) bold, italic, bolditalic fonts
 - [x] render markdown
-  - [ ] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
+  - [x] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
         manual line break solves it, though.
 - [x] laserpointer
-- [x] implement ~~underline~~ 
+- [x] implement ~~underline~~: 
     - and do we have ==highlight==? NO!
 - [ ] formatting: center
 - [ ] Overview Mode
