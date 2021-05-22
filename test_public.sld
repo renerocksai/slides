@@ -157,7 +157,7 @@ _
 # -------------------------------------------------------------
 @popslide thankyou
 @pop thankyou_title text=**Slideshows in ZIG**
-@pop thankyou_subtitle text=_Easy text-based slideshows for Hackers_
+@pop thankyou_subtitle text=_Slideshows for Hackers_
 @pop thankyou_authors text=_@renerocksai_
 
 @pop rightbox x=1350 y=530
