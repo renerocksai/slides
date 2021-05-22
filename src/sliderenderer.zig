@@ -350,9 +350,23 @@ pub const SlideshowRenderer = struct {
                         std.log.debug("lastConsumedIdx: {}, lastIdxOfSpace: {}, currentIdxOfSpace: {}", .{ lastConsumedIdx, lastIdxOfSpace, currentIdxOfSpace });
                         if (std.mem.indexOfPos(u8, span.text.?, currentIdxOfSpace, " ")) |idx| {
                             currentIdxOfSpace = idx;
-                            if (span.text.?[currentIdxOfSpace + 1] == ' ') {
-                                currentIdxOfSpace += 1; // jump over consecutive spaces
-                                continue;
+                            // look-ahead only allowed if there is more text
+                            if (span.text.?.len > currentIdxOfSpace + 1) {
+                                if (span.text.?[currentIdxOfSpace + 1] == ' ') {
+                                    currentIdxOfSpace += 1; // jump over consecutive spaces
+                                    continue;
+                                }
+                            }
+                            if (currentIdxOfSpace == 0) {
+                                // special case: we start with a space
+                                // we start searching for the next space 1 after the last found one
+                                if (currentIdxOfSpace + 1 < span.text.?.len) {
+                                    currentIdxOfSpace += 1;
+                                    continue;
+                                } else {
+                                    // in this case we better break or else we will loop forever
+                                    break;
+                                }
                             }
                             wordCount += 1;
                         } else {
@@ -431,10 +445,11 @@ pub const SlideshowRenderer = struct {
                                     layoutContext.current_line_height = attempted_span_size.y;
                                 }
 
-                                std.log.debug(">>> BREAKING THE LINE, height: {}", .{layoutContext.current_line_height});
-                                layoutContext.current_pos.x = layoutContext.origin_pos.x;
-                                layoutContext.current_pos.y += layoutContext.current_line_height;
-                                layoutContext.current_line_height = 0;
+                                // let's not break the line because of the last word
+                                // std.log.debug(">>> BREAKING THE LINE, height: {}", .{layoutContext.current_line_height});
+                                // layoutContext.current_pos.x = layoutContext.origin_pos.x;
+                                // layoutContext.current_pos.y += layoutContext.current_line_height;
+                                // layoutContext.current_line_height = 0;
                                 break; // it's the last word after all
                             }
                         }
@@ -513,7 +528,7 @@ pub const SlideshowRenderer = struct {
         my_fonts.pushStyledFontScaled(fontsize, fontstyle);
         defer my_fonts.popFontScaled();
         const ctext = try self.toCString(text);
-        std.log.debug("cstring: `{s}`", .{ctext});
+        std.log.debug("cstring: of {s} = `{s}`", .{ text, ctext });
         if (ctext[0] == 0) {
             size_out.x = 0;
             size_out.y = 0;
