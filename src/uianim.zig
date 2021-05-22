@@ -375,17 +375,19 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
         }
 
         if (show_error_panel) {
-            igSetCursorPos(ImVec2{ .x = editor_pos.x, .y = s.y + 2 });
+            igSetCursorPos(ImVec2{ .x = editor_pos.x, .y = s.y + 2 + find_area_height + pos.y });
             igPushStyleColorVec4(ImGuiCol_Text, .{ .x = 0.95, .y = 0.95, .w = 0.99 });
             igPushStyleColorVec4(ImGuiCol_FrameBg, .{ .x = 0, .y = 0.1, .z = 0.2, .w = 0.5 });
             var selected: c_int = 0;
             const item_array = try anim.parser_context.?.allErrorsToCstrArray(anim.parser_context.?.allocator);
 
             my_fonts.pushFontScaled(error_panel_fontsize);
+            igPushItemWidth(-1);
             if (igListBoxStr_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
                 // an error was selected
                 anim.jumpToPosAndHighlightLine(parser_errors.items[@intCast(usize, anim.selected_error)].line_offset, true);
             }
+            igPopItemWidth();
             my_fonts.popFontScaled();
             igPopStyleColor(2);
             // igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
