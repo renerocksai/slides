@@ -1,6 +1,6 @@
 # Slides - Slideshows for Hackers 
 
-This project is both a case study and also marks my first steps in [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
+This project is both a case study and also marks my first steps in the programming language [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
 **Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint.
 
