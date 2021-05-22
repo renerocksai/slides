@@ -23,7 +23,9 @@ If you want to play with it you can download the current release from the releas
 
 See it in action: We open a slideshow, go through the slides, activate the laserpointer, open the editor, make and save changes to the subtitle of the last slide, then close the editor.
 
-https://user-images.githubusercontent.com/30892199/119228997-0acfd780-bb16-11eb-835f-d23989268ff9.mp4
+
+https://user-images.githubusercontent.com/30892199/119229946-73b94e80-bb1a-11eb-84ad-cae5251d4bbe.mp4
+
 
 
 # Motivation 
