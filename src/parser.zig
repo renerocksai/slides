@@ -166,7 +166,14 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                 continue;
             }
 
-            // std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
+            if (line[0] == 0) {
+                break;
+            }
+
+            std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
+            std.log.info("    line len: `{d}`", .{line.len});
+            std.log.info("    line[0] : `{d}`", .{line[0]});
+            std.log.info("        line: `{s}`", .{line});
             if (context.input[context.parsed_line_offset] != line[0]) {
                 std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
                 return error.Overflow;
@@ -545,7 +552,7 @@ fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *
 
 fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserContext) !void {
     // .
-    std.log.debug("{s} : text={s}", .{ parsing_item_context.directive, parsing_item_context.text });
+    std.log.debug("{s} : text=`{s}`", .{ parsing_item_context.directive, parsing_item_context.text });
 
     // switch over directives
     if (std.mem.eql(u8, parsing_item_context.directive, "@push")) {
