@@ -99,6 +99,7 @@ pub const EditAnim = struct {
     search_term: [*c]u8 = null,
     search_term_size: usize = 25,
     search_ed_active: bool = false,
+    current_search_pos: usize = 0,
 
     pub fn shrink(self: *EditAnim) void {
         if (self.desired_size.x > 300) {
@@ -296,7 +297,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
 
         // (optional) extra stuff
         const grow_shrink_button_panel_height = 0; // 22;
-        const find_area_height = 50;
+        const find_area_height = 26;
         const find_area_button_size = 120;
         const find_area_min_width = 70 + 70;
 
@@ -309,7 +310,33 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             anim.search_ed_active = igInputTextWithHint("", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
             //            std.log.debug("search active: {}", .{anim.search_ed_active});
             igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
-            _ = igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 });
+            if (igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 })) {
+                // pass
+                if (std.mem.lenZ(anim.search_term) > 0) {
+                    // DO SEARCH
+                    std.log.debug("Search term is: {s}", .{anim.search_term});
+                    const shit: []u8 = std.mem.spanZ(anim.textbuf);
+                    const fuck: []u8 = std.mem.spanZ(anim.search_term);
+                    if (std.mem.indexOfPos(u8, shit, anim.current_search_pos, fuck)) |foundindex| {
+                        // found, now highlight the search result and jump cursor there
+                        anim.jumpToPosAndHighlightLine(foundindex, true);
+                        anim.current_search_pos = foundindex + 1;
+                    } else {
+                        // no (more) finds
+                        // if we have to wrap:
+                        if (anim.current_search_pos > 0) { // we hadn't started from the beginning
+                            anim.current_search_pos = 0;
+                            if (std.mem.indexOfPos(u8, shit, anim.current_search_pos, fuck)) |foundindex| {
+                                // found, now highlight the search result and jump cursor there
+                                anim.jumpToPosAndHighlightLine(foundindex, true);
+                                anim.current_search_pos = foundindex + 1;
+                            } else {
+                                anim.current_search_pos = 0;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // on with the editor, shift it down by find_area_height
