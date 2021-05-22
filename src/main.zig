@@ -484,7 +484,9 @@ fn showBottomPanel() void {
         // dummy column for the editor save button
         igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {}
+            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
+                cmdSave();
+            }
         }
         igEndColumns();
     } else {
