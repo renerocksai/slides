@@ -20,7 +20,7 @@ If you want to play with it you can download the current release from the releas
 - virtual laser pointer in different sizes
 
 
-See it in action: We activate and resize the laserpointer, navigate to a slide, open the editor, make and save changes to the subtitle of the last slide, then close the editor.
+See it in action: We open a slideshow, go through the slides, activate the laserpointer, open the editor, make and save changes to the subtitle of the last slide, then close the editor.
 
 
 https://user-images.githubusercontent.com/30892199/118730194-83dddf00-b837-11eb-988a-677a63f5d139.mp4
@@ -45,7 +45,7 @@ This project achieves what I set out for in the following ways:
  
 ## Interesting Observations 
 
-Using slides, I far more enjoy creating slideshow presentations. It seems to trick my mind into a more enjoyable, programming-like mode when I spend my time in neovim, using the slideshow description / markup language. It is a completely mouse-less way of creating presentations. I find it very effective. I also really like that I can put my presentations and supporting assets in a git reposiory and have them version-controlled. 
+Using slides, I far more enjoy creating slideshow presentations. It seems to trick my mind into a more enjoyable, programming-like state when I spend my time in neovim, using the slideshow description / markup language. It is a completely mouse-less way of creating presentations. I find it very effective. I also really like that I can put my presentations and supporting assets in a git reposiory and have them version-controlled. 
 
 Lots of the contents of my slideshows is Markdown or very Markdown-friendly which makes re-use of information snippets really handy, e.g. from notes to presentation to blog post.  
 
