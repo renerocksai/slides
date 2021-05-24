@@ -18,8 +18,7 @@
 
 @push slide_title  x=110  y=71   w=1712 h=73  fontsize=52 color=#000000ff
 
-# this is broken at the moment 
-#@push slide_number x=1803 y=1021 w=40   h=40  fontsize=20 color=#000000ff text=$slide_number
+@push slide_number x=1803 y=1027 w=40   h=40  fontsize=20 color=#404040ff text=$slide_number
 
 @push sources_info x=110  y=960  w=1758 h=129 fontsize=20 color=#bfbfbfff text=Sources:
 
@@ -54,7 +53,7 @@
 # -- content slide template
 # -------------------------------------------------------------
 @bg img=assets/bglb.jpg
-
+@pop slide_number
 @pushslide content
 
 # -------------------------------------------------------------
