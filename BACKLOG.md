@@ -14,21 +14,19 @@
 - [x] editor width shrink, grow buttons
 - [x] show line in open editor when changing slides (!new! flash it!)
 - [x] drag editor width button y-centered - can be used as dummy button for flash animation? no, it would flash, too
-- [x] If there are no slides, show a red background in showslides
+- [x] If there are no slides, show a colored background in showslides
 - [x] if current slide index > num_slides: jump to last slide in showslides -- this will be used in hot reloads
 - [x] hot reload slides
 - [x] `$slide_number`
 - [x] bullets bg imgs and colors -- bullets-like template
 - [x] separate arena for slides : on reload just wipe the arena
-- [x] initial bullet rendering: draw text first, substituting bullet symbols by "  ", then a second time with just the bullets in their own style
-- [x] slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
+- [x] outdated: initial bullet rendering: draw text first, substituting bullet symbols by "  ", then a second time with just the bullets in their own style
+- [x] probably outdated: slides: get items parsed into render elements: texts split into blocks of normal and bulleted text - for special bullet rendering and formatting like centering
 - [x] Menus - bring back the menus!
 - [x] render bullets in bulleted text boxes, with nice indents (come automatically on wrap :) 
 - [x] parse markdown (dialect) subset
 - [x] load (and cache) bold, italic, bolditalic fonts
 - [x] render markdown
-  - [x] not perfect. screws up in title **artificial** _voices_ in _**human choices**_ with wrapping (cut off)
-        manual line break solves it, though.
 - [x] laserpointer
 - [x] implement ~~underline~~: 
     - and do we have ==highlight==? NO!
