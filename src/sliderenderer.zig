@@ -141,8 +141,13 @@ pub const SlideshowRenderer = struct {
                 .current_line_height = line_height_bullet_width.y, // will be overridden immediately but needed if text starts with empty line(s)
             };
 
+            var slideNumStr: [10]u8 = undefined;
+            _ = try std.fmt.bufPrint(&slideNumStr, "{d}", .{slide_number});
+
+            const new_t = try std.mem.replaceOwned(u8, self.allocator, t, "$slide_number", &slideNumStr);
+
             // split into lines
-            var it = std.mem.split(t, "\n");
+            var it = std.mem.split(new_t, "\n");
             while (it.next()) |line| {
                 if (line.len == 0) {
                     // empty line

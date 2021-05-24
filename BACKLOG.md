@@ -1,9 +1,9 @@
 # Backlog
 
-* re-introduce `$slide_number`
 * get markdown rendering right - it might be we have a +/-1 offset bug with some formatting.
     * parsing is OK - maybe calculating text sizes with trailing blanks is odd in imgui?
 
+* [x] re-introduce `$slide_number`
 - [x] SEARCH function
 - [x] get markdown rendering right 
 - [x] kinesis-friendlyness: make backspace button go one slide back
