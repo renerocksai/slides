@@ -8,11 +8,11 @@ usingnamespace upaya.imgui;
 /// Some **bold** text and some _italic_ text.
 /// The combination is **_bold italic_** text or _**bold italic**_.
 /// - a bulleted item
-/// Some ~underlined~ text.
+/// Some ~~underlined~~ text.
 ///
 /// Colors <#rrggbbaa>this is colored</>
 ///
-/// ~**_underlined bold italic text_**~.
+/// ~~**_underlined bold italic text_**~~.
 ///
 pub const StyleFlags = struct {
     pub const none = 0;

@@ -141,9 +141,9 @@ pub const SlideshowRenderer = struct {
                 .current_line_height = line_height_bullet_width.y, // will be overridden immediately but needed if text starts with empty line(s)
             };
 
+            // slide number
             var slideNumStr: [10]u8 = undefined;
             _ = try std.fmt.bufPrint(&slideNumStr, "{d}", .{slide_number});
-
             const new_t = try std.mem.replaceOwned(u8, self.allocator, t, "$slide_number", &slideNumStr);
 
             // split into lines
@@ -647,9 +647,8 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     var wrap_pos = item.position;
     wrap_pos.x += item.size.x;
 
-    // we need to make this larger :since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
-    // wrap_pos.x += 10; // since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
-
+    // we need to make the wrap pos slightly larger:
+    // since for underline, sizes are pixel exact, later scaling of this might screw the wrapping - safety margin is 10 pixels here
     var wrap_offset = slidePosToRenderPos(.{ .x = 10, .y = 0 }, slide_tl, slide_size, internal_render_size).x;
     if (wrap_offset < 10) {
         wrap_offset = 10;
@@ -666,8 +665,6 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
 
     // diplay the text
     const t = item.text.?;
-    // std.log.debug("rendering Text `{s}` with fontsize {d} ({d}), wrap pos {d:3.0}", .{ t, fs, fsize, item.size.x });
-    // special case: 1st char is bullet
     igSetCursorPos(slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size));
     igPushStyleColorVec4(ImGuiCol_Text, col.?);
     igText(t);

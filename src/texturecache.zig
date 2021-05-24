@@ -6,6 +6,9 @@ const allocator = std.heap.page_allocator;
 
 var path2tex = std.StringHashMap(*upaya.Texture).init(allocator);
 
+// TODO: I am not sure anymore whether it is OK to have this cache alive across
+//       multiple load / save cycles
+
 // open img file relative to refpath (slideshow file)
 pub fn getImg(p: []const u8, refpath: ?[]const u8) !?*upaya.Texture {
     var tex: ?*upaya.Texture = null;

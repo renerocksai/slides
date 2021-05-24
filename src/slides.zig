@@ -137,6 +137,8 @@ pub const SlideItem = struct {
         // TODO: BUG BUG compiler BUG ?!?!?!?!?!
         // if(self.underline_width == null) { A } else { B }
         // does not work. Even when it is null, the B branch is always executed
+        // -- I am not sure whether it is really a bug or if I just got the concept
+        // of optionals wrong back then
         if (self.underline_width) |w| {} else {
             self.underline_width = slideshow.default_underline_width;
         }
@@ -235,75 +237,3 @@ pub const ItemContext = struct {
         }
     }
 };
-
-// .
-// demo slides
-// .
-
-//pub fn makeDemoSlides(slides: *std.ArrayList(*Slide), allocator: *std.mem.Allocator) void {
-pub fn makeDemoSlides(slides: *SlideList, allocator: *std.mem.Allocator) void {
-    // title fontsize 96 color black, x=219, y=481, w=836 (, h=328)
-    // subtitle fontsize 45 color #cd0f2d, x=219, y=758, w=1149, (y=246)
-    // authors color #993366
-    const demoimgpath1 = "assets/nim/1.png";
-    const demoimgpath2 = "assets/nim/5.png";
-    const demoimgpath3 = "assets/example.png";
-
-    var slide_1: *Slide = Slide.new(allocator) catch unreachable;
-    var slide_2: *Slide = Slide.new(allocator) catch unreachable;
-
-    slide_1.pos_in_editor = 0;
-    slide_2.pos_in_editor = 0;
-
-    // Slide 1
-    // background
-    slide_1.items.append(SlideItem{ .kind = .background, .img_path = demoimgpath1[0..demoimgpath1.len] }) catch unreachable;
-    // title
-    slide_1.items.append(SlideItem{
-        .kind = .textbox,
-        .fontSize = 96,
-        .text = "Artififial Voices in Human Choices",
-        .color = ImVec4{ .w = 0.9 },
-        .position = ImVec2{ .x = 219, .y = 481 },
-        .size = ImVec2{ .x = 836, .y = 238 },
-    }) catch unreachable;
-    // subtitle etc
-    slide_1.items.append(SlideItem{
-        .kind = .textbox,
-        .fontSize = 45,
-        .text = "SOMETHING SOMETHING REJECTIONS\n\nDr. Carolin Kaiser, Rene Schallner",
-        .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
-        .position = ImVec2{ .x = 219, .y = 758 },
-        .size = ImVec2{ .x = 1149, .y = 246 },
-    }) catch unreachable;
-    slides.append(slide_1) catch unreachable;
-
-    // Slide 2
-    // background
-    slide_2.items.append(SlideItem{ .kind = .background, .img_path = demoimgpath2[0..demoimgpath2.len] }) catch unreachable;
-    // title
-    slide_2.items.append(SlideItem{
-        .kind = .textbox,
-        .fontSize = 96,
-        .text = "Artififial Voices in Human Choices",
-        .color = ImVec4{ .w = 0.9 },
-        .position = ImVec2{ .x = 219, .y = 481 },
-        .size = ImVec2{ .x = 836, .y = 238 },
-    }) catch unreachable;
-    // subtitle etc
-    slide_2.items.append(SlideItem{
-        .kind = .textbox,
-        .fontSize = 45,
-        .text = "Milestone 3\n\nDr. Carolin Kaiser, Rene Schallner",
-        .color = ImVec4{ .x = 0xcd / 255.0, .y = 0x0f / 255.0, .z = 0x2d / 255.0, .w = 0.9 },
-        .position = ImVec2{ .x = 219, .y = 758 },
-        .size = ImVec2{ .x = 1149, .y = 246 },
-    }) catch unreachable;
-    slide_2.items.append(SlideItem{
-        .kind = .img,
-        .img_path = demoimgpath3[0..demoimgpath3.len],
-        .position = ImVec2{ .x = 916, .y = 121 },
-        .size = ImVec2{ .x = 1916 / 3, .y = 2121 / 3 },
-    }) catch unreachable;
-    slides.append(slide_2) catch unreachable;
-}

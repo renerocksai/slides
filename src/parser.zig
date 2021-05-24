@@ -516,7 +516,6 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
     return item_context;
 }
 
-// TODO:
 // - @push       -- merge: parser context, current item context --> pushed item
 // - @pushslide  -- pushed slide just from parser context, clear current item context just as with @page
 // - @pop        -- merge: current item context with parser context --> current item context
@@ -536,7 +535,6 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
 // - slide defaults
 // - slideshow defaults
 //
-
 fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *ItemContext) void {
     if (parsing_item_context.text == null) parsing_item_context.text = item_context.text;
     if (parsing_item_context.fontSize == null) parsing_item_context.fontSize = item_context.fontSize;
