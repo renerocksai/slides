@@ -346,7 +346,7 @@ fn handleKeyboard() void {
         return;
     }
     // don't consume keys while the editor is visible
-    if ((igGetActiveID() == igGetIDStr("editor")) or (ed_anim.search_ed_active)) {
+    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("search"))) {
         //        std.log.debug("search_ed_active: {}", .{ed_anim.search_ed_active});
         return;
     }
