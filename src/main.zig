@@ -470,6 +470,9 @@ fn showBottomPanel() void {
         //            G.app_state = .mainmenu;
         //        }
         igNextColumn();
+        igNextColumn();
+        // TODO: using the button can cause crashes, whereas the shortcut and menu don't -- what's going on here?
+        //       when button is removed, we also saw it with the shortcut
         if (animatedButton("[f]ullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
             cmdToggleFullscreen();
         }
