@@ -13,19 +13,6 @@ pub const FontStyle = enum {
 };
 
 const FontMap = std.AutoHashMap(i32, *ImFont);
-// const FontFileSpec = struct {
-//     style: FontStyles = undefined,
-//     filename: []const u8 = undefined,
-//     size2font: ?*FontMap = null,
-// };
-//
-// const FontNames = [_]FontFileSpec{
-//     FontFileSpec{ .style = .normal, .filename = "../assets/Calibri Light.ttf" },
-//     FontFileSpec{ .style = .bold, .filename = "../assets/Calibri Regular.ttf" }, // Calibri is the bold version of Calibri Light for us
-//     FontFileSpec{ .style = .italic, .filename = "../assets/Calibri Light Italic.ttf" },
-//     FontFileSpec{ .style = .bolditalic, .filename = "../assets/Calibri Italic.ttf" }, // Calibri is the bold version of Calibri Light for us
-// };
-
 //const baked_font_sizes = [_]i32{ 14, 20, 28, 36, 40, 45, 52, 60, 68, 72, 90, 96, 104, 128, 136, 144, 192, 300, 600 };
 const baked_font_sizes = [_]i32{
     14,
@@ -145,7 +132,6 @@ pub fn pushFontScaled(pixels: i32) void {
     // we assume we have a font, now scale it
     last_scale = font_info.font.*.Scale;
     const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, font_info.size);
-    //std.log.debug("--> Requested font size: {}, scaling from size: {} with scale: {}\n", .{ pixels, font_info.size, new_scale });
     font_info.font.*.Scale = new_scale;
     igPushFont(font_info.font);
     last_font = font_info.font;
@@ -160,7 +146,6 @@ pub fn pushStyledFontScaled(pixels: i32, style: FontStyle) void {
     // we assume we have a font, now scale it
     last_scale = font_info.font.*.Scale;
     const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, font_info.size);
-    //std.log.debug("--> Requested font size: {}, scaling from size: {} with scale: {}\n", .{ pixels, font_info.size, new_scale });
     font_info.font.*.Scale = new_scale;
     igPushFont(font_info.font);
     last_font = font_info.font;

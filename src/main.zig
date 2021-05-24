@@ -41,14 +41,6 @@ pub fn main() !void {
 }
 
 fn init() void {
-    // Try to set the cpu affinity
-    //const my_pid = std.os.linux.getpid();
-    //std.log.debug("my pid is {}", .{my_pid});
-
-    //var my_affinity_mask = std.os.sched_getaffinity(my_pid) catch unreachable;
-    //var x: std.os.linux.cpu_set_t = my_affinity_mask;
-    //std.log.debug("my affinity mask is {x}", .{my_affinity_mask});
-    //my_affinity_mask[0] = 1;
     my_fonts.loadFonts() catch unreachable;
     if (std.builtin.os.tag == .windows) {
         std.log.info("on windows", .{});
@@ -195,6 +187,7 @@ const LaserpointerAnim = struct {
         self.frame_ticker = 0;
         self.anim_ticker = 0;
         if (self.show_laserpointer) {
+            // mouse cursor manipulation such as hiding and changing shape doesn't do anything
             // igSetMouseCursor(ImGuiMouseCursor_TextInput);
             sapp_show_mouse(false);
             std.log.debug("Hiding mouse", .{});
@@ -251,14 +244,15 @@ fn update() void {
             showMenu();
         }
 
-        // no switch appstate
         handleKeyboard();
+
         const do_reload = checkAutoReload() catch false;
         if (do_reload) {
             loadSlideshow(G.slideshow_filp.?) catch |err| {
                 std.log.err("Unable to auto-reload: {any}", .{err});
             };
         }
+
         if (G.slideshow.slides.items.len > 0) {
             if (G.current_slide > G.slideshow.slides.items.len) {
                 G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
@@ -277,6 +271,7 @@ fn update() void {
             }
         }
         igEnd();
+
         if (G.show_saveas) {
             igOpenPopup("Save slideshow?");
         }
@@ -296,7 +291,7 @@ fn update() void {
 fn makeDefaultSlideshow() !void {
     var empty: *Slide = undefined;
     empty = try Slide.new(G.slideshow_allocator);
-    // make a red background
+    // make a grey background
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
     try empty.items.append(bg);
     try G.slideshow.slides.append(empty);
@@ -347,7 +342,6 @@ fn handleKeyboard() void {
     }
     // don't consume keys while the editor is visible
     if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("search"))) {
-        //        std.log.debug("search_ed_active: {}", .{ed_anim.search_ed_active});
         return;
     }
     var deltaindex: i32 = 0;
@@ -383,7 +377,6 @@ fn handleKeyboard() void {
     }
 
     if (igIsKeyReleased(SAPP_KEYCODE_F)) {
-        //        std.log.debug("fullscreen search_ed_active: {}", .{ed_anim.search_ed_active});
         cmdToggleFullscreen();
     }
 
@@ -398,7 +391,7 @@ fn handleKeyboard() void {
     var new_slide_index: i32 = G.current_slide + deltaindex;
 
     // special slide navigation: 1 and 0
-    // needs to be after applying deltaindex!!!!!
+    // needs to happen after applying deltaindex!!!!!
     if (igIsKeyReleased(SAPP_KEYCODE_1)) {
         new_slide_index = 0;
     }
@@ -465,10 +458,6 @@ fn showBottomPanel() void {
             anim_bottom_panel.visible = false;
         }
         igNextColumn();
-        // igNextColumn();
-        //        if (animatedButton("[m]ain menu", ImVec2{ .x = igGetColumnWidth(0), .y = 22 }, &bt_backtomenu_anim) == .released) {
-        //            G.app_state = .mainmenu;
-        //        }
         igNextColumn();
         // TODO: using the button can cause crashes, whereas the shortcut and menu don't -- what's going on here?
         //       when button is removed, we also saw it with the shortcut
@@ -544,16 +533,6 @@ fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     };
     setStatusMsg("Saved!");
     return true;
-
-    // interesting snippet: null-check for c-style pointers expressed via optional slices
-    // const prompt = c"> ";
-    //
-    // fn readline() ?[]const u8 {
-    //     if (editline.readline(prompt)) |line| {
-    //             return std.mem.toSliceConst(u8, line);
-    //     }
-    //     return null;
-    // }
 }
 
 fn slideSizeInWindow() ImVec2 {
@@ -695,8 +674,6 @@ fn loadSlideshow(filp: []const u8) !void {
 }
 
 fn isEditorDirty() bool {
-    //    std.log.debug("ED: {any}", .{G.editor_memory});
-    //    std.log.debug("ED: {any}", .{G.loaded_content});
     return !std.mem.eql(u8, G.editor_memory, G.loaded_content);
 }
 
@@ -735,7 +712,6 @@ fn cmdSave() void {
 }
 
 fn saveSlideshowAs() void {
-
     // file dialog
     var selected_file: []const u8 = undefined;
     var buf: [2048]u8 = undefined;

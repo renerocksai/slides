@@ -277,11 +277,9 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             anim.ticker_ms += 1;
             if (anim.ticker_ms < anim.flash_editor_duration) {
                 anim.activate();
-                // std.log.debug("flashing editor {}", .{anim.ticker_ms});
             } else {
                 anim.in_flash_editor_animation = false;
                 igActivateItem(igGetIDStr("dummy"));
-                // std.log.debug("un-flashing editor {}", .{anim.ticker_ms});
             }
         } else {
             anim.ticker_ms = 0;
@@ -308,10 +306,8 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             const textfield_width = s.x - find_area_button_size - gap * 2;
             igPushItemWidth(textfield_width);
             anim.search_ed_active = igInputTextWithHint("search", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
-            //            std.log.debug("search active: {}", .{anim.search_ed_active});
             igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
             if (igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 })) {
-                // pass
                 if (std.mem.lenZ(anim.search_term) > 0) {
                     // DO SEARCH
                     std.log.debug("Search term is: {s}", .{anim.search_term});
@@ -358,7 +354,6 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
                 // .
                 my_fonts.popFontScaled();
                 num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_line_height);
-                // std.log.info("Text line height is {d} --> {d} of {d} lines will fit in {d:.0}", .{ text_line_height, num_visible_error_lines, parser_errors.items.len, error_panel_height });
                 if (num_visible_error_lines > parser_errors.items.len) {
                     num_visible_error_lines = @intCast(c_int, parser_errors.items.len);
                 }
@@ -383,7 +378,6 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
         if (resize_ret == .pressed or anim.in_resize_mode) {
             var mouse_pos: ImVec2 = undefined;
             igGetMousePos(&mouse_pos);
-            // std.log.debug("mouse_pos: {d:.0}", .{mouse_pos.x});
             if (anim.resize_mouse_x > 0) {
                 anim.current_size.x -= mouse_pos.x - anim.resize_mouse_x;
                 if (anim.current_size.x > internal_render_size.x - 300) {
@@ -417,28 +411,10 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             igPopItemWidth();
             my_fonts.popFontScaled();
             igPopStyleColor(2);
-            // igSetCursorPos(ImVec2{ .x = pos.x, .y = s.y + 2 });
-            // _ = igButton("CHECK", .{ .x = 100, .y = @intToFloat(f32, num_visible_error_lines) * text_line_height });
         }
 
-        // maybe do sth below: buttons or stuff
-        // get real editor size
-        if (false) {
-            s = trxy(ImVec2{ .x = anim.current_size.x, .y = 0 }, content_window_size, internal_render_size);
-            const real_ed_w = s.x;
-            const bt_width = s.x / 2; //50;
-            s.x = content_window_size.x - real_ed_w;
-            s.y = size.y - grow_shrink_button_panel_height;
-            igSetCursorPos(s);
-            if (animatedButton("<", .{ .x = bt_width, .y = 20 }, &bt_grow_anim) == .released) {
-                anim.grow();
-            }
-            s.x += bt_width;
-            igSetCursorPos(s);
-            if (animatedButton(">", .{ .x = bt_width, .y = 20 }, &bt_shrink_anim) == .released) {
-                anim.shrink();
-            }
-        }
+        // the dummy button is necessary so we have something to activate after flashing the editor
+        // to get out of the editor - or else it would suddenly start consuming keystrokes
         igSetCursorPos(.{ .x = pos.x, .y = 20 }); // below menu bar
         igPushStyleColorVec4(ImGuiCol_Button, .{ .w = 0 });
         _ = igButton("dummy", .{ .x = 2, .y = 2 });
