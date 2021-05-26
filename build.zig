@@ -22,6 +22,7 @@ pub fn build(b: *Builder) void {
     // format is: executable_name, path_to_zig_file
     const examples = [_][2][]const u8{
         [_][]const u8{ "slides", "src/main.zig" },
+        [_][]const u8{ "testmd", "src/testmd.zig" },
     };
 
     for (examples) |example, i| {
