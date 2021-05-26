@@ -1,4 +1,5 @@
 const std = @import("std");
+// TODO: maybe imvec4 is not worth it creating a dependency here
 const upaya = @import("upaya");
 usingnamespace upaya.imgui;
 
@@ -109,6 +110,7 @@ pub const MdLineParser = struct {
                         if (peekAhead(line, pos, 1)) |next| {
                             if (next == '*') {
                                 if (std.mem.indexOf(u8, line[pos + 1 ..], "**")) |term_pos_relative| {
+                                    // here, we have to deal with double symbols, hence no >= 1 down there:
                                     if (term_pos_relative > 1) {
                                         // check if terminator is preceded by space
                                         if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
@@ -154,6 +156,7 @@ pub const MdLineParser = struct {
                         if (peekAhead(line, pos, 1)) |next| {
                             if (next == '~') {
                                 if (std.mem.indexOf(u8, line[pos + 1 ..], "~~")) |term_pos_relative| {
+                                    // here, we have to deal with double symbols, hence no >= 1 down there:
                                     if (term_pos_relative > 1) {
                                         // check if terminator is preceded by space
                                         if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
@@ -192,7 +195,8 @@ pub const MdLineParser = struct {
                     } else {
                         // try to start italic:
                         if (std.mem.indexOf(u8, line[pos + 1 ..], "_")) |term_pos_relative| {
-                            if (term_pos_relative > 1) {
+                            // how many chars after the character (pos+1) after the initial _ (pos)
+                            if (term_pos_relative >= 1) {
                                 // check if terminator is preceded by space
                                 if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
                                     if (nospace != ' ') {

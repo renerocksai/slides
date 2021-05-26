@@ -1,8 +1,27 @@
 # Backlog
 
-* get markdown rendering right - it might be we have a +/-1 offset bug with some formatting.
-    * parsing is OK - maybe calculating text sizes with trailing blanks is odd in imgui?
+## BUGS:
 
+
+- [ ] render bug
+```
+    @pop bigbox y=720 x=110 w=900 h=900
+    - _**right:**_ Fake Lane Attack on Tesla Autopilot
+        - researchers successfully tricked Tesla Autopilot into driving into opposing traffic by placing "small stickers as interference patches on the ground"
+    _
+    # TODO: BUG! Below line wraps the bold text wrongly (vulnerability below adverserial)
+    <#cd0f2dff>The susceptability to such attacks is called **_adverserial vulnerability_**</>
+```
+
+
+## Baklog and stuff in random order
+- [x] parser bug
+```
+    # debug TODO bug 
+    # - trading bot has one of _m_ artificial emotional voices
+    # seems like single letters cannot be used in formatting
+    - trading bot has one of _m_ artificial emotional voices
+```
 * [x] re-introduce `$slide_number`
 - [x] SEARCH function
 - [x] get markdown rendering right 
