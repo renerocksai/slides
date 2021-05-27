@@ -305,7 +305,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: ImVec2
             const gap = 5;
             const textfield_width = s.x - find_area_button_size - gap * 2;
             igPushItemWidth(textfield_width);
-            anim.search_ed_active = igInputTextWithHint("search", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
+            anim.search_ed_active = igInputTextWithHint("##search", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
             igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
             if (igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 })) {
                 if (std.mem.lenZ(anim.search_term) > 0) {

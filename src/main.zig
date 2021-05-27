@@ -341,7 +341,7 @@ fn handleKeyboard() void {
         return;
     }
     // don't consume keys while the editor is visible
-    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("search"))) {
+    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("##search"))) {
         return;
     }
     var deltaindex: i32 = 0;

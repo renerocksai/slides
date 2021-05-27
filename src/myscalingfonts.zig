@@ -10,6 +10,7 @@ pub const FontStyle = enum {
     bold,
     italic,
     bolditalic,
+    zig,
 };
 
 const FontMap = std.AutoHashMap(i32, *ImFont);
@@ -43,12 +44,14 @@ const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
 const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
 const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
 const fontdata_bolditalic = @embedFile("../assets/Calibri Italic.ttf"); // Calibri is the bold version of Calibri Light for us
+const fontdata_zig = @embedFile("../assets/press-start-2p.ttf");
 
 var allFonts: StyledFontMap = StyledFontMap.init(std.heap.page_allocator);
 var my_fonts = FontMap.init(std.heap.page_allocator);
 var my_fonts_bold = FontMap.init(std.heap.page_allocator);
 var my_fonts_italic = FontMap.init(std.heap.page_allocator);
 var my_fonts_bolditalic = FontMap.init(std.heap.page_allocator);
+var my_fonts_zig = FontMap.init(std.heap.page_allocator);
 
 pub fn loadFonts() error{OutOfMemory}!void {
     var io = igGetIO();
@@ -60,12 +63,27 @@ pub fn loadFonts() error{OutOfMemory}!void {
     try allFonts.put(.bold, &my_fonts_bold);
     try allFonts.put(.italic, &my_fonts_italic);
     try allFonts.put(.bolditalic, &my_fonts_bolditalic);
+    try allFonts.put(.zig, &my_fonts_zig);
 
     // actual font loading
     for (baked_font_sizes) |fsize, i| {
         try addFont(fsize);
     }
     commitFonts();
+}
+
+pub fn addZigShowtimeFont() !void {
+    const fsize = 52;
+    var io = igGetIO();
+    var font_config = ImFontConfig_ImFontConfig();
+    font_config[0].MergeMode = false;
+    font_config[0].PixelSnapH = true;
+    font_config[0].OversampleH = 1;
+    font_config[0].OversampleV = 1;
+    font_config[0].FontDataOwnedByAtlas = false;
+    var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_zigshowtimefont, fontdata_normal.len, @intToFloat(f32, fsize), font_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    try my_fonts.put(fsize, font);
+    return;
 }
 
 pub fn addFont(fsize: i32) !void {
@@ -105,6 +123,20 @@ pub fn addFont(fsize: i32) !void {
     font_config_bolditalic[0].FontDataOwnedByAtlas = false;
     var font_bolditalic = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_bolditalic, fontdata_bolditalic.len, @intToFloat(f32, fsize), font_config_bolditalic, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
     try my_fonts_bolditalic.put(fsize, font_bolditalic);
+
+    // special case: our zig font
+    std.log.debug("trying {d}", .{fsize});
+    if (fsize < 192) {
+        var font_config_zig = ImFontConfig_ImFontConfig();
+        font_config_zig[0].MergeMode = false;
+        font_config_zig[0].PixelSnapH = true;
+        font_config_zig[0].OversampleH = 1;
+        font_config_zig[0].OversampleV = 1;
+        font_config_zig[0].FontDataOwnedByAtlas = false;
+        var font_zig = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_zig, fontdata_zig.len, @intToFloat(f32, fsize), font_config_zig, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+        try my_fonts_zig.put(fsize, font_zig);
+    }
+    std.log.debug("OK {d}", .{fsize});
 }
 
 pub fn commitFonts() void {
@@ -113,18 +145,20 @@ pub fn commitFonts() void {
     var h: i32 = undefined;
     var bytes_per_pixel: i32 = undefined;
     var pixels: [*c]u8 = undefined;
+    std.log.debug("trying to get font atlas", .{});
     ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &pixels, &w, &h, &bytes_per_pixel);
+    std.log.debug("font atlas: {any}{d}x{d}", .{ true, w, h });
 
     var tex = Texture.initWithData(pixels[0..@intCast(usize, w * h * bytes_per_pixel)], w, h, .nearest);
+    std.log.debug("tex: {any} {d}x{d}", .{ tex, w, h });
     ImFontAtlas_SetTexID(io.Fonts, tex.imTextureID());
+    std.log.debug("set: {any}", .{true});
 }
 
 var last_scale: f32 = 0.0;
 var last_font: *ImFont = undefined;
 
-pub const bakedFontInfo = struct {
-    font: *ImFont, size: i32
-};
+pub const bakedFontInfo = struct { font: *ImFont, size: i32 };
 
 pub fn pushFontScaled(pixels: i32) void {
     const font_info = getFontScaled(pixels);
@@ -205,6 +239,11 @@ pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
     //    var it = my_fonts.iterator();
     //     for (it.next()) |item| {
     for (baked_font_sizes) |fsize, i| {
+        if (style == .zig) {
+            if (fsize >= 192) {
+                continue;
+            }
+        }
         var diff = pixels - fsize;
 
         // std.log.debug("diff={}, pixels={}, fsize={}", .{ diff, pixels, fsize });
@@ -221,6 +260,11 @@ pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
         }
     }
 
+    //    if (style == .zig) {
+    //        if (found_font_size >= 192) {
+    //            found_font_size = 144; // TODO: hack
+    //        }
+    //    }
     const ret = bakedFontInfo{ .font = font, .size = found_font_size };
 
     return ret;
