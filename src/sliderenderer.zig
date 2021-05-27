@@ -276,6 +276,9 @@ pub const SlideshowRenderer = struct {
                 if (span.styleflags & StyleFlags.italic > 0) {
                     element.fontStyle = .italic;
                 }
+                if (span.styleflags & StyleFlags.zig > 0) {
+                    element.fontStyle = .zig;
+                }
                 if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) == (StyleFlags.bold | StyleFlags.italic)) {
                     element.fontStyle = .bolditalic;
                 }

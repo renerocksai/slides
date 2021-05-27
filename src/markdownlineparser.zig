@@ -22,6 +22,7 @@ pub const StyleFlags = struct {
     pub const underline = 4;
     pub const line_bulleted = 8;
     pub const colored = 16;
+    pub const zig = 32;
 };
 
 pub const MdTextSpan = struct {
@@ -214,6 +215,43 @@ pub const MdLineParser = struct {
                     }
                 },
 
+                '!' => {
+                    if (self.currentSpan.styleflags & StyleFlags.zig > 0) {
+                        // try to terminate zig
+                        // make sure we weren't preceded by a space
+                        if (peekBack(line, pos, 1)) |prev| {
+                            if (prev != ' ') {
+                                self.currentSpan.endpos = pos;
+                                try self.emitCurrentSpan(line);
+
+                                // clear zig
+                                self.currentSpan.styleflags &= 0xff - StyleFlags.zig;
+                                self.currentSpan.startpos = pos + 1;
+                                self.currentSpan.endpos = 0;
+                            }
+                        }
+                    } else {
+                        // try to start italic:
+                        if (std.mem.indexOf(u8, line[pos + 1 ..], "!")) |term_pos_relative| {
+                            // how many chars after the character (pos+1) after the initial ! (pos)
+                            if (term_pos_relative >= 1) {
+                                // check if terminator is preceded by space
+                                if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
+                                    if (nospace != ' ') {
+                                        self.currentSpan.endpos = pos;
+                                        try self.emitCurrentSpan(line);
+
+                                        // change style of new span
+                                        self.currentSpan.styleflags |= StyleFlags.zig;
+                                        self.currentSpan.startpos = pos + 1;
+                                        self.currentSpan.endpos = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+
                 '<' => {
                     if (self.currentSpan.styleflags & StyleFlags.colored > 0) {
                         // try to terminate color
@@ -313,13 +351,18 @@ pub const MdLineParser = struct {
                 line_bulleted = "bulleted";
             }
 
+            var zig: []const u8 = "(not zig)";
+            if (span.styleflags & StyleFlags.zig > 0) {
+                zig = "zig";
+            }
+
             var colored: []const u8 = "";
 
             if (span.styleflags & StyleFlags.colored > 0) {
                 colored = std.fmt.allocPrint(self.allocator, "color: {}", .{span.color_override}) catch "color";
             }
 
-            std.log.debug("[{}:{}] `{s}` : {s} {s} {s} {s} {s}", .{ span.startpos, span.endpos, span.text, bold, italic, underline, line_bulleted, colored });
+            std.log.debug("[{}:{}] `{s}` : {s} {s} {s} {s} {s} {s}", .{ span.startpos, span.endpos, span.text, bold, italic, underline, zig, line_bulleted, colored });
         }
     }
 };
