@@ -236,6 +236,7 @@ $ zig build slides
 To just build: `zig build`. This will create the executable `slides` in `./zig-cache/bin/`.
 
 ## Tested with: 
+- zig `0.8.0` (release)
 - zig `0.8.0-dev.1120+300ebbd56`
 - zig `0.8.0-dev.1141+68e772647`
 - zig-upaya [prime31/zig-upaya@154417379bfaa36f51c3b1b438fa73cf563d90f0](https://github.com/prime31/zig-upaya/commit/154417379bfaa36f51c3b1b438fa73cf563d90f0).
