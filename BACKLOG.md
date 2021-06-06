@@ -1,5 +1,6 @@
 # Backlog
 
+
 ## BUGS:
 
 
@@ -15,6 +16,7 @@
 
 
 ## Baklog and stuff in random order
+- [x] custom bullet symbol (char)
 - [x] parser bug
 ```
     # debug TODO bug 

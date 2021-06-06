@@ -17,6 +17,7 @@ pub const SlideShow = struct {
     default_underline_width: i32 = 1,
     default_color: ImVec4 = .{ .w = 0.9 },
     default_bullet_color: ImVec4 = .{ .x = 1, .w = 1 },
+    default_bullet_symbol: []const u8 = ">",
 
     // TODO: maybe later: font encountered while parsing
     fonts: std.ArrayList([]u8) = undefined,
@@ -46,6 +47,7 @@ pub const Slide = struct {
     fontsize: i32 = 16,
     text_color: ImVec4 = .{ .w = 1 },
     bullet_color: ImVec4 = ImVec4{ .x = 1, .w = 1 },
+    bullet_symbol: ?[]const u8 = null,
     underline_width: i32 = 1,
 
     // .
@@ -65,6 +67,7 @@ pub const Slide = struct {
         if (ctx.color) |col| self.text_color = col;
         if (ctx.bullet_color) |bul| self.bullet_color = bul;
         if (ctx.underline_width) |uw| self.underline_width = uw;
+        if (ctx.bullet_symbol) |bs| self.bullet_symbol = bs;
     }
 
     pub fn fromSlide(orig: *Slide, a: *std.mem.Allocator) !*Slide {
@@ -87,6 +90,7 @@ pub const SlideItemError = error{
     ColorNull,
     UnderlineWidthNull,
     BulletColorNull,
+    BulletSymbolNull,
 };
 
 pub const SlideItem = struct {
@@ -99,6 +103,7 @@ pub const SlideItem = struct {
     size: ImVec2 = ImVec2{},
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
+    bullet_symbol: ?[]const u8 = null,
 
     pub fn new(a: *std.mem.Allocator) !*SlideItem {
         var self = try a.create(SlideItem);
@@ -119,12 +124,14 @@ pub const SlideItem = struct {
         if (context.size) |size| self.size = size;
         if (context.underline_width) |w| self.underline_width = w;
         if (context.bullet_color) |color| self.bullet_color = color;
+        if (context.bullet_symbol) |symbol| self.bullet_symbol = symbol;
     }
     pub fn applySlideDefaultsIfNecessary(self: *SlideItem, slide: *Slide) void {
         if (self.fontSize == null) self.fontSize = slide.fontsize;
         if (self.color == null) self.color = slide.text_color;
         if (self.underline_width == null) self.underline_width = slide.underline_width;
         if (self.bullet_color == null) self.bullet_color = slide.bullet_color;
+        if (self.bullet_symbol == null) self.bullet_symbol = slide.bullet_symbol;
     }
     pub fn applySlideShowDefaultsIfNecessary(self: *SlideItem, slideshow: *SlideShow) void {
         if (self.fontSize == null) {
@@ -146,6 +153,10 @@ pub const SlideItem = struct {
         if (self.bullet_color) |bc| {} else {
             self.bullet_color = slideshow.default_bullet_color;
         }
+
+        if (self.bullet_symbol) |bs| {} else {
+            self.bullet_symbol = slideshow.default_bullet_symbol;
+        }
     }
 
     pub fn sanityCheck(self: *SlideItem) SlideItemError!void {
@@ -154,6 +165,7 @@ pub const SlideItem = struct {
         if (self.color == null and self.kind == .textbox) return SlideItemError.ColorNull;
         if (self.underline_width == null and self.kind == .textbox) return SlideItemError.UnderlineWidthNull;
         if (self.bullet_color == null and self.kind == .textbox) return SlideItemError.BulletColorNull;
+        if (self.bullet_symbol == null and self.kind == .textbox) return SlideItemError.BulletSymbolNull;
 
         if (self.img_path == null and (self.kind == .img or self.kind == .background)) return SlideItemError.ImgPathNull;
     }
@@ -189,6 +201,7 @@ pub const SlideItem = struct {
                 std.log.info(indent ++ " fsize: {any}", .{self.fontSize});
                 std.log.info(indent ++ "uwidth: {any}", .{self.underline_width});
                 std.log.info(indent ++ "bcolor: {any}", .{self.bullet_color});
+                std.log.info(indent ++ "bsymbl: {any}", .{self.bullet_symbol});
             },
         }
         std.log.info(indent ++ "-----------------------", .{});
@@ -206,6 +219,7 @@ pub const ItemContext = struct {
     size: ?ImVec2 = null,
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
+    bullet_symbol: ?[]const u8 = null,
     line_number: usize = 0,
     line_offset: usize = 0,
 
@@ -234,6 +248,9 @@ pub const ItemContext = struct {
         }
         if (self.bullet_color == null) {
             if (other.bullet_color) |color| self.bullet_color = color;
+        }
+        if (self.bullet_symbol == null) {
+            if (other.bullet_symbol) |symbol| self.bullet_symbol = symbol;
         }
     }
 };

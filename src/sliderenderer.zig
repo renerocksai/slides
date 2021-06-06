@@ -27,6 +27,7 @@ const RenderElement = struct {
     underline_width: ?i32 = null,
     bullet_color: ?ImVec4 = null,
     texture: ?*upaya.Texture = null,
+    bullet_symbol: [*:0]const u8 = "",
 };
 
 const RenderedSlide = struct {
@@ -125,6 +126,18 @@ pub const SlideshowRenderer = struct {
             return;
         }
 
+        // actually, checking for a bullet symbol only makes sense if anywhere in the text a bulleted item exists
+        // but we'll leave it like this for now
+        // not sure I want to allocate here, though
+        var bulletSymbol: [*:0]const u8 = undefined;
+        if (item.bullet_symbol) |bs| {
+            bulletSymbol = try std.fmt.allocPrintZ(self.allocator, "{s}", .{bs});
+        } else {
+            // no bullet symbol - error
+            std.log.err("No bullet symbol for text {s}", .{item.text});
+            return;
+        }
+
         const color = item.color orelse return;
         const underline_width = item.underline_width orelse 0;
 
@@ -177,7 +190,7 @@ pub const SlideshowRenderer = struct {
                         .size = .{ .x = available_width, .y = layoutContext.available_size.y },
                         .fontSize = fontSize,
                         .underline_width = underline_width,
-                        .text = ">",
+                        .text = bulletSymbol,
                         .color = bulletColor,
                     });
                     // 2. increase indent by 1 and add indented text block
@@ -491,7 +504,7 @@ pub const SlideshowRenderer = struct {
         igCalcTextSize(&size, text, text + 5, false, 8000);
         ret.y = size.y;
         var bullet_text: [*c]const u8 = undefined;
-        bullet_text = "> ";
+        bullet_text = "> "; // TODO this should ideally honor the real bullet symbol but I don't care atm
         igCalcTextSize(&size, bullet_text, bullet_text + std.mem.lenZ(bullet_text), false, 8000);
         ret.x = size.x;
         my_fonts.popFontScaled();
