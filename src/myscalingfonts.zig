@@ -88,13 +88,26 @@ pub fn addZigShowtimeFont() !void {
 
 pub fn addFont(fsize: i32) !void {
     var io = igGetIO();
+
+    // set up the font ranges
+    // The following spits out the range {32, 255} :
+    // const default_font_ranges: [*:0]const ImWchar = ImFontAtlas_GetGlyphRangesDefault(io.Fonts);
+    // std.log.debug("font ranges: {d}", .{default_font_ranges});
+    // bullets: 2022, 2023, 2043
+    const my_font_ranges = [_]ImWchar{
+        32, 255, // default range
+        0x2022, 0x2023, // bullet and triangular bullet(triangular does not work with my calibri light)
+        0, // sentinel
+    };
+
     var font_config = ImFontConfig_ImFontConfig();
     font_config[0].MergeMode = false;
     font_config[0].PixelSnapH = true;
     font_config[0].OversampleH = 1;
     font_config[0].OversampleV = 1;
     font_config[0].FontDataOwnedByAtlas = false;
-    var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), font_config, ImFontAtlas_GetGlyphRangesDefault(io.Fonts));
+    var font = ImFontAtlas_AddFontFromMemoryTTF(io.Fonts, fontdata_normal, fontdata_normal.len, @intToFloat(f32, fsize), font_config, &my_font_ranges);
+    // see above: bullet range only needs to be applied to default font
     try my_fonts.put(fsize, font);
 
     var font_config_bold = ImFontConfig_ImFontConfig();

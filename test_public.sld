@@ -11,6 +11,8 @@
 @underline_width=2
 @color=#000000ff
 @bullet_color=#cd0f2dff
+# Override bullet symbol default of > with the bullet point
+# @bullet_symbol=•
 
 # -------------------------------------------------------------
 # -- definitions for later
@@ -115,13 +117,13 @@ _
 _
 - **and so on**, _and on_
 
-@pop rightbox 
+@pop rightbox bullet_symbol=•
 _
 _
 _
 - here is text in the right box
 _
-- here comes more text
+- we changed the **~~bullet symbol~~**!
 _
 - and so on
 _

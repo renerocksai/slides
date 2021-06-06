@@ -212,6 +212,14 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
                 continue;
             }
 
+            if (std.mem.startsWith(u8, line, "@bullet_symbol=")) {
+                parseDefaultBulletSymbol(line, slideshow, context) catch |err| {
+                    reportErrorInContext(err, context, null);
+                    continue;
+                };
+                continue;
+            }
+
             if (std.mem.startsWith(u8, line, "@")) {
                 // commit current parsing_item_context
                 commitParsingContext(&parsing_item_context, context) catch |err| {
@@ -335,6 +343,18 @@ fn parseDefaultBulletColor(line: []const u8, slideshow: *SlideShow, context: *Pa
         if (std.mem.eql(u8, word, "@bullet_color")) {
             slideshow.default_bullet_color = try parseColor(line[8..], context);
             std.log.debug("global default_bullet_color: {any}", .{slideshow.default_bullet_color});
+        }
+    }
+}
+
+fn parseDefaultBulletSymbol(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(line, "=");
+    if (it.next()) |word| {
+        if (std.mem.eql(u8, word, "@bullet_symbol")) {
+            if (it.next()) |sym| {
+                slideshow.default_bullet_symbol = try context.allocator.dupe(u8, sym);
+                std.log.debug("global default_bullet_symbol: {s}", .{slideshow.default_bullet_symbol});
+            }
         }
     }
 }
@@ -483,6 +503,11 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                             continue;
                         };
                         item_context.bullet_color = color;
+                    }
+                }
+                if (std.mem.eql(u8, attrname, "bullet_symbol")) {
+                    if (attr_it.next()) |sym| {
+                        item_context.bullet_symbol = try context.allocator.dupe(u8, sym);
                     }
                 }
                 if (std.mem.eql(u8, attrname, "underline_width")) {
