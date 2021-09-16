@@ -94,6 +94,7 @@ const AppData = struct {
     hot_reload_last_stat: ?std.fs.File.Stat = undefined,
     show_saveas: bool = true,
     show_saveas_reason: SaveAsReason = .none,
+    did_post_init: bool = false,
 
     fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -208,8 +209,28 @@ var anim_laser = LaserpointerAnim{};
 var time_prev: i64 = 0;
 var time_now: i64 = 0;
 
+fn post_init() void {
+    // check if we have a cmd line arg
+    var arg_it = std.process.args();
+    _ = arg_it.skip(); // skip own exe
+
+    if (arg_it.next(G.allocator)) |arg| {
+        // we have an arg
+        const slide_fn = arg catch "";
+        var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+        const shit = std.fs.realpath(slide_fn, &buf) catch return;
+        loadSlideshow(shit) catch |err| {
+            std.log.err("loadSlideshow: {any}", .{err});
+        };
+    }
+}
+
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
 fn update() void {
+    if (!G.did_post_init) {
+        G.did_post_init = true;
+        post_init();
+    }
 
     // debug update loop timing
     if (false) {
@@ -618,6 +639,7 @@ fn checkAutoReload() !bool {
 }
 
 fn loadSlideshow(filp: []const u8) !void {
+    std.log.debug("LOAD {s}", .{filp});
     if (std.fs.openFileAbsolute(filp, .{ .read = true })) |f| {
         defer f.close();
         G.hot_reload_last_stat = try f.stat();
