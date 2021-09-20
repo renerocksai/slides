@@ -77,7 +77,7 @@ To make the changes you made take effect, save the presentation using the save b
 ![image](https://user-images.githubusercontent.com/30892199/119230156-53d65a80-bb1b-11eb-805e-02f9f8708232.png)
 
 
-**Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic feartures of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
+**Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic features of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
 
 ## Presentation and Slide Navigation
