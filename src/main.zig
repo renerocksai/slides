@@ -350,19 +350,20 @@ fn handleKeyboard() void {
         cmdSave();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_L) and ctrl and !shift) {
+    // don't consume keys while the editor is visible
+    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("##search"))) {
+        return;
+    }
+
+    if (igIsKeyReleased(SAPP_KEYCODE_L) and !shift) {
         anim_laser.toggle();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_L) and ctrl and shift) {
+    if (igIsKeyReleased(SAPP_KEYCODE_L) and shift) {
         anim_laser.laserpointer_zoom *= 1.5;
         if (anim_laser.laserpointer_zoom > 10) {
             anim_laser.laserpointer_zoom = 1.0;
         }
-        return;
-    }
-    // don't consume keys while the editor is visible
-    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("##search"))) {
         return;
     }
     var deltaindex: i32 = 0;
@@ -413,11 +414,11 @@ fn handleKeyboard() void {
 
     // special slide navigation: 1 and 0
     // needs to happen after applying deltaindex!!!!!
-    if (igIsKeyReleased(SAPP_KEYCODE_1)) {
+    if (igIsKeyReleased(SAPP_KEYCODE_1) or (igIsKeyReleased(SAPP_KEYCODE_G) and !shift)) {
         new_slide_index = 0;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_0)) {
+    if (igIsKeyReleased(SAPP_KEYCODE_0) or (igIsKeyReleased(SAPP_KEYCODE_G) and shift)) {
         new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
     }
 
@@ -931,7 +932,7 @@ fn showMenu() void {
                 cmdToggleFullscreen();
             }
             if (igMenuItemBool("Overview", "O", false, true)) {}
-            if (igMenuItemBool("Toggle Laserpointer", "Ctrl + L", false, true)) {
+            if (igMenuItemBool("Toggle Laserpointer", "L", false, true)) {
                 anim_laser.toggle();
             }
             if (igMenuItemBool("Toggle on-screen menu buttons", "M", false, true)) {
