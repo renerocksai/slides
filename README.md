@@ -93,8 +93,8 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>Ctrl</kbd> + <kbd>Q</kbd> | Quit |
 | <kbd>E</kbd> | Toggle editor |
 | <kbd>F</kbd> | Toggle fullscreen |
-| <kbd>Ctrl</kbd> + <kbd>L</kbd> | Toggle laserpointer |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> | cycle through laserpointer sizes |
+| <kbd>L</kbd> | Toggle laserpointer |
+| <kbd>Shift</kbd> + <kbd>L</kbd> | cycle through laserpointer sizes |
 | <kbd>M</kbd> | Toggle on-screen menu buttons |
 | Cursor <kbd><-</kbd> | Goto previous slide |
 | <kbd>PgUp</kbd> | Goto previous slide |
@@ -104,6 +104,8 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>Space</kbd> | Goto next slide |
 | <kbd>1</kbd> | Goto first slide |
 | <kbd>0</kbd> | Goto last slide |
+| <kbd>G</kbd> | Goto first slide |
+| <kbd>Shift</kbd> + <kbd>G</kbd> | Goto last slide |
 
 # Slideshow Text Format 
 
