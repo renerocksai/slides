@@ -134,6 +134,7 @@ var bt_toggle_bottom_panel_anim = ButtonAnim{};
 var bt_save_anim = ButtonAnim{};
 var anim_bottom_panel = bottomPanelAnim{};
 var anim_status_msg = MsgAnim{};
+var anim_autorun = AutoRunAnim{};
 
 const LaserpointerAnim = struct {
     frame_ticker: usize = 0,
@@ -267,6 +268,24 @@ fn update() void {
 
         handleKeyboard();
 
+        // autorun logic
+        anim_autorun.animate();
+        if (anim_autorun.flag_switch_slide) {
+            // inc slide
+            var current_slide_index = G.current_slide;
+            var new_slide_index = clampSlideIndex(G.current_slide + 1);
+            if (current_slide_index == new_slide_index) {
+                // stop, can't advance any further
+                anim_autorun.stop();
+            } else {
+                // OK, doit
+                jumpToSlide(new_slide_index);
+            }
+        }
+        if (anim_autorun.flag_start_screenshot) {
+            // TODO: start screenshot
+        }
+
         const do_reload = checkAutoReload() catch false;
         if (do_reload) {
             loadSlideshow(G.slideshow_filp.?) catch |err| {
@@ -355,6 +374,11 @@ fn handleKeyboard() void {
         return;
     }
 
+    if (igIsKeyReleased(SAPP_KEYCODE_A)) {
+        cmdToggleAutoRun();
+        return;
+    }
+
     if (igIsKeyReleased(SAPP_KEYCODE_L) and !shift) {
         anim_laser.toggle();
         return;
@@ -423,16 +447,21 @@ fn handleKeyboard() void {
     }
 
     // clamp slide index
+    new_slide_index = clampSlideIndex(new_slide_index);
+    jumpToSlide(new_slide_index);
+}
+
+fn clampSlideIndex(new_slide_index: i32) i32 {
+    var ret = new_slide_index;
     if (G.slideshow.slides.items.len > 0 and new_slide_index >= @intCast(i32, G.slideshow.slides.items.len)) {
-        new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
+        ret = @intCast(i32, G.slideshow.slides.items.len - 1);
     } else if (G.slideshow.slides.items.len == 0 and G.current_slide > 0) {
-        new_slide_index = 0;
+        ret = 0;
     }
     if (new_slide_index < 0) {
-        new_slide_index = 0;
+        ret = 0;
     }
-
-    jumpToSlide(new_slide_index);
+    return ret;
 }
 
 fn showSlide2(slide_number: i32) !void {
@@ -890,6 +919,17 @@ fn savePopup(reason: SaveAsReason) bool {
         }
     }
     return doit;
+}
+
+fn cmdToggleAutoRun() void {
+    if (anim_autorun.toggle()) {
+        // started
+        // goto 1st slide
+        G.current_slide = 0;
+        if (!sapp_is_fullscreen()) {
+            cmdToggleFullscreen();
+        }
+    }
 }
 
 // .
