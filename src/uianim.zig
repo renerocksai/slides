@@ -585,3 +585,53 @@ pub fn showMsg(msg: [*c]const u8, pos: ImVec2, flyin_pos: ImVec2, color: ImVec4,
     igText(msg);
     igPopStyleColor(1);
 }
+
+// auto run through the presentation
+pub const AutoRunAnim = struct {
+    running: bool = false,
+    ticker_ms: u32 = 0,
+    slide_duration: i32 = 200,
+    screenshot_duration: i32 = 200,
+    flag_switch_slide: bool = false,
+    flag_in_screenshot: bool = false,
+    flag_start_screenshot: bool = false,
+
+    pub fn animate(self: *AutoRunAnim) void {
+        if (!self.running)
+            return;
+
+        self.flag_switch_slide = false;
+        self.flag_start_screenshot = false;
+
+        self.ticker_ms += @floatToInt(u32, frame_dt * 1000);
+        if (self.flag_in_screenshot) {
+            self.flag_start_screenshot = false;
+            if (self.ticker_ms >= self.screenshot_duration) {
+                self.ticker_ms = 0;
+                self.flag_switch_slide = true;
+                self.flag_in_screenshot = false;
+            }
+        } else if (self.ticker_ms >= self.slide_duration) {
+            self.ticker_ms = 0;
+            self.flag_in_screenshot = true;
+            self.flag_start_screenshot = true;
+        }
+    }
+
+    pub fn toggle(self: *AutoRunAnim) bool {
+        self.running = !self.running;
+        return self.running;
+    }
+
+    pub fn start(self: *AutoRunAnim) void {
+        self.running = true;
+    }
+
+    pub fn stop(self: *AutoRunAnim) void {
+        self.running = false;
+    }
+
+    pub fn is_running(self: *AutoRunAnim) bool {
+        return self.running;
+    }
+};
