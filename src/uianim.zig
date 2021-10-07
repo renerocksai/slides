@@ -620,6 +620,9 @@ pub const AutoRunAnim = struct {
 
     pub fn toggle(self: *AutoRunAnim) bool {
         self.running = !self.running;
+        if (!self.running) {
+            self.stop();
+        }
         return self.running;
     }
 
@@ -629,6 +632,9 @@ pub const AutoRunAnim = struct {
 
     pub fn stop(self: *AutoRunAnim) void {
         self.running = false;
+        self.flag_start_screenshot = false;
+        self.flag_in_screenshot = false;
+        self.flag_switch_slide = false;
     }
 
     pub fn is_running(self: *AutoRunAnim) bool {

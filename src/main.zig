@@ -7,7 +7,7 @@ const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const parser = @import("parser.zig");
 const render = @import("sliderenderer.zig");
-
+const screenshot = @import("screenshot.zig");
 const md = @import("markdownlineparser.zig");
 usingnamespace md;
 
@@ -277,6 +277,7 @@ fn update() void {
             if (current_slide_index == new_slide_index) {
                 // stop, can't advance any further
                 anim_autorun.stop();
+                setStatusMsg("Screen-shotting finished!");
             } else {
                 // OK, doit
                 jumpToSlide(new_slide_index);
@@ -284,6 +285,16 @@ fn update() void {
         }
         if (anim_autorun.flag_start_screenshot) {
             // TODO: start screenshot
+            if (screenshot.flameShotLinux(G.allocator)) |ret| {
+                if (ret == false) {
+                    setStatusMsg("Screenshot failed - try debug build!");
+                    anim_autorun.stop();
+                }
+            } else |err| {
+                std.log.err("screenshot error: {any}", .{err});
+                setStatusMsg("Screenshot failed - try debug build!");
+                anim_autorun.stop();
+            }
         }
 
         const do_reload = checkAutoReload() catch false;
@@ -928,6 +939,18 @@ fn cmdToggleAutoRun() void {
         G.current_slide = 0;
         if (!sapp_is_fullscreen()) {
             cmdToggleFullscreen();
+        }
+        // delete the shit if present
+        if (std.fs.openDirAbsolute("/tmp", .{ .access_sub_paths = true, .iterate = true, .no_follow = true })) |tmpdir| {
+            // defer tmpdir.close();
+            if (tmpdir.deleteTree("slide_shots")) {} else |err| {
+                std.log.err("Warning: Unable to delete /tmp/slide_shots", .{});
+            }
+            if (tmpdir.makeDir("slide_shots")) {} else |err| {
+                std.log.err("Unable to create /tmp/slide_shots", .{});
+            }
+        } else |err| {
+            std.log.err("Unable to open /tmp", .{});
         }
     }
 }
