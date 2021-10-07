@@ -29,7 +29,7 @@ w=297
 print(f'{w}x{h}')
 pdf = FPDF('L', 'mm', (h, w))
 
-for f in sorted(images):
+for f in sorted(images, key=natural_keys):
     pdf.add_page()
     pdf.image(os.path.join(imgdir, f), x=0, y=0, w=297, h=h)
 pdf.output('output.pdf', 'F')
