@@ -79,9 +79,9 @@ const AppData = struct {
     loaded_content: []u8 = undefined, // we will check for dirty editor against this
     last_window_size: ImVec2 = .{},
     content_window_size: ImVec2 = .{},
-    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1071.0 },
+    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1064.0 },
     slide_render_width: f32 = 1920.0,
-    slide_render_height: f32 = 1071.0,
+    slide_render_height: f32 = 1064.0,
     slide_renderer: *render.SlideshowRenderer = undefined,
     img_tint_col: ImVec4 = .{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = .{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
