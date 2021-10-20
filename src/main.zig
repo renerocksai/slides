@@ -79,9 +79,9 @@ const AppData = struct {
     loaded_content: []u8 = undefined, // we will check for dirty editor against this
     last_window_size: ImVec2 = .{},
     content_window_size: ImVec2 = .{},
-    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1080.0 },
+    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1071.0 },
     slide_render_width: f32 = 1920.0,
-    slide_render_height: f32 = 1080.0,
+    slide_render_height: f32 = 1071.0,
     slide_renderer: *render.SlideshowRenderer = undefined,
     img_tint_col: ImVec4 = .{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = .{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
@@ -252,7 +252,7 @@ fn update() void {
 
     var flags: c_int = 0;
     flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
-    flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+    // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     const is_fullscreen = sapp_is_fullscreen();
     if (!is_fullscreen) {
         flags |= ImGuiWindowFlags_MenuBar;
@@ -499,6 +499,7 @@ fn showSlide2(slide_number: i32) !void {
     // render slide
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
     try G.slide_renderer.render(slide_number, slideAreaTL(), slideSizeInWindow(), G.internal_render_size);
+    // OK: std.log.debug("slideAreaTL: {any}, slideSizeInWindow: {any}, internal_render_size: {any}", .{ slideAreaTL(), slideSizeInWindow(), G.internal_render_size });
 
     // .
     // button row
