@@ -1,0 +1,17 @@
+name: Release (beta)
+
+on: workflow_dispatch
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        # path: slides
+      - uses: goto-bus-stop/setup-zig@v1
+      - uses: actions/checkout@v2
+        with:
+          repository: github/prime31/zig-upaya
+          submodules: true
+          # path: zig-upaya
+      - run: zig build -D release-safe
