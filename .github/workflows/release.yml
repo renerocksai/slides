@@ -15,5 +15,5 @@ jobs:
           ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
           submodules: true
           path: zig-upaya
-      - run: find .
-      # - run: cd slides && ln -s ../zig-upaya/ && zig build -Drelease-safe
+      # - run: find .
+      - run: zig build -Drelease-safe
