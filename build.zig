@@ -3,11 +3,6 @@ const std = @import("std");
 const Builder = std.build.Builder;
 
 // tell where you checked out zig-upaya
-//    It needs to be within your "package" directory for zig to accept it.
-//    I checked it out in the parent directory and placed a link here with
-//    `ln -s ../zig-upaya`.
-//    On Windows, you probably have to copy zig-upaya instead of linking to it.
-//    For that case I've already put `zig-upaya/` into the .gitignore file.
 const upaya_dir = "./zig-upaya/";
 
 const upaya_build = @import(upaya_dir ++ "src/build.zig");
@@ -16,7 +11,8 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
     // use a different cache folder for macos arm builds
-    b.cache_root = if (std.builtin.os.tag == .macos and std.builtin.arch == std.builtin.Arch.aarch64) "zig-arm-cache" else "zig-cache";
+    // b.cache_root = if (std.builtin.os.tag == .macos and std.builtin.arch == std.builtin.Arch.aarch64) "zig-arm-cache" else "zig-cache";
+    b.cache_root = "zig-cache";
 
     // declare optional other zig executables here
     // format is: executable_name, path_to_zig_file
