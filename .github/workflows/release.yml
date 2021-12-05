@@ -18,8 +18,12 @@ jobs:
           ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
           submodules: true
           path: zig-upaya
-      - run: find .
-      - run: echo $(pwd)
-      - run: zig version
-      - run: cat main/build.zig
-      - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe
+      # - run: find .
+      # - run: echo $(pwd)
+      # - run: zig version
+      # - run: cat main/build.zig
+      
+      - name: install deps
+        run: sudo apt-get install -y libglew-dev libsdl2-dev 
+      - name: build it
+        - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe
