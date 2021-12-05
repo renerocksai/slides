@@ -83,8 +83,8 @@ jobs:
 
       - name: Build executable
         # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
-        run: zig build -Drelease-safe --verbose
-        # run: zig build --verbose
+        # run: zig build -Drelease-safe --verbose
+        run: zig build --verbose
 
       - name: Zip it
         shell: powershell
@@ -113,13 +113,14 @@ jobs:
       
       - uses: goto-bus-stop/setup-zig@v1
         with:
-          version: 0.8.1
+          # it died unexpectedly with 0.8.1
+          version: 0.8.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build macos executable
         # run: zig build -Drelease-safe
-        run: zig build 
+        run: zig build --verbose
 
       - name: Find out what's happening
         run: find .
