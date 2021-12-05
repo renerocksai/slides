@@ -18,5 +18,6 @@ jobs:
           path: zig-upaya
       - run: find .
       - run: echo $(pwd)
+      - run: zig version
       - run: cat main/build.zig
       - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe
