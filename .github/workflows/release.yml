@@ -27,17 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+          submodules: 'recursive'
+
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.8.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-        with:
-          repository: prime31/zig-upaya
-          ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
-          submodules: 'recursive'
-          path: zig-upaya
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -70,17 +64,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+          submodules: 'recursive'
+
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.8.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-        with:
-          repository: prime31/zig-upaya
-          ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
-          submodules: 'recursive'
-          path: zig-upaya
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -113,17 +101,11 @@ jobs:
   #   runs-on: macos-latest
   #   steps:
   #     - uses: actions/checkout@v2
+  #       submodules: 'recursive'
+  #       
   #     - uses: goto-bus-stop/setup-zig@v1
   #       with:
   #         version: 0.8.0
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         repository: prime31/zig-upaya
-  #         ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
-  #         submodules: 'recursive'
-  #         path: zig-upaya
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #
