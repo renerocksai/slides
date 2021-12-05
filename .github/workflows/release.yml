@@ -34,7 +34,7 @@ jobs:
         run: zig build -Drelease-safe --verbose
 
       - name: Zip it
-        run: gz ./zig-cache/bin/slides
+        run: gzip ./zig-cache/bin/slides
 
       - name: Create Release
         id: create_release
