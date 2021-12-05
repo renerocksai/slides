@@ -16,10 +16,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }} ${{ github.sha }} 
           body: |
             Automated Release by GitHub Action CI
-          draft: true
+            The linux build is a fast release build. 
+            The windows build is a (slower) debug build. 
+          draft: false
           prerelease: true
 
   build-ubuntu:
@@ -57,7 +59,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./zig-cache/bin/slides.gz
-          asset_name: slides-linux.gz
+          asset_name: slides-linux-release.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -98,7 +100,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides-win64.zip
-          asset_name: slides-win64.zip
+          asset_name: slides-win64-debug.zip
           asset_content_type: application/zip
 
 # macos needs a little work
