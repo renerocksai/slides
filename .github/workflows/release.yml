@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   draft_release:
-    name: Create Release (draft)
+    name: Create Release
     runs-on: ubuntu-latest
     outputs: 
       upload_url: ${{ steps.create_release.outputs.upload_url }}
