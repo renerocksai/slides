@@ -26,4 +26,4 @@ jobs:
       - run: lsb_release -a
       - run: sudo apt-get update
       - run: sudo apt-get install -y libglew-dev libsdl2-dev 
-      - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe
+      - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
