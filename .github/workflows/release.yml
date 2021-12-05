@@ -68,6 +68,9 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Install msvc-dev
+        uses: ilammy/msvc-dev-cmd@v1
+
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.8.0
