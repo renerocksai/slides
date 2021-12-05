@@ -3,7 +3,7 @@ name: Release Linux, Windows (beta)
 on: workflow_dispatch
 
 jobs:
-  draft-release:
+  draft_release:
     name: Create Release (draft)
     runs-on: ubuntu-latest
     outputs: 
@@ -55,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./zig-cache/bin/slides.gz
           asset_name: slides-linux.gz
           asset_content_type: application/gzip
@@ -80,7 +80,8 @@ jobs:
 
       - name: Build executable
         # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
-        run: zig build -Drelease-safe --verbose
+        # run: zig build -Drelease-safe --verbose
+        run: zig build --verbose
 
       - name: Zip it
         shell: powershell
@@ -92,7 +93,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides-win64.zip
           asset_name: slides-win64.zip
           asset_content_type: application/zip
@@ -124,7 +125,7 @@ jobs:
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #       with:
-  #         upload_url: ${{ needs.create_release.outputs.upload_url }}
+  #         upload_url: ${{ needs.draft_release.outputs.upload_url }}
   #         asset_path: ./zig-cache/bin/slides.gz
   #         asset_name: slides-macos.gz
   #         asset_content_type: application/gzip
