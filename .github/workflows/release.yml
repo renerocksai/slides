@@ -73,7 +73,7 @@ jobs:
 
       - uses: goto-bus-stop/setup-zig@v1
         with:
-          version: 0.8.0
+          version: 0.8.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
