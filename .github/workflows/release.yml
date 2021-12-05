@@ -23,7 +23,5 @@ jobs:
       # - run: zig version
       # - run: cat main/build.zig
       
-      - name: install deps
-        run: sudo apt-get install -y libglew-dev libsdl2-dev 
-      - name: build it
+        - run: sudo apt-get install -y libglew-dev libsdl2-dev 
         - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe
