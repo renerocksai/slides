@@ -32,3 +32,30 @@ jobs:
       - name: Build executable
         # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
         run: zig build -Drelease-safe --verbose
+
+      - name: Zip it
+        run: gz ./zig-cache/bin/slides
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automated Release by GitHub Action CI
+          draft: true
+          prerelease: true
+
+      - name: Ship it (Linux x64)
+        id: upload-release-asset-linux-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./zig-cache/bin/slides.gz
+          asset_name: slides.gz
+          asset_content_type: application/gzip
