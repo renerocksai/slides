@@ -10,6 +10,8 @@ jobs:
         with:
           path: main
       - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.8.0
       - uses: actions/checkout@v2
         with:
           repository: prime31/zig-upaya
