@@ -16,4 +16,5 @@ jobs:
           submodules: true
           path: zig-upaya
       # - run: find .
+      - run: echo $(pwd)
       - run: zig build -Drelease-safe
