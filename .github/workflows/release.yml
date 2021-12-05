@@ -1,9 +1,25 @@
-name: Release Linux (beta)
+name: Release Linux, macos (beta)
 
 on: workflow_dispatch
 
 jobs:
+  draft-release:
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automated Release by GitHub Action CI
+          draft: true
+          prerelease: true
+
   build-ubuntu:
+    needs: draft-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,10 +34,6 @@ jobs:
           ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
           submodules: 'recursive'
           path: zig-upaya
-      # - run: find .
-      # - run: echo $(pwd)
-      # - run: zig version
-      # - run: cat main/build.zig
 
       - name: Update Ubuntu
         run: |
@@ -36,19 +48,6 @@ jobs:
       - name: Zip it
         run: gzip ./zig-cache/bin/slides
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Automated Release by GitHub Action CI
-          draft: true
-          prerelease: true
-
       - name: Ship it (Linux x64)
         id: upload-release-asset-linux-x64
         uses: actions/upload-release-asset@v1
@@ -57,5 +56,39 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./zig-cache/bin/slides.gz
-          asset_name: slides.gz
+          asset_name: slides-linux.gz
+          asset_content_type: application/gzip
+
+  build-macos:
+    needs: draft-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        # with:
+        #   path: main
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.8.0
+      - uses: actions/checkout@v2
+        with:
+          repository: prime31/zig-upaya
+          ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
+          submodules: 'recursive'
+          path: zig-upaya
+
+      - name: Build macos executable
+        run: zig build -Drelease-safe 
+
+      - name: Zip it
+        run: gzip ./zig-cache/bin/slides
+
+      - name: Ship it (macos)
+        id: upload-release-asset-macos-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./zig-cache/bin/slides.gz
+          asset_name: slides-macos.gz
           asset_content_type: application/gzip
