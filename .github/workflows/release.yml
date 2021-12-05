@@ -24,9 +24,10 @@ jobs:
       # - run: cat main/build.zig
 
       - name: Update Ubuntu
-        run: lsb_release -a
-        run: sudo apt-get update
-        run: sudo apt-get install -y libglew-dev libsdl2-dev 
+        run: |
+          lsb_release -a
+          sudo apt-get update
+          sudo apt-get install -y libglew-dev libsdl2-dev 
 
       - name: Build executable
         # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
