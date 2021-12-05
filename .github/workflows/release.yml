@@ -1,4 +1,4 @@
-name: Release (beta)
+name: Release Linux (beta)
 
 on: workflow_dispatch
 
@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          path: main
+        # with:
+        #   path: main
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.8.0
@@ -18,12 +18,16 @@ jobs:
           ref: 154417379bfaa36f51c3b1b438fa73cf563d90f0
           submodules: 'recursive'
           path: zig-upaya
-      - run: find .
+      # - run: find .
       # - run: echo $(pwd)
       # - run: zig version
       # - run: cat main/build.zig
-      
-      - run: lsb_release -a
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y libglew-dev libsdl2-dev 
-      - run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
+
+      - name: Update Ubuntu
+        run: lsb_release -a
+        run: sudo apt-get update
+        run: sudo apt-get install -y libglew-dev libsdl2-dev 
+
+      - name: Build executable
+        # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
+        run: zig build -Drelease-safe --verbose
