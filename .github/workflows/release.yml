@@ -101,7 +101,6 @@ jobs:
           asset_name: slides-win64.zip
           asset_content_type: application/zip
 
-  macos build is broken: std.builtin has no member called arch
   build-macos:
     needs: draft_release
     runs-on: macos-latest
