@@ -83,8 +83,8 @@ jobs:
 
       - name: Build executable
         # run: cd main && ln -s ../zig-upaya && zig build -Drelease-safe --verbose
-        # run: zig build -Drelease-safe --verbose
-        run: zig build --verbose
+        run: zig build -Drelease-safe --verbose
+        # run: zig build --verbose
 
       - name: Zip it
         shell: powershell
@@ -101,34 +101,34 @@ jobs:
           asset_name: slides-win64.zip
           asset_content_type: application/zip
 
-  # macos build is broken: std.builtin has no member called arch
-  # build-macos:
-  #   needs: draft_release
-  #   runs-on: macos-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #       submodules: 'recursive'
-  #       
-  #     - uses: goto-bus-stop/setup-zig@v1
-  #       with:
-  #         version: 0.8.0
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #
-  #     - name: Build macos executable
-  #       run: zig build -Drelease-safe 
-  #
-  #     - name: Zip it
-  #       run: gzip ./zig-cache/bin/slides
-  #
-  #     - name: Ship it (macos)
-  #       id: upload-release-asset-macos-x64
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.draft_release.outputs.upload_url }}
-  #         asset_path: ./zig-cache/bin/slides.gz
-  #         asset_name: slides-macos.gz
-  #         asset_content_type: application/gzip
+  macos build is broken: std.builtin has no member called arch
+  build-macos:
+    needs: draft_release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+        submodules: 'recursive'
+       
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.8.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build macos executable
+        run: zig build -Drelease-safe
+
+      - name: Zip it
+        run: gzip ./zig-cache/bin/slides
+
+      - name: Ship it (macos)
+        id: upload-release-asset-macos-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
+          asset_path: ./zig-cache/bin/slides.gz
+          asset_name: slides-macos.gz
+          asset_content_type: application/gzip
