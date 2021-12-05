@@ -6,7 +6,7 @@ This project is both a case study and also marks my first steps in the programmi
 
 This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/). 
  
-If you want to play with _slides_ you can download the current release from the releases section on GitHub. I will release versions as I see fit. Since releasing requires me to boot into Windows, it won't happen too often, though.
+If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit. 
 
 ![image](https://user-images.githubusercontent.com/30892199/119228360-f9d19700-bb12-11eb-9cc2-f04e7f18e8d9.png)
 
@@ -193,41 +193,15 @@ Here come the bullets:
 
 
 # Building it
+
 ## prerequisites
 
 
-Clone [zig-upaya](https://github.com/prime31/zig-upaya):
+Clone this repository - **recursively**
 
 ```bash
-$ git clone --recursive https://github.com/prime31/zig-upaya/
+$ git clone https://github.com/renerocksai/slides --recursive
 ```
-Clone this repository:
-
-```bash
-$ git clone renerocksai/slides
-```
-
-Create a link to zig-upaya:
-
-```bash
-$ cd slides
-$ ln -s ../zig-upaya
-```
-
-If you name the link differently, then modify the following line in `build.zig` accordingly:
-
-```zig
-const upaya_dir = "./zig-upaya/";
-```
-
-... and also this line in `src/main.zig`:
-
-```zig
-const Texture = @import("../zig-upaya/src/texture.zig").Texture;
-```
-
-
-Note: On Windows, you probably have to move the entire `zig-upaya` directory into the `slides` directory.
 
 ## build and run
 
@@ -236,6 +210,10 @@ $ zig build slides
 ```
 
 To just build: `zig build`. This will create the executable `slides` in `./zig-cache/bin/`.
+
+**Note regarding Windows:** while I can make release builds on my windows laptop, I could not reproduce a working
+windows setup via GitHub actions, starting from a clean machine. So I can only release debug builds for windows
+automatically (GitHub Actions). 
 
 ## Tested with: 
 - zig `0.8.0` (release)
