@@ -23,7 +23,7 @@ jobs:
           prerelease: true
 
   build-ubuntu:
-    needs: draft-release
+    needs: draft_release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -61,7 +61,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-windows:
-    needs: draft-release
+    needs: draft_release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -100,7 +100,7 @@ jobs:
 
   # macos build is broken: std.builtin has no member called arch
   # build-macos:
-  #   needs: draft-release
+  #   needs: draft_release
   #   runs-on: macos-latest
   #   steps:
   #     - uses: actions/checkout@v2
