@@ -11,7 +11,7 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v1
       - uses: actions/checkout@v2
         with:
-          repository: github/prime31/zig-upaya
+          repository: prime31/zig-upaya
           submodules: true
           # path: zig-upaya
       - run: zig build -D release-safe
