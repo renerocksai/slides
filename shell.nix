@@ -8,6 +8,15 @@ in
 { pkgs ? import nixpkgs { } }:
 
 pkgs.mkShell {
+  buildInputs = with pkgs; [
+    SDL2
+    xorg.libX11 
+    xorg.libXrandr
+    glew
+    # kdialog
+    gnome.zenity
+  ];
+
   nativeBuildInputs = with pkgs; [
     cmake
     gdb
