@@ -15,6 +15,7 @@ pkgs.mkShell {
     glew
     # kdialog
     gnome.zenity
+    zig
   ];
 
   nativeBuildInputs = with pkgs; [
