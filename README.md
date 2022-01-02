@@ -1,17 +1,17 @@
-# Slides - Slideshows for Hackers 
+# Slides - Slideshows for Hackers
 
 This project is both a case study and also marks my first steps in the programming language [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
 **Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint.
 
-This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/). 
- 
-If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit. 
+This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
+
+If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit.
 
 ![image](https://user-images.githubusercontent.com/30892199/119228360-f9d19700-bb12-11eb-9cc2-f04e7f18e8d9.png)
 
+## Highlights
 
-## Highlights:
 - Presentations are created in a simple text format, see below.
   - makes your slides totally GitHub-friendly
 - One single (mostly static) executable - no install required.
@@ -20,15 +20,11 @@ If you want to play with _slides_ you can download the current release from the 
 - support for clickers
 - virtual laser pointer in different sizes
 
-
 See it in action: We open a slideshow, go through the slides, activate the laserpointer, open the editor, make and save changes to the subtitle of the last slide, then close the editor.
 
+<https://user-images.githubusercontent.com/30892199/119229946-73b94e80-bb1a-11eb-84ad-cae5251d4bbe.mp4>
 
-https://user-images.githubusercontent.com/30892199/119229946-73b94e80-bb1a-11eb-84ad-cae5251d4bbe.mp4
-
-
-
-# Motivation 
+# Motivation
 
 Apart from all the reasons for ditching Powerpoint that also applied to my previous slideshow project, [Bûllets](https://github.com/renerocksai/bullets), which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
 
@@ -37,23 +33,23 @@ In addition, this project also serves as a case study for myself where I test ou
 This project achieves what I set out for in the following ways:
 
 - **portability:** zig allows for cross-platform development. If it weren't for OpenGL and SDL dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
-    - the result is a free-standing executable, only a few MB in size that needs no installer
+  - the result is a free-standing executable, only a few MB in size that needs no installer
 - **easy to get started with:** just download, start and go!
 - **no external dependencies:** all you need to create presentations is the program itself. No other software is required. The builtin editor is not the greatest but since slides watches your files, you can use an external editor, too. Changes will be loaded everytime you save.
 - **super quick slide creation:** a simple text format supporting basic Markdown syntax (plus underlines) and templates for building blocks lets you type formatted bulleted lists very quickly.
-    - you can also paste in Markdown from your note taking app, which is what I do frequently
- 
-## Interesting Observations 
+  - you can also paste in Markdown from your note taking app, which is what I do frequently
 
-Using slides, I far more enjoy creating slideshow presentations. It seems to trick my mind into a more enjoyable, programming-like state when I spend my time in neovim, using the slideshow description / markup language. It is a completely mouse-less way of creating presentations. I find it very effective. I also really like that I can put my presentations and supporting assets in a git reposiory and have them version-controlled. 
+## Interesting Observations
 
-Lots of the contents of my slideshows is Markdown or very Markdown-friendly which makes re-use of information snippets really handy, e.g. from notes to presentation to blog post.  
+Using slides, I far more enjoy creating slideshow presentations. It seems to trick my mind into a more enjoyable, programming-like state when I spend my time in neovim, using the slideshow description / markup language. It is a completely mouse-less way of creating presentations. I find it very effective. I also really like that I can put my presentations and supporting assets in a git reposiory and have them version-controlled.
+
+Lots of the contents of my slideshows is Markdown or very Markdown-friendly which makes re-use of information snippets really handy, e.g. from notes to presentation to blog post.
 
 BTW, I use `imgtool.py`, also contained in the repo, for figuring out image sizes and placement.  Make sure you have some PIL installed.
 
 # Usage
 
-After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window. 
+After starting slides by double-clicking it or launching it from the command line, you will be greeted with an empty window.
 
 ![](screenshots/empty.png)
 
@@ -61,29 +57,29 @@ Use the menu or keyboard shortcuts (see below) to load the sample presentation `
 
 ## Opening a Slideshow
 
-Usually, you want to open an existing slideshow for editing or presentation purposes. If you want to experiment with a new slideshow, just open the editor with the <kbd>E</kbd> key and fire away. To make the changes take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
+Usually, you want to open an existing slideshow for editing or presentation purposes. If you want to experiment with a new slideshow, just open the editor with the <kbd>E</kbd> key and fire away. To make the changes take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>.
 
-To open an existing slideshow, use the menu or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>O</kbd> and then pick a file from the file browser. 
+To open an existing slideshow, use the menu or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>O</kbd> and then pick a file from the file browser.
 
 ## Editing and Saving a Slideshow
+
 You open the built-in editor with the <kbd>E</kbd> key. Note that the editor will not be active for text input with a blinking cursor immediately. This allows you to navigate through the slides until you have reached the one you want to edit. As you navigate through the slides, the editor will follow by moving the current slide's `@popslide` or `@slide` command into the visible area and quickly flashing it with a red background once.
 
-You enter the editor by clicking somewhere into the text and leave it by clicking somewhere outside of the text. To hide the editor, just use the `[e] editor` button or press the <kbd>E</kbd> key again. 
+You enter the editor by clicking somewhere into the text and leave it by clicking somewhere outside of the text. To hide the editor, just use the `[e] editor` button or press the <kbd>E</kbd> key again.
 
-To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>. 
+To make the changes you made take effect, save the presentation using the save button or the keyboard shortcut <kbd>Ctrl</kbd> + <kbd>S</kbd>.
 
 **Note:** You can resize the editor pane by dragging it by the lighter blue handle that separates slide content from the editor in the vertical center of the editor:
 
 ![image](https://user-images.githubusercontent.com/30892199/119230156-53d65a80-bb1b-11eb-805e-02f9f8708232.png)
 
-
 **Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic features of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
-
 ## Presentation and Slide Navigation
+
 See the next section for keyboard shortcuts for slideshow control and slide navigation. In addition to using the keyboard, you can also use a "clicker" / "presenter" device.
 
-## Keyboard Shortcuts 
+## Keyboard Shortcuts
 
 | Shortcut | Description |
 | -------- | ----------- |
@@ -107,8 +103,7 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>G</kbd> | Goto first slide |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Goto last slide |
 
-# Slideshow Text Format 
-
+# Slideshow Text Format
 
 ## Markdown Format
 
@@ -125,13 +120,13 @@ Formatting is supported:
 ```markdown
 Normal text.
 **Bold** text.
-_italic_ text. 
+_italic_ text.
 _**Bold italic**_ text.
 ~~Underlined~~ text.
 <#rrggbbaa>Colored with alpha</> text. E.g. <#ff0000ff>red full opacity</>
 ```
- 
-## Slideshow Format 
+
+## Slideshow Format
 
 Internal render buffer resolution is 1920x1080. So always use coordinates in this range.
 
@@ -153,11 +148,11 @@ Example of the current text format - see `test_public.sld` for a more realistic 
 # lines starting with a # sign are comments BTW
 
 # title, subtitle, authors
-@push intro_title    x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
-@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
-@push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa 
+@push intro_title    x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
+@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
+@push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
 
-# the following pushslide command will cause everything up to here to be 
+# the following pushslide command will cause everything up to here to be
 # "remembered as template" named `intro`, it will not be rendered immediately
 @pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
 
@@ -179,8 +174,8 @@ Example of the current text format - see `test_public.sld` for a more realistic 
 # -------------------------------------------------------------
 @slide
 
-# some image on the slide 
-@box img=some_image.png x=800 y=100 w=320 h=200  
+# some image on the slide
+@box img=some_image.png x=800 y=100 w=320 h=200
 
 @box x=100 y=100 w=1720 h=880
 Here come the bullets:
@@ -191,33 +186,40 @@ Here come the bullets:
 
 ```
 
-
 # Building it
 
 ## prerequisites
 
-
 Clone this repository - **recursively**
 
-```bash
-$ git clone https://github.com/renerocksai/slides --recursive
+```console
+git clone https://github.com/renerocksai/slides.git --recursive
+```
+
+### NixOS
+
+This applies to NixOS only. To make sure all dependencies are met, I highly recommend using the provided nix shell (via
+`shell.nix`). Start it in the slides directory:
+
+```console
+nix-shell
 ```
 
 ## build and run
 
-```bash
-$ zig build slides
+```console
+zig build slides
 ```
 
 To just build: `zig build`. This will create the executable `slides` in `./zig-cache/bin/`.
 
 **Note regarding Windows:** while I can make release builds on my windows laptop, I could not reproduce a working
 windows setup via GitHub actions, starting from a clean machine. So I can only release debug builds for windows
-automatically (GitHub Actions). 
+automatically (GitHub Actions).
 
-## Tested with: 
+## Tested with
+
 - zig `0.8.0` (release)
 - zig `0.8.0-dev.1120+300ebbd56`
 - zig `0.8.0-dev.1141+68e772647`
 - zig-upaya [prime31/zig-upaya@154417379bfaa36f51c3b1b438fa73cf563d90f0](https://github.com/prime31/zig-upaya/commit/154417379bfaa36f51c3b1b438fa73cf563d90f0).
-
