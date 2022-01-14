@@ -8,6 +8,7 @@ in
 { pkgs ? import nixpkgs { } }:
 
 pkgs.mkShell {
+  # for building
   buildInputs = with pkgs; [
     SDL2
     xorg.libX11 
@@ -18,6 +19,7 @@ pkgs.mkShell {
     zig
   ];
 
+  # for running tools in the shell
   nativeBuildInputs = with pkgs; [
     cmake
     gdb
