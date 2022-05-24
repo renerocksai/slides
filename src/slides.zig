@@ -160,14 +160,19 @@ pub const SlideItem = struct {
     }
 
     pub fn sanityCheck(self: *SlideItem) SlideItemError!void {
-        if (self.text == null and self.kind == .textbox) return SlideItemError.TextNull;
+        if (self.text == null and self.color == null and self.kind == .textbox) return SlideItemError.TextNull;
         if (self.fontSize == null and self.kind == .textbox) return SlideItemError.FontSizeNull;
         if (self.color == null and self.kind == .textbox) return SlideItemError.ColorNull;
         if (self.underline_width == null and self.kind == .textbox) return SlideItemError.UnderlineWidthNull;
         if (self.bullet_color == null and self.kind == .textbox) return SlideItemError.BulletColorNull;
         if (self.bullet_symbol == null and self.kind == .textbox) return SlideItemError.BulletSymbolNull;
 
-        if (self.img_path == null and (self.kind == .img or self.kind == .background)) return SlideItemError.ImgPathNull;
+        if (self.img_path == null and (self.kind == .img)) return SlideItemError.ImgPathNull;
+        if (self.kind == .background) {
+            if (self.img_path == null and self.color == null) {
+                return SlideItemError.ColorNull;
+            }
+        }
     }
 
     pub fn printToLog(self: *const SlideItem) void {

@@ -108,10 +108,26 @@ pub const SlideshowRenderer = struct {
         // for line in lines:
         //     if line is bulleted: emit bullet, adjust x pos
         //     render spans
-        std.log.debug("ENTER preRenderTextBlock for slide {d}", .{slide_number});
+        std.log.debug("ENTER preRenderTextBlock for slide {d} : {s}", .{ slide_number, item });
         const spaces_per_indent: usize = 4;
         var fontSize: i32 = 0;
         var line_height_bullet_width: ImVec2 = .{};
+
+        // box without text, but with color: render a colored box!
+        if (item.text == null and item.color != null) {
+            std.log.debug("preRenderTextBlock (color) creating RenderElement", .{});
+            try renderSlide.elements.append(RenderElement{
+                .kind = .text,
+                .position = item.position,
+                .size = item.size,
+                .fontSize = null,
+                .underline_width = null,
+                .text = null,
+                .color = item.color,
+            });
+            std.log.debug("LEAVE preRenderTextBlock (color) for slide {d}", .{slide_number});
+            return;
+        }
 
         if (item.fontSize) |fs| {
             line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
@@ -661,7 +677,28 @@ fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVe
 }
 
 fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
-    if (item.*.text.?[0] == 0) {
+    if (item.text == null and item.color == null) {
+        return;
+    }
+    // new: box without text, but with color: make a colored box
+    if (item.text == null and item.color != null) {
+        igSetCursorPos(item.position);
+        var drawlist = igGetForegroundDrawListNil();
+        if (drawlist == null) {
+            std.log.warn("drawlist is null!", .{});
+        } else {
+            var br = slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size);
+            const sz = slidePosToRenderPos(item.size, slide_tl, slide_size, internal_render_size);
+            br.x += sz.x;
+            br.y += sz.y;
+            const bgcolu32 = igGetColorU32Vec4(item.color.?);
+            igRenderFrame(item.position, br, bgcolu32, true, 0.0);
+        }
+        return;
+    }
+
+    // check for empty text
+    if (item.text.?[0] == 0) {
         return;
     }
     var wrap_pos = item.position;
