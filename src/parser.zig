@@ -696,11 +696,11 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
     slide_item.applySlideShowDefaultsIfNecessary(parser_context.slideshow);
     if (slide_item.img_path) |img_path| {
         slide_item.kind = .img;
-        if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
-            slide_item.kind = .background;
-        }
     } else {
         slide_item.kind = .textbox;
+    }
+    if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
+        slide_item.kind = .background;
     }
     // std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
     try parser_context.current_slide.items.append(slide_item.*);
