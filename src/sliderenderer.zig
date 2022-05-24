@@ -88,6 +88,7 @@ pub const SlideshowRenderer = struct {
     }
 
     fn createBg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
+        std.log.info("pre-rendering bg {}", .{item});
         if (item.img_path) |p| {
             var texptr = try tcache.getImg(p, slideshow_filp);
             if (texptr) |t| {
@@ -95,7 +96,10 @@ pub const SlideshowRenderer = struct {
             }
         } else {
             if (item.color) |color| {
+                std.log.info("bg has color {}", .{color});
                 try renderSlide.elements.append(RenderElement{ .kind = .background, .color = color });
+            } else {
+                std.log.info("bg has NO COLOR", .{});
             }
         }
     }
