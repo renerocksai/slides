@@ -1,0 +1,228 @@
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondItalic.eot');
+    src: local('Georgia Pro Cond Italic'), local('GeorgiaPro-CondItalic'),
+        url('GeorgiaPro-CondItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondItalic.woff2') format('woff2'),
+        url('GeorgiaPro-CondItalic.woff') format('woff'),
+        url('GeorgiaPro-CondItalic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-Italic.eot');
+    src: local('Georgia Pro Italic'), local('GeorgiaPro-Italic'),
+        url('GeorgiaPro-Italic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-Italic.woff2') format('woff2'),
+        url('GeorgiaPro-Italic.woff') format('woff'),
+        url('GeorgiaPro-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-BoldItalic.eot');
+    src: local('Georgia Pro Bold Italic'), local('GeorgiaPro-BoldItalic'),
+        url('GeorgiaPro-BoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-BoldItalic.woff2') format('woff2'),
+        url('GeorgiaPro-BoldItalic.woff') format('woff'),
+        url('GeorgiaPro-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-SemiboldItalic.eot');
+    src: local('Georgia Pro Semibold Italic'), local('GeorgiaPro-SemiboldItalic'),
+        url('GeorgiaPro-SemiboldItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-SemiboldItalic.woff2') format('woff2'),
+        url('GeorgiaPro-SemiboldItalic.woff') format('woff'),
+        url('GeorgiaPro-SemiboldItalic.ttf') format('truetype');
+    font-weight: 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-LightItalic.eot');
+    src: local('Georgia Pro Light Italic'), local('GeorgiaPro-LightItalic'),
+        url('GeorgiaPro-LightItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-LightItalic.woff2') format('woff2'),
+        url('GeorgiaPro-LightItalic.woff') format('woff'),
+        url('GeorgiaPro-LightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-Light.eot');
+    src: local('Georgia Pro Light'), local('GeorgiaPro-Light'),
+        url('GeorgiaPro-Light.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-Light.woff2') format('woff2'),
+        url('GeorgiaPro-Light.woff') format('woff'),
+        url('GeorgiaPro-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-BlackItalic.eot');
+    src: local('Georgia Pro Black Italic'), local('GeorgiaPro-BlackItalic'),
+        url('GeorgiaPro-BlackItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-BlackItalic.woff2') format('woff2'),
+        url('GeorgiaPro-BlackItalic.woff') format('woff'),
+        url('GeorgiaPro-BlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-Bold.eot');
+    src: local('Georgia Pro Bold'), local('GeorgiaPro-Bold'),
+        url('GeorgiaPro-Bold.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-Bold.woff2') format('woff2'),
+        url('GeorgiaPro-Bold.woff') format('woff'),
+        url('GeorgiaPro-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondBlackItalic.eot');
+    src: local('Georgia Pro Cond Black Italic'), local('GeorgiaPro-CondBlackItalic'),
+        url('GeorgiaPro-CondBlackItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondBlackItalic.woff2') format('woff2'),
+        url('GeorgiaPro-CondBlackItalic.woff') format('woff'),
+        url('GeorgiaPro-CondBlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondRegular.eot');
+    src: local('Georgia Pro Cond'), local('GeorgiaPro-CondRegular'),
+        url('GeorgiaPro-CondRegular.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondRegular.woff2') format('woff2'),
+        url('GeorgiaPro-CondRegular.woff') format('woff'),
+        url('GeorgiaPro-CondRegular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondLightItalic.eot');
+    src: local('Georgia Pro Cond Light Italic'), local('GeorgiaPro-CondLightItalic'),
+        url('GeorgiaPro-CondLightItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondLightItalic.woff2') format('woff2'),
+        url('GeorgiaPro-CondLightItalic.woff') format('woff'),
+        url('GeorgiaPro-CondLightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondBoldItalic.eot');
+    src: local('Georgia Pro Cond Bold Italic'), local('GeorgiaPro-CondBoldItalic'),
+        url('GeorgiaPro-CondBoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondBoldItalic.woff2') format('woff2'),
+        url('GeorgiaPro-CondBoldItalic.woff') format('woff'),
+        url('GeorgiaPro-CondBoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondBlack.eot');
+    src: local('Georgia Pro Cond Black'), local('GeorgiaPro-CondBlack'),
+        url('GeorgiaPro-CondBlack.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondBlack.woff2') format('woff2'),
+        url('GeorgiaPro-CondBlack.woff') format('woff'),
+        url('GeorgiaPro-CondBlack.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-Black.eot');
+    src: local('Georgia Pro Black'), local('GeorgiaPro-Black'),
+        url('GeorgiaPro-Black.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-Black.woff2') format('woff2'),
+        url('GeorgiaPro-Black.woff') format('woff'),
+        url('GeorgiaPro-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondLight.eot');
+    src: local('Georgia Pro Cond Light'), local('GeorgiaPro-CondLight'),
+        url('GeorgiaPro-CondLight.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondLight.woff2') format('woff2'),
+        url('GeorgiaPro-CondLight.woff') format('woff'),
+        url('GeorgiaPro-CondLight.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondSemibold.eot');
+    src: local('Georgia Pro Cond Semibold'), local('GeorgiaPro-CondSemibold'),
+        url('GeorgiaPro-CondSemibold.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondSemibold.woff2') format('woff2'),
+        url('GeorgiaPro-CondSemibold.woff') format('woff'),
+        url('GeorgiaPro-CondSemibold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondSemiboldItalic.eot');
+    src: local('Georgia Pro Cond Semibold Italic'), local('GeorgiaPro-CondSemiboldItalic'),
+        url('GeorgiaPro-CondSemiboldItalic.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondSemiboldItalic.woff2') format('woff2'),
+        url('GeorgiaPro-CondSemiboldItalic.woff') format('woff'),
+        url('GeorgiaPro-CondSemiboldItalic.ttf') format('truetype');
+    font-weight: 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Georgia Pro';
+    src: url('GeorgiaPro-Semibold.eot');
+    src: local('Georgia Pro Semibold'), local('GeorgiaPro-Semibold'),
+        url('GeorgiaPro-Semibold.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-Semibold.woff2') format('woff2'),
+        url('GeorgiaPro-Semibold.woff') format('woff'),
+        url('GeorgiaPro-Semibold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Georgia Pro Cond';
+    src: url('GeorgiaPro-CondBold.eot');
+    src: local('Georgia Pro Cond Bold'), local('GeorgiaPro-CondBold'),
+        url('GeorgiaPro-CondBold.eot?#iefix') format('embedded-opentype'),
+        url('GeorgiaPro-CondBold.woff2') format('woff2'),
+        url('GeorgiaPro-CondBold.woff') format('woff'),
+        url('GeorgiaPro-CondBold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+

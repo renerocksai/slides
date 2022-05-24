@@ -31,20 +31,25 @@ const baked_font_sizes = [_]i32{
     72,
     90,
     96,
-    104,
-    136,
-    144,
-    192,
-    300,
+    // 104,
+    // 136,
+    // 144,
+    // 192,
+    // 300,
 };
 
 const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
 
-const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
-const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
-const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
-const fontdata_bolditalic = @embedFile("../assets/Calibri Italic.ttf"); // Calibri is the bold version of Calibri Light for us
-const fontdata_zig = @embedFile("../assets/press-start-2p.ttf");
+const fontdata_normal = @embedFile("../assets/fonts/GeorgiaPro-Semibold.ttf");
+const fontdata_bold = @embedFile("../assets/fonts/GeorgiaPro-Bold.ttf"); // Calibri is the bold version of Calibri Light for us
+const fontdata_italic = @embedFile("../assets/fonts/GeorgiaPro-SemiboldItalic.ttf");
+const fontdata_bolditalic = @embedFile("../assets/Calibri Light.ttf");
+const fontdata_zig = @embedFile("../assets/Calibri Regular.ttf");
+
+// const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
+// const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
+// const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
+// const fontdata_bolditalic = @embedFile("../assets/Calibri Italic.ttf"); // Calibri is the bold version of Calibri Light for us
 
 var allFonts: StyledFontMap = StyledFontMap.init(std.heap.page_allocator);
 var my_fonts = FontMap.init(std.heap.page_allocator);
@@ -73,6 +78,7 @@ pub fn loadFonts() error{OutOfMemory}!void {
 }
 
 pub fn addZigShowtimeFont() !void {
+    return;
     const fsize = 52;
     var io = igGetIO();
     var font_config = ImFontConfig_ImFontConfig();
