@@ -1,4 +1,0 @@
-[submodule "zig-upaya"]
-	path = zig-upaya
-	url = https://github.com/renerocksai/zig-upaya.git
-	branch = slides--zig-0.8.0
