@@ -4,8 +4,9 @@ const Builder = std.build.Builder;
 
 // tell where you checked out zig-upaya
 const upaya_dir = "./zig-upaya/";
+const upaya_build_zig = upaya_dir ++ "src/build.zig";
 
-const upaya_build = @import(upaya_dir ++ "src/build.zig");
+const upaya_build = @import("./zig-upaya/src/build.zig");
 
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
@@ -32,7 +33,7 @@ pub fn build(b: *Builder) void {
 }
 
 /// creates an exe with all the required dependencies
-fn createExe(b: *Builder, target: std.build.Target, name: []const u8, source: []const u8) !void {
+fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source: []const u8) !void {
     // support for cli apps
     const is_cli = std.mem.endsWith(u8, name, "cli");
 
@@ -54,7 +55,7 @@ fn createExe(b: *Builder, target: std.build.Target, name: []const u8, source: []
     b.installArtifact(exe);
 }
 
-pub fn addUpayaToArtifact(b: *Builder, exe: *std.build.LibExeObjStep, target: std.build.Target, comptime prefix_path: []const u8) void {
+pub fn addUpayaToArtifact(b: *Builder, exe: *std.build.LibExeObjStep, target: std.zig.CrossTarget, comptime prefix_path: []const u8) void {
     if (prefix_path.len > 0 and !std.mem.endsWith(u8, prefix_path, "/")) @panic("prefix-path must end with '/' if it is not empty");
     upaya_build.linkArtifact(b, exe, target, prefix_path);
 }

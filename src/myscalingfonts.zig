@@ -31,11 +31,11 @@ const baked_font_sizes = [_]i32{
     72,
     90,
     96,
-    // 104,
-    // 136,
-    // 144,
-    // 192,
-    // 300,
+    104,
+    136,
+    144,
+    192,
+    300,
 };
 
 const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
@@ -165,13 +165,19 @@ pub fn commitFonts() void {
     var bytes_per_pixel: i32 = undefined;
     var pixels: [*c]u8 = undefined;
     std.log.debug("trying to get font atlas", .{});
-    ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &pixels, &w, &h, &bytes_per_pixel);
-    std.log.debug("font atlas: {any}{d}x{d}", .{ true, w, h });
 
-    var tex = Texture.initWithData(pixels[0..@intCast(usize, w * h * bytes_per_pixel)], w, h, .nearest);
-    std.log.debug("tex: {any} {d}x{d}", .{ tex, w, h });
-    ImFontAtlas_SetTexID(io.Fonts, tex.imTextureID());
-    std.log.debug("set: {any}", .{true});
+    _ = ImFontAtlas_Build(io.Fonts);
+
+    if (true) {
+        // ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &pixels, &w, &h, &bytes_per_pixel);
+        ImFontAtlas_GetTexDataAsAlpha8(io.Fonts, &pixels, &w, &h, &bytes_per_pixel);
+        std.log.debug("font atlas: {any}{d}x{d}", .{ true, w, h });
+
+        var tex = Texture.initWithData(pixels[0..@intCast(usize, w * h * bytes_per_pixel)], w, h, .nearest);
+        std.log.debug("tex: {any} {d}x{d}", .{ tex, w, h });
+        ImFontAtlas_SetTexID(io.Fonts, tex.imTextureID());
+        std.log.debug("set: {any}", .{true});
+    }
 }
 
 var last_scale: f32 = 0.0;
