@@ -51,7 +51,7 @@ pub const ParserErrorContext = struct {
 
 pub const ParserContext = struct {
     allocator: *std.mem.Allocator,
-    input: []const u8 = undefined,
+    input: [:0]const u8 = undefined,
 
     parsed_line_number: usize = 0,
     parsed_line_offset: usize = 0,
