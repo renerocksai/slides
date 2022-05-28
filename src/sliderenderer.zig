@@ -1,11 +1,11 @@
 const std = @import("std");
 const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
-const upaya = @import("upaya");
+const imgui = @import("imgui");
 const my_fonts = @import("myscalingfonts.zig");
 const markdownlineparser = @import("markdownlineparser.zig");
+const zt = @import("zt");
 
-usingnamespace upaya.imgui;
 usingnamespace slides;
 usingnamespace markdownlineparser;
 
@@ -17,23 +17,23 @@ const RenderElementKind = enum {
 
 const RenderElement = struct {
     kind: RenderElementKind = .background,
-    position: ImVec2 = ImVec2{},
-    size: ImVec2 = ImVec2{},
-    color: ?ImVec4 = ImVec4{},
+    position: imgui.ImVec2 = imgui.ImVec2{},
+    size: imgui.ImVec2 = imgui.ImVec2{},
+    color: ?imgui.ImVec4 = imgui.ImVec4{},
     text: ?[*:0]const u8 = null,
     fontSize: ?i32 = null,
     fontStyle: my_fonts.FontStyle = .normal,
     underlined: bool = false,
     underline_width: ?i32 = null,
-    bullet_color: ?ImVec4 = null,
-    texture: ?*upaya.Texture = null,
+    bullet_color: ?imgui.ImVec4 = null,
+    texture: ?zt.gl.Texture = null,
     bullet_symbol: [*:0]const u8 = "",
 };
 
 const RenderedSlide = struct {
     elements: std.ArrayList(RenderElement) = undefined,
 
-    fn new(allocator: *std.mem.Allocator) !*RenderedSlide {
+    fn new(allocator: std.mem.Allocator) !*RenderedSlide {
         var self: *RenderedSlide = try allocator.create(RenderedSlide);
         self.* = .{};
         self.elements = std.ArrayList(RenderElement).init(allocator);
@@ -43,10 +43,10 @@ const RenderedSlide = struct {
 
 pub const SlideshowRenderer = struct {
     renderedSlides: std.ArrayList(*RenderedSlide) = undefined,
-    allocator: *std.mem.Allocator = undefined,
-    md_parser: MdLineParser = .{},
+    allocator: std.mem.Allocator = undefined,
+    md_parser: markdownlineparser.MdLineParser = .{},
 
-    pub fn new(allocator: *std.mem.Allocator) !*SlideshowRenderer {
+    pub fn new(allocator: std.mem.Allocator) !*SlideshowRenderer {
         var self: *SlideshowRenderer = try allocator.create(SlideshowRenderer);
         self.* = .{};
         self.*.allocator = allocator;
@@ -55,7 +55,7 @@ pub const SlideshowRenderer = struct {
         return self;
     }
 
-    pub fn preRender(self: *SlideshowRenderer, slideshow: *const SlideShow, slideshow_filp: []const u8) !void {
+    pub fn preRender(self: *SlideshowRenderer, slideshow: *const slides.SlideShow, slideshow_filp: []const u8) !void {
         std.log.debug("ENTER preRender", .{});
         if (slideshow.slides.items.len == 0) {
             return;
@@ -66,14 +66,14 @@ pub const SlideshowRenderer = struct {
         for (slideshow.slides.items) |slide, i| {
             const slide_number = i + 1;
 
-            if (slide.items.items.len == 0) {
+            if (slide.items.?.items.len == 0) {
                 continue;
             }
 
             // add a renderedSlide
             var renderSlide = try RenderedSlide.new(self.allocator);
 
-            for (slide.items.items) |item, j| {
+            for (slide.items.?.items) |item| {
                 switch (item.kind) {
                     .background => try self.createBg(renderSlide, item, slideshow_filp),
                     .textbox => try self.preRenderTextBlock(renderSlide, item, slide_number),
@@ -87,7 +87,8 @@ pub const SlideshowRenderer = struct {
         std.log.debug("LEAVE preRender", .{});
     }
 
-    fn createBg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
+    fn createBg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: slides.SlideItem, slideshow_filp: []const u8) !void {
+        _ = self;
         std.log.info("pre-rendering bg {}", .{item});
         if (item.img_path) |p| {
             var texptr = try tcache.getImg(p, slideshow_filp);
@@ -104,14 +105,14 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slide_number: usize) !void {
+    fn preRenderTextBlock(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: slides.SlideItem, slide_number: usize) !void {
         // for line in lines:
         //     if line is bulleted: emit bullet, adjust x pos
         //     render spans
         std.log.debug("ENTER preRenderTextBlock for slide {d} : {s}", .{ slide_number, item });
         const spaces_per_indent: usize = 4;
         var fontSize: i32 = 0;
-        var line_height_bullet_width: ImVec2 = .{};
+        var line_height_bullet_width: imgui.ImVec2 = .{};
 
         // box without text, but with color: render a colored box!
         if (item.text == null and item.color != null) {
@@ -137,7 +138,7 @@ pub const SlideshowRenderer = struct {
             std.log.err("No fontsize for text {s}", .{item.text});
             return;
         }
-        var bulletColor: ImVec4 = .{};
+        var bulletColor: imgui.ImVec4 = .{};
         if (item.bullet_color) |bc| {
             bulletColor = bc;
         } else {
@@ -162,7 +163,7 @@ pub const SlideshowRenderer = struct {
         const underline_width = item.underline_width orelse 0;
 
         if (item.text) |t| {
-            const tl_pos = ImVec2{ .x = item.position.x, .y = item.position.y };
+            const tl_pos = imgui.ImVec2{ .x = item.position.x, .y = item.position.y };
             var layoutContext = TextLayoutContext{
                 .available_size = .{ .x = item.size.x, .y = item.size.y },
                 .origin_pos = tl_pos,
@@ -180,7 +181,7 @@ pub const SlideshowRenderer = struct {
             const new_t = try std.mem.replaceOwned(u8, self.allocator, t, "$slide_number", &slideNumStr);
 
             // split into lines
-            var it = std.mem.split(new_t, "\n");
+            var it = std.mem.split(u8, new_t, "\n");
             while (it.next()) |line| {
                 if (line.len == 0) {
                     // empty line
@@ -192,7 +193,7 @@ pub const SlideshowRenderer = struct {
                 var bullet_indent_in_spaces: usize = 0;
                 const is_bulleted = self.countIndentOfBullet(line, &bullet_indent_in_spaces);
                 const indent_level = bullet_indent_in_spaces / spaces_per_indent;
-                const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, bullet_indent_in_spaces / spaces_per_indent);
+                const indent_in_pixels = line_height_bullet_width.x * @intToFloat(f32, indent_level);
                 var available_width = item.size.x - indent_in_pixels;
                 layoutContext.available_size.x = available_width;
                 layoutContext.origin_pos.x = tl_pos.x + indent_in_pixels;
@@ -243,13 +244,13 @@ pub const SlideshowRenderer = struct {
     }
 
     const TextLayoutContext = struct {
-        origin_pos: ImVec2 = .{},
-        current_pos: ImVec2 = .{},
-        available_size: ImVec2 = .{},
+        origin_pos: imgui.ImVec2 = .{},
+        current_pos: imgui.ImVec2 = .{},
+        available_size: imgui.ImVec2 = .{},
         current_line_height: f32 = 0,
         fontSize: i32 = 0,
         underline_width: usize = 0,
-        color: ImVec4 = .{},
+        color: imgui.ImVec4 = .{},
         text: []const u8 = undefined,
     };
 
@@ -301,24 +302,24 @@ pub const SlideshowRenderer = struct {
                 std.log.debug("new span, len=: `{d}`", .{span.text.?.len});
                 // work out the font
                 element.fontStyle = .normal;
-                element.underlined = span.styleflags & StyleFlags.underline > 0;
+                element.underlined = span.styleflags & markdownlineparser.StyleFlags.underline > 0;
 
-                if (span.styleflags & StyleFlags.bold > 0) {
+                if (span.styleflags & markdownlineparser.StyleFlags.bold > 0) {
                     element.fontStyle = .bold;
                 }
-                if (span.styleflags & StyleFlags.italic > 0) {
+                if (span.styleflags & markdownlineparser.StyleFlags.italic > 0) {
                     element.fontStyle = .italic;
                 }
-                if (span.styleflags & StyleFlags.zig > 0) {
+                if (span.styleflags & markdownlineparser.StyleFlags.zig > 0) {
                     element.fontStyle = .zig;
                 }
-                if (span.styleflags & (StyleFlags.bold | StyleFlags.italic) == (StyleFlags.bold | StyleFlags.italic)) {
+                if (span.styleflags & (markdownlineparser.StyleFlags.bold | markdownlineparser.StyleFlags.italic) == (markdownlineparser.StyleFlags.bold | markdownlineparser.StyleFlags.italic)) {
                     element.fontStyle = .bolditalic;
                 }
 
                 // work out the color
                 element.color = default_color;
-                if (span.styleflags & StyleFlags.colored > 0) {
+                if (span.styleflags & markdownlineparser.StyleFlags.colored > 0) {
                     if (span.color_override) |co| {
                         element.color = co;
                     } else {
@@ -329,9 +330,9 @@ pub const SlideshowRenderer = struct {
 
                 // check the line hight of this span's fontstyle so we can check whether it wrapped
                 const ig_span_fontsize_text: [*c]const u8 = "XXX";
-                var ig_span_fontsize: ImVec2 = .{};
+                var ig_span_fontsize: imgui.ImVec2 = .{};
                 my_fonts.pushStyledFontScaled(layoutContext.fontSize, element.fontStyle);
-                igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 2000);
+                imgui.igCalcTextSize(&ig_span_fontsize, ig_span_fontsize_text, ig_span_fontsize_text + 2, false, 2000);
                 my_fonts.popFontScaled();
 
                 // check if whole span fits width. - let's be opportunistic!
@@ -356,7 +357,7 @@ pub const SlideshowRenderer = struct {
                 //
                 //
 
-                var attempted_span_size: ImVec2 = .{};
+                var attempted_span_size: imgui.ImVec2 = .{};
                 var available_width: f32 = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
                 var render_text_c = try self.styledTextblockSize_toCstring(span.text.?, layoutContext.fontSize, element.fontStyle, Infinity_Width, &attempted_span_size);
                 std.log.debug("available_width: {d}, attempted_span_size: {d:3.0}", .{ available_width, attempted_span_size.x });
@@ -516,24 +517,26 @@ pub const SlideshowRenderer = struct {
         std.log.debug("LEAVE3 renderMdBlock ", .{});
     }
 
-    fn lineHightAndBulletWidthForFontSize(self: *SlideshowRenderer, fontsize: i32) ImVec2 {
-        var size = ImVec2{};
-        var ret = ImVec2{};
+    fn lineHightAndBulletWidthForFontSize(self: *SlideshowRenderer, fontsize: i32) imgui.ImVec2 {
+        _ = self;
+        var size = imgui.ImVec2{};
+        var ret = imgui.ImVec2{};
         my_fonts.pushFontScaled(fontsize);
         const text: [*c]const u8 = "FontCheck";
-        igCalcTextSize(&size, text, text + 5, false, 8000);
+        imgui.igCalcTextSize(&size, text, text + 5, false, 8000);
         ret.y = size.y;
         var bullet_text: [*c]const u8 = undefined;
         bullet_text = "> "; // TODO this should ideally honor the real bullet symbol but I don't care atm
-        igCalcTextSize(&size, bullet_text, bullet_text + std.mem.lenZ(bullet_text), false, 8000);
+        imgui.igCalcTextSize(&size, bullet_text, bullet_text + std.mem.len(bullet_text), false, 8000);
         ret.x = size.x;
         my_fonts.popFontScaled();
         return ret;
     }
 
     fn countIndentOfBullet(self: *SlideshowRenderer, line: []const u8, indent_out: *usize) bool {
+        _ = self;
         var indent: usize = 0;
-        for (line) |c, i| {
+        for (line) |c| {
             if (c == '-' or c == '>') {
                 indent_out.* = indent;
                 return true;
@@ -557,16 +560,16 @@ pub const SlideshowRenderer = struct {
     }
 
     fn heightOfTextblock_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, block_width: f32, height_out: *f32) ![*c]const u8 {
-        var size = ImVec2{};
+        var size = imgui.ImVec2{};
         my_fonts.pushFontScaled(fontsize);
         const ctext = try self.toCString(text);
-        igCalcTextSize(&size, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
+        imgui.igCalcTextSize(&size, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
         my_fonts.popFontScaled();
         height_out.* = size.y;
         return ctext;
     }
 
-    fn styledTextblockSize_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, fontstyle: my_fonts.FontStyle, block_width: f32, size_out: *ImVec2) ![*c]const u8 {
+    fn styledTextblockSize_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, fontstyle: my_fonts.FontStyle, block_width: f32, size_out: *imgui.ImVec2) ![*c]const u8 {
         my_fonts.pushStyledFontScaled(fontsize, fontstyle);
         defer my_fonts.popFontScaled();
         const ctext = try self.toCString(text);
@@ -576,14 +579,15 @@ pub const SlideshowRenderer = struct {
             size_out.y = 0;
             return ctext;
         }
-        igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext)], false, block_width);
+        imgui.igCalcTextSize(size_out, ctext, &ctext[std.mem.len(ctext)], false, block_width);
         return ctext;
     }
 
-    fn createImg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: SlideItem, slideshow_filp: []const u8) !void {
+    fn createImg(self: *SlideshowRenderer, renderSlide: *RenderedSlide, item: slides.SlideItem, slideshow_filp: []const u8) !void {
+        _ = self;
         if (item.img_path) |p| {
-            var texptr = try tcache.getImg(p, slideshow_filp);
-            if (texptr) |t| {
+            var texture = tcache.getImg(p, slideshow_filp) catch null;
+            if (texture) |t| {
                 try renderSlide.elements.append(RenderElement{
                     .kind = .image,
                     .position = item.position,
@@ -594,7 +598,7 @@ pub const SlideshowRenderer = struct {
         }
     }
 
-    pub fn render(self: *SlideshowRenderer, slide_number: i32, pos: ImVec2, size: ImVec2, internal_render_size: ImVec2) !void {
+    pub fn render(self: *SlideshowRenderer, slide_number: i32, pos: imgui.ImVec2, size: imgui.ImVec2, internal_render_size: imgui.ImVec2) !void {
         if (self.renderedSlides.items.len == 0) {
             std.log.debug("0 renderedSlides", .{});
             return;
@@ -607,8 +611,8 @@ pub const SlideshowRenderer = struct {
         }
 
         // TODO: pass that in from G
-        const img_tint_col: ImVec4 = ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
-        const img_border_col: ImVec4 = ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.0 }; // 50% opaque black
+        const img_tint_col: imgui.ImVec4 = imgui.ImVec4{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }; // No tint
+        const img_border_col: imgui.ImVec4 = imgui.ImVec4{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.0 }; // 50% opaque black
 
         for (slide.elements.items) |element| {
             switch (element.kind) {
@@ -627,63 +631,68 @@ pub const SlideshowRenderer = struct {
                     renderText(&element, pos, size, internal_render_size);
                 },
                 .image => {
-                    renderImg(element.position, element.size, element.texture.?, img_tint_col, img_border_col, pos, size, internal_render_size);
+                    if (element.texture) |txt| {
+                        renderImg(element.position, element.size, txt, img_tint_col, img_border_col, pos, size, internal_render_size);
+                    }
                 },
             }
         }
     }
 };
 
-fn slidePosToRenderPos(pos: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
-    const my_tl = ImVec2{
+fn slidePosToRenderPos(pos: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
+    const my_tl = imgui.ImVec2{
         .x = slide_tl.x + pos.x * slide_size.x / internal_render_size.x,
         .y = slide_tl.y + pos.y * slide_size.y / internal_render_size.y,
     };
     return my_tl;
 }
 
-fn slideSizeToRenderSize(size: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) ImVec2 {
-    const my_size = ImVec2{
+fn slideSizeToRenderSize(size: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
+    const my_size = imgui.ImVec2{
         .x = size.x * slide_size.x / internal_render_size.x,
         .y = size.y * slide_size.y / internal_render_size.y,
     };
     return my_size;
 }
 
-fn renderImg(pos: ImVec2, size: ImVec2, texture: *upaya.Texture, tint_color: ImVec4, border_color: ImVec4, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
-    var uv_min = ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
-    var uv_max = ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
+fn renderImg(pos: imgui.ImVec2, size: imgui.ImVec2, texture: zt.gl.Texture, tint_color: imgui.ImVec4, border_color: imgui.ImVec4, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) void {
+    var uv_min = imgui.ImVec2{ .x = 0.0, .y = 0.0 }; // Top-let
+    var uv_max = imgui.ImVec2{ .x = 1.0, .y = 1.0 }; // Lower-right
 
     // position the img in the slide
     const my_tl = slidePosToRenderPos(pos, slide_tl, slide_size, internal_render_size);
-    const my_size = slideSizeToRenderSize(size, slide_size, internal_render_size);
+    var my_size = slideSizeToRenderSize(size, slide_size, internal_render_size);
 
-    igSetCursorPos(my_tl);
-    igImage(texture.*.imTextureID(), my_size, uv_min, uv_max, tint_color, border_color);
+    imgui.igSetCursorPos(my_tl);
+    imgui.igImage(@intToPtr(*zt.gl.Texture, @ptrToInt(&texture)).imguiId(), my_size, uv_min, uv_max, tint_color, border_color);
 }
 
-fn renderBgColor(bgcol: ImVec4, size: ImVec2, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
-    igSetCursorPos(slide_tl);
-    var drawlist = igGetForegroundDrawListNil();
+fn renderBgColor(bgcol: imgui.ImVec4, size: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) void {
+    // TODO: might have to translate to render coordinates!!!
+    _ = internal_render_size;
+    _ = size;
+    imgui.igSetCursorPos(slide_tl);
+    var drawlist = imgui.igGetForegroundDrawList_Nil();
     if (drawlist == null) {
         std.log.warn("drawlist is null!", .{});
     } else {
         var br = slide_tl;
         br.x = slide_tl.x + slide_size.x;
         br.y = slide_tl.y + slide_size.y;
-        const bgcolu32 = igGetColorU32Vec4(bgcol);
-        igRenderFrame(slide_tl, br, bgcolu32, true, 0.0);
+        const bgcolu32 = imgui.igGetColorU32_Vec4(bgcol);
+        imgui.igRenderFrame(slide_tl, br, bgcolu32, true, 0.0);
     }
 }
 
-fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, internal_render_size: ImVec2) void {
+fn renderText(item: *const RenderElement, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) void {
     if (item.text == null and item.color == null) {
         return;
     }
     // new: box without text, but with color: make a colored box
     if (item.text == null and item.color != null) {
-        igSetCursorPos(item.position);
-        var drawlist = igGetForegroundDrawListNil();
+        imgui.igSetCursorPos(item.position);
+        var drawlist = imgui.igGetForegroundDrawList_Nil();
         if (drawlist == null) {
             std.log.warn("drawlist is null!", .{});
         } else {
@@ -691,8 +700,8 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
             const sz = slidePosToRenderPos(item.size, slide_tl, slide_size, internal_render_size);
             br.x += sz.x;
             br.y += sz.y;
-            const bgcolu32 = igGetColorU32Vec4(item.color.?);
-            igRenderFrame(item.position, br, bgcolu32, true, 0.0);
+            const bgcolu32 = imgui.igGetColorU32_Vec4(item.color.?);
+            imgui.igRenderFrame(item.position, br, bgcolu32, true, 0.0);
         }
         return;
     }
@@ -712,7 +721,7 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
     }
     wrap_pos.x += wrap_offset;
 
-    igPushTextWrapPos(slidePosToRenderPos(wrap_pos, slide_tl, slide_size, internal_render_size).x);
+    imgui.igPushTextWrapPos(slidePosToRenderPos(wrap_pos, slide_tl, slide_size, internal_render_size).x);
     const fs = item.fontSize.?;
     const fsize = @floatToInt(i32, @intToFloat(f32, fs) * slide_size.y / internal_render_size.y);
     const col = item.color;
@@ -722,11 +731,11 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
 
     // diplay the text
     const t = item.text.?;
-    igSetCursorPos(slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size));
-    igPushStyleColorVec4(ImGuiCol_Text, col.?);
-    igText(t);
-    igPopStyleColor(1);
-    igPopTextWrapPos();
+    imgui.igSetCursorPos(slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size));
+    imgui.igPushStyleColor_Vec4(imgui.ImGuiCol_Text, col.?);
+    imgui.igText(t);
+    imgui.igPopStyleColor(1);
+    imgui.igPopTextWrapPos();
 
     //   we need to rely on the size here, so better make sure, the width is correct
     if (item.underlined) {
@@ -736,7 +745,7 @@ fn renderText(item: *const RenderElement, slide_tl: ImVec2, slide_size: ImVec2, 
         var br = tl;
         br.x += item.size.x;
         br.y += 2;
-        const bgcolu32 = igGetColorU32Vec4(col.?);
-        igRenderFrame(slidePosToRenderPos(tl, slide_tl, slide_size, internal_render_size), slidePosToRenderPos(br, slide_tl, slide_size, internal_render_size), bgcolu32, true, 0.0);
+        const bgcolu32 = imgui.igGetColorU32_Vec4(col.?);
+        imgui.igRenderFrame(slidePosToRenderPos(tl, slide_tl, slide_size, internal_render_size), slidePosToRenderPos(br, slide_tl, slide_size, internal_render_size), bgcolu32, true, 0.0);
     }
 }

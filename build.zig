@@ -1,12 +1,6 @@
-const builtin = @import("builtin");
 const std = @import("std");
+const ztBuild = @import("./ZT/build.zig");
 const Builder = std.build.Builder;
-
-// tell where you checked out zig-upaya
-const upaya_dir = "./zig-upaya/";
-const upaya_build_zig = upaya_dir ++ "src/build.zig";
-
-const upaya_build = @import("./zig-upaya/src/build.zig");
 
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
@@ -19,7 +13,6 @@ pub fn build(b: *Builder) void {
     // format is: executable_name, path_to_zig_file
     const examples = [_][2][]const u8{
         [_][]const u8{ "slides", "src/main.zig" },
-        [_][]const u8{ "testmd", "src/testmd.zig" },
     };
 
     for (examples) |example, i| {
@@ -28,34 +21,21 @@ pub fn build(b: *Builder) void {
         // first element in the list is added as "run" so "zig build run" works
         if (i == 0) createExe(b, target, "run", example[1]) catch unreachable;
     }
-
-    upaya_build.addTests(b, target);
 }
 
 /// creates an exe with all the required dependencies
 fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source: []const u8) !void {
-    // support for cli apps
-    const is_cli = std.mem.endsWith(u8, name, "cli");
-
     var exe = b.addExecutable(name, source);
     exe.setBuildMode(b.standardReleaseOptions());
     exe.setOutputDir(std.fs.path.join(b.allocator, &[_][]const u8{ b.cache_root, "bin" }) catch unreachable);
     exe.setTarget(target);
 
-    if (is_cli) {
-        upaya_build.linkCommandLineArtifact(b, exe, target, "");
-    } else {
-        addUpayaToArtifact(b, exe, target, upaya_dir);
-    }
+    ztBuild.link(exe);
 
     const run_cmd = exe.run();
     const exe_step = b.step(name, b.fmt("run {s}.zig", .{name}));
     exe_step.dependOn(&run_cmd.step);
     b.default_step.dependOn(&exe.step);
     b.installArtifact(exe);
-}
-
-pub fn addUpayaToArtifact(b: *Builder, exe: *std.build.LibExeObjStep, target: std.zig.CrossTarget, comptime prefix_path: []const u8) void {
-    if (prefix_path.len > 0 and !std.mem.endsWith(u8, prefix_path, "/")) @panic("prefix-path must end with '/' if it is not empty");
-    upaya_build.linkArtifact(b, exe, target, prefix_path);
+    ztBuild.addBinaryContent("ZT/example/assets") catch unreachable;
 }

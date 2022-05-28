@@ -1,8 +1,8 @@
 const std = @import("std");
 
-pub fn flameShotLinux(alloc: *std.mem.Allocator) !bool {
+pub fn flameShotLinux(alloc: std.mem.Allocator) !bool {
     const args = [_][]const u8{
-        "/usr/bin/flameshot",
+        "/run/current-system/sw/bin/flameshot",
         "full",
         "-p",
         "/tmp/slide_shots",
