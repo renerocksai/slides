@@ -190,10 +190,10 @@ Here come the bullets:
 
 ## prerequisites
 
-Clone this repository - **recursively**
+Clone this repository
 
 ```console
-git clone https://github.com/renerocksai/slides.git --recursive
+git clone https://github.com/renerocksai/slides.git
 ```
 
 ### NixOS
@@ -211,7 +211,7 @@ nix-shell
 zig build slides
 ```
 
-To just build: `zig build`. This will create the executable `slides` in `./zig-cache/bin/`.
+To just build: `zig build`. This will create the executable `slides` in `./zig-out/bin/`.
 
 **Note regarding Windows:** while I can make release builds on my windows laptop, I could not reproduce a working
 windows setup via GitHub actions, starting from a clean machine. So I can only release debug builds for windows
@@ -219,7 +219,4 @@ automatically (GitHub Actions).
 
 ## Tested with
 
-- zig `0.8.0` (release)
-- zig `0.8.0-dev.1120+300ebbd56`
-- zig `0.8.0-dev.1141+68e772647`
-- zig-upaya [prime31/zig-upaya@154417379bfaa36f51c3b1b438fa73cf563d90f0](https://github.com/prime31/zig-upaya/commit/154417379bfaa36f51c3b1b438fa73cf563d90f0).
+- zig `0.9.1` (release)
