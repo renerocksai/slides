@@ -1,54 +1,128 @@
-const upaya = @import("upaya");
-const sokol = @import("sokol");
-const Texture = upaya.Texture;
 const std = @import("std");
 const uianim = @import("uianim.zig");
-const tcache = @import("texturecache.zig");
+const tc = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const parser = @import("parser.zig");
 const render = @import("sliderenderer.zig");
 const screenshot = @import("screenshot.zig");
-const md = @import("markdownlineparser.zig");
-usingnamespace md;
-
-usingnamespace upaya.imgui;
-usingnamespace sokol;
-usingnamespace uianim;
-usingnamespace slides;
-
-pub extern "c" fn sched_getaffinity(pid: c_int, size: usize, set: *cpu_set_t) c_int;
-
+const mdlineparser = @import("markdownlineparser.zig");
 const my_fonts = @import("myscalingfonts.zig");
+const filedialog = @import("filedialog");
+
+const zt = @import("zt");
+const zg = zt.custom_components;
+const imgui = @import("imgui");
+const ig = imgui;
+const glfw = @import("glfw");
+
+// usingnamespace stopped working?
+
+const SlideShow = slides.SlideShow;
+const Slide = slides.Slide;
+const SlideItem = slides.SlideItem;
+const ButtonAnim = uianim.ButtonAnim;
+const EditAnim = uianim.EditAnim;
+const animatedEditor = uianim.animatedEditor;
+const animatedButton = uianim.animatedButton;
+const showMsg = uianim.showMsg;
+const MsgAnim = uianim.MsgAnim;
+const AutoRunAnim = uianim.AutoRunAnim;
+
+const ImVec2 = imgui.ImVec2;
+const ImVec4 = imgui.ImVec4;
+
+/// SampleData will be available through the application's context.data.
+pub const SampleData = struct {
+    consoleOpen: bool = true,
+    showMenuBar: bool = true,
+    showButtonMenu: bool = true,
+};
+
+pub const SampleApplication = zt.App(SampleData);
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    var allocator = &arena.allocator;
+    const allocator = arena.allocator();
     defer arena.deinit();
 
+    std.log.debug("1a", .{});
     try G.init(allocator);
+    std.log.debug("2a", .{});
     defer G.deinit();
 
-    upaya.run(.{
-        .init = init,
-        .update = update,
-        .app_name = "Slides",
-        .window_title = "Slides",
-        .ini_file_storage = .none,
-        .swap_interval = 1, // ca 16ms
-        .width = 1200,
-        .height = 800,
-    });
+    // init our stuff
+    init();
+    var context = try SampleApplication.begin(std.heap.c_allocator);
+    // Lets customize!
+    my_fonts.loadFonts() catch unreachable;
+    context.rebuildFont();
+
+    // Set up state
+    context.settings.energySaving = false; // Some examples are games, and will benefit from this.
+    // here, more context stuff (access to SazmpleData field members) could be done
+
+    context.setWindowSize(1920, 1080);
+    context.setWindowTitle("ZT Demo");
+    context.setWindowIcon(zt.path("texture/ico.png"));
+
+    G.setContext(context);
+
+    // You control your own main loop, all you got to do is call begin and end frame,
+    // and zt will handle the rest.
+    while (context.open) {
+        context.beginFrame();
+
+        // call update with our context
+        update(context);
+        inspectContext(context);
+        context.endFrame();
+    }
+
+    context.deinit();
+}
+
+// This is a simple side panel that will display information about the scene, your context, and settings.
+fn inspectContext(ctx: *SampleApplication.Context) void {
+    // Basic toggle
+    var io = ig.igGetIO();
+    if (io.*.KeysDownDuration[glfw.GLFW_KEY_GRAVE_ACCENT] == 0.0) {
+        ctx.data.consoleOpen = !ctx.data.consoleOpen;
+    }
+    if (!ctx.data.consoleOpen) return;
+
+    const flags = ig.ImGuiWindowFlags_NoResize;
+
+    const height = 240;
+    ig.igSetNextWindowPos(zt.math.vec2(40, io.*.DisplaySize.y - height), ig.ImGuiCond_Once, .{});
+    ig.igSetNextWindowSize(zt.math.vec2(
+        250,
+        height - 20,
+    ), ig.ImGuiCond_Always);
+    if (ig.igBegin("Little helper", null, flags)) {
+        ig.igText("Settings");
+        _ = zg.edit("Menu Bar", &ctx.data.showMenuBar);
+        _ = zg.edit("Button Menu", &ctx.data.showButtonMenu);
+        ig.igSeparator();
+        _ = zg.edit("Energy Saving", &ctx.settings.energySaving);
+        if (ig.igCheckbox("V Sync", &ctx.settings.vsync)) {
+            // The vsync setting is only a getter, setting it does nothing.
+            // So on change, we follow through with the real call that changes it.
+            ctx.setVsync(ctx.settings.vsync);
+        }
+        ig.igSeparator();
+
+        ig.igText("Information");
+        zg.text("{d:.1}fps", .{ctx.time.fps});
+        ig.igSeparator();
+        ig.igPushStyleColor_Vec4(ig.ImGuiCol_Text, ig.ImVec4{ .x = 1, .y = 1, .z = 0.1, .w = 1 });
+        zg.text("\nHide me with the [`] key", .{});
+        ig.igPopStyleColor(1);
+    }
+    ig.igEnd();
 }
 
 fn init() void {
-    my_fonts.loadFonts() catch unreachable;
-    if (std.builtin.os.tag == .windows) {
-        std.log.info("on windows", .{});
-    } else {
-        std.log.info("on {}", .{std.builtin.os.tag});
-    }
-
-    initEditorContent() catch |err| {
+    initEditorContent() catch {
         std.log.err("Not enough memory for editor!", .{});
     };
 }
@@ -71,17 +145,18 @@ const AppState = enum {
 };
 
 const AppData = struct {
-    allocator: *std.mem.Allocator = undefined,
+    allocator: std.mem.Allocator = undefined,
     slideshow_arena: std.heap.ArenaAllocator = undefined,
-    slideshow_allocator: *std.mem.Allocator = undefined,
+    slideshow_allocator: std.mem.Allocator = undefined,
     app_state: AppState = .mainmenu,
     editor_memory: []u8 = undefined,
     loaded_content: []u8 = undefined, // we will check for dirty editor against this
     last_window_size: ImVec2 = .{},
     content_window_size: ImVec2 = .{},
-    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1064.0 },
+    content_window_size_before_fullscreen: ImVec2 = .{},
+    internal_render_size: ImVec2 = .{ .x = 1920.0, .y = 1080.0 }, // TODO: why was there 1064? Window title bar?
     slide_render_width: f32 = 1920.0,
-    slide_render_height: f32 = 1064.0,
+    slide_render_height: f32 = 1080.0, // TODO: ditto: 1064
     slide_renderer: *render.SlideshowRenderer = undefined,
     img_tint_col: ImVec4 = .{ .x = 1.0, .y = 1.0, .z = 1.0, .w = 1.0 }, // No tint
     img_border_col: ImVec4 = .{ .x = 0.0, .y = 0.0, .z = 0.0, .w = 0.5 }, // 50% opaque black
@@ -95,14 +170,29 @@ const AppData = struct {
     show_saveas: bool = true,
     show_saveas_reason: SaveAsReason = .none,
     did_post_init: bool = false,
+    is_fullscreen: bool = false,
+    context: *SampleApplication.Context = undefined,
+    openfiledialog_context: ?*anyopaque = null,
 
-    fn init(self: *AppData, alloc: *std.mem.Allocator) !void {
+    fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
 
         self.slideshow_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        self.slideshow_allocator = &self.slideshow_arena.allocator;
+        self.slideshow_allocator = self.slideshow_arena.allocator();
+        const b = try self.slideshow_allocator.create(slides.Slide);
+        std.log.debug("*b {*} ", .{b});
+        std.log.debug("b {} ", .{b.*});
+
+        std.log.debug("trying Slide.new", .{});
+        const c = try Slide.new(self.slideshow_allocator);
+        std.log.debug("*c {*} ", .{c});
+
         self.slideshow = try SlideShow.new(self.slideshow_allocator);
         self.slide_renderer = try render.SlideshowRenderer.new(self.slideshow_allocator);
+    }
+
+    fn setContext(self: *AppData, context: *SampleApplication.Context) void {
+        self.context = context;
     }
 
     fn deinit(self: *AppData) void {
@@ -151,11 +241,11 @@ const LaserpointerAnim = struct {
 
     fn anim(self: *LaserpointerAnim, mousepos: ImVec2) void {
         if (self.show_laserpointer) {
-            igSetCursorPos(mousepos);
-            sapp_show_mouse(false);
-            var drawlist = igGetForegroundDrawListNil();
-            const colu32 = igGetColorU32Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
-            ImDrawList_AddCircleFilled(drawlist, mousepos, self.laserpointer_size * self.laserpointer_zoom + 10 * self.size_jiggle_table[@intCast(usize, self.size_jiggle_index)], colu32, 256);
+            imgui.igSetCursorPos(mousepos);
+            // TODO: sapp_show_mouse(false);
+            var drawlist = imgui.igGetForegroundDrawList_Nil();
+            const colu32 = imgui.igGetColorU32_Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
+            imgui.ImDrawList_AddCircleFilled(drawlist, mousepos, self.laserpointer_size * self.laserpointer_zoom + 10 * self.size_jiggle_table[@intCast(usize, self.size_jiggle_index)], colu32, 256);
 
             self.frame_ticker += 1;
 
@@ -191,12 +281,12 @@ const LaserpointerAnim = struct {
         if (self.show_laserpointer) {
             // mouse cursor manipulation such as hiding and changing shape doesn't do anything
             // igSetMouseCursor(ImGuiMouseCursor_TextInput);
-            sapp_show_mouse(false);
+            // TODO: sapp_show_mouse(false);
             std.log.debug("Hiding mouse", .{});
         } else {
             //igSetMouseCursor(ImGuiMouseCursor_Arrow);
             std.log.debug("Showing mouse", .{});
-            sapp_show_mouse(true);
+            // TODO: sapp_show_mouse(true);
         }
     }
 };
@@ -227,7 +317,8 @@ fn post_init() void {
 }
 
 // update will be called at every swap interval. with swap_interval = 1 above, we'll get 60 fps
-fn update() void {
+fn update(context: *SampleApplication.Context) void {
+    _ = context;
     if (!G.did_post_init) {
         G.did_post_init = true;
         post_init();
@@ -242,8 +333,9 @@ fn update() void {
     }
 
     var mousepos: ImVec2 = undefined;
-    igGetMousePos(&mousepos);
-    igGetWindowContentRegionMax(&G.content_window_size);
+    imgui.igGetMousePos(&mousepos);
+    const io = imgui.igGetIO();
+    G.content_window_size = io.*.DisplaySize;
     if (G.content_window_size.x != G.last_window_size.x or G.content_window_size.y != G.last_window_size.y) {
         // window size changed
         std.log.debug("win size changed from {} to {}", .{ G.last_window_size, G.content_window_size });
@@ -251,19 +343,24 @@ fn update() void {
     }
 
     var flags: c_int = 0;
-    flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
-    // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-    const is_fullscreen = sapp_is_fullscreen();
-    if (!is_fullscreen) {
-        flags |= ImGuiWindowFlags_MenuBar;
-    }
-    if (igBegin("main", null, flags)) {
-        // make the "window" fill the whole available area
-        igSetWindowPosStr("main", .{ .x = 0, .y = 0 }, ImGuiCond_Always);
-        igSetWindowSizeStr("main", G.content_window_size, ImGuiCond_Always);
+    // flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoResize | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar | imgui.ImGuiWindowFlags_NoDecoration;
 
-        if (!is_fullscreen) {
-            showMenu();
+    flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar;
+    // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+    if (!isFullScreen()) {
+        if (context.data.showMenuBar) {
+            flags |= imgui.ImGuiWindowFlags_MenuBar;
+        }
+    }
+    if (imgui.igBegin("main", null, flags)) {
+        // make the "window" fill the whole available area
+        imgui.igSetWindowPos_Str("main", .{ .x = 0, .y = 0 }, imgui.ImGuiCond_Always);
+        imgui.igSetWindowSize_Str("main", G.content_window_size, imgui.ImGuiCond_Always);
+
+        if (!isFullScreen()) {
+            if (context.data.showMenuBar) {
+                showMenu();
+            }
         }
 
         handleKeyboard();
@@ -308,23 +405,67 @@ fn update() void {
             if (G.current_slide > G.slideshow.slides.items.len) {
                 G.current_slide = @intCast(i32, G.slideshow.slides.items.len - 1);
             }
-            showSlide2(G.current_slide) catch |err| {
+            showSlide2(G.current_slide, context) catch |err| {
                 std.log.err("SlideShow Error: {any}", .{err});
             };
         } else {
-            if (makeDefaultSlideshow()) |_| {
+            // optionally show editor
+            my_fonts.pushFontScaled(16);
+
+            var start_y: f32 = 22;
+            if (isFullScreen()) {
+                start_y = 0;
+            }
+            ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
+            if (!anim_bottom_panel.visible) {
+                ed_anim.desired_size.y += 20.0;
+            }
+            _ = animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size) catch unreachable;
+
+            my_fonts.popFontScaled();
+            if (context.data.showButtonMenu) {
+                showBottomPanel();
+            }
+            showStatusMsgV(G.status_msg);
+            if (makeDefaultSlideshow()) {
                 G.current_slide = 0;
-                showSlide2(G.current_slide) catch |err| {
+                showSlide2(G.current_slide, context) catch |err| {
                     std.log.err("SlideShow Error: {any}", .{err});
                 };
             } else |err| {
                 std.log.err("SlideShow Error: {any}", .{err});
             }
         }
-        igEnd();
+
+        // handle cmdLoad
+        if (G.openfiledialog_context != null) {
+            const dlg = G.openfiledialog_context.?;
+            const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
+            const minSize = ig.ImVec2{ .x = 800, .y = 400 };
+
+            // display dialog
+            if (filedialog.IGFD_DisplayDialog(dlg, "loadsld", ig.ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+                // actually load the slideshow
+                if (filedialog.IGFD_IsOk(dlg)) {
+                    const cfilePathName = filedialog.IGFD_GetFilePathName(dlg);
+                    std.log.debug("GetFilePathName : {s}\n", .{cfilePathName});
+                    loadSlideshow(std.mem.sliceTo(cfilePathName, 0)) catch |err| {
+                        std.log.err("loadSlideshow: {any}", .{err});
+                    };
+                    filedialog.IGFD_CloseDialog(dlg);
+                    filedialog.IGFD_Destroy(dlg);
+                    G.openfiledialog_context = null;
+                } else {
+                    filedialog.IGFD_CloseDialog(dlg);
+                    filedialog.IGFD_Destroy(dlg);
+                    G.openfiledialog_context = null;
+                }
+            }
+        }
+        imgui.igEnd();
 
         if (G.show_saveas) {
-            igOpenPopup("Save slideshow?");
+            imgui.igOpenPopup_Str("Save slideshow?", imgui.ImGuiPopupFlags_MouseButtonDefault_);
         }
 
         if (savePopup(G.show_saveas_reason)) {
@@ -340,11 +481,12 @@ fn update() void {
 }
 
 fn makeDefaultSlideshow() !void {
-    var empty: *Slide = undefined;
-    empty = try Slide.new(G.slideshow_allocator);
+    // const empty = try Slide.new(G.slideshow_allocator);
+    const empty = try Slide.new(G.allocator);
+    std.log.debug("empty slide created", .{});
     // make a grey background
     var bg = SlideItem{ .kind = .background, .color = .{ .x = 0.5, .y = 0.5, .z = 0.5, .w = 0.9 } };
-    try empty.items.append(bg);
+    try empty.items.?.append(bg);
     try G.slideshow.slides.append(empty);
     try G.slide_renderer.preRender(G.slideshow, "");
     std.log.debug("created empty slideshow", .{});
@@ -362,39 +504,42 @@ fn jumpToSlide(slidenumber: i32) void {
 }
 
 fn handleKeyboard() void {
-    const ctrl = igIsKeyDown(SAPP_KEYCODE_LEFT_CONTROL) or igIsKeyDown(SAPP_KEYCODE_RIGHT_CONTROL);
-    const shift = igIsKeyDown(SAPP_KEYCODE_LEFT_SHIFT) or igIsKeyDown(SAPP_KEYCODE_RIGHT_SHIFT);
-    if (igIsKeyReleased(SAPP_KEYCODE_Q) and ctrl) {
+    const io = ig.igGetIO();
+
+    const ctrl = io.*.KeyCtrl;
+    const shift = io.*.KeyShift;
+
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_Q) and ctrl) {
         cmdQuit();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_O) and ctrl) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_O) and ctrl) {
         cmdLoadSlideshow();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_N) and ctrl) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_N) and ctrl) {
         cmdNewSlideshow();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_S) and ctrl) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_S) and ctrl) {
         cmdSave();
         return;
     }
     // don't consume keys while the editor is visible
-    if ((igGetActiveID() == igGetIDStr("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (igGetActiveID() == igGetIDStr("##search"))) {
+    if ((ig.igGetActiveID() == ig.igGetID_Str("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (ig.igGetActiveID() == ig.igGetID_Str("##search"))) {
         return;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_A)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_A)) {
         cmdToggleAutoRun();
         return;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_L) and !shift) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_L) and !shift) {
         anim_laser.toggle();
         return;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_L) and shift) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_L) and shift) {
         anim_laser.laserpointer_zoom *= 1.5;
         if (anim_laser.laserpointer_zoom > 10) {
             anim_laser.laserpointer_zoom = 1.0;
@@ -402,43 +547,43 @@ fn handleKeyboard() void {
         return;
     }
     var deltaindex: i32 = 0;
-    if (igIsKeyReleased(' ')) {
+    if (ig.igIsKeyReleased(' ')) {
         deltaindex = 1;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_LEFT)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_LEFT)) {
         deltaindex = -1;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_RIGHT)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_RIGHT)) {
         deltaindex = 1;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_BACKSPACE)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_BACKSPACE)) {
         deltaindex = -1;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_PAGE_UP)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_PAGE_UP)) {
         deltaindex = -1;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_PAGE_DOWN)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_PAGE_DOWN)) {
         deltaindex = 1;
     }
-    if (igIsKeyReleased(SAPP_KEYCODE_UP)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_UP)) {
         ed_anim.grow();
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_DOWN)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_DOWN)) {
         ed_anim.shrink();
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_F)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_F)) {
         cmdToggleFullscreen();
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_M)) {
-        if (igIsKeyDown(SAPP_KEYCODE_LEFT_SHIFT) or igIsKeyDown(SAPP_KEYCODE_RIGHT_SHIFT)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_M)) {
+        if (shift) {
             G.app_state = .mainmenu;
         } else {
             cmdToggleBottomPanel();
@@ -449,11 +594,11 @@ fn handleKeyboard() void {
 
     // special slide navigation: 1 and 0
     // needs to happen after applying deltaindex!!!!!
-    if (igIsKeyReleased(SAPP_KEYCODE_1) or (igIsKeyReleased(SAPP_KEYCODE_G) and !shift)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_1) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and !shift)) {
         new_slide_index = 0;
     }
 
-    if (igIsKeyReleased(SAPP_KEYCODE_0) or (igIsKeyReleased(SAPP_KEYCODE_G) and shift)) {
+    if (ig.igIsKeyReleased(glfw.GLFW_KEY_0) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and shift)) {
         new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
     }
 
@@ -475,12 +620,12 @@ fn clampSlideIndex(new_slide_index: i32) i32 {
     return ret;
 }
 
-fn showSlide2(slide_number: i32) !void {
+fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
     // optionally show editor
     my_fonts.pushFontScaled(16);
 
     var start_y: f32 = 22;
-    if (sapp_is_fullscreen()) {
+    if (isFullScreen()) {
         start_y = 0;
     }
     ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
@@ -488,8 +633,9 @@ fn showSlide2(slide_number: i32) !void {
         ed_anim.desired_size.y += 20.0;
     }
     const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
+
     if (!editor_active and !ed_anim.search_ed_active) {
-        if (igIsKeyPressed(SAPP_KEYCODE_E, false)) {
+        if (ig.igIsKeyPressed(glfw.GLFW_KEY_E, false)) {
             cmdToggleEditor();
         }
     }
@@ -504,7 +650,9 @@ fn showSlide2(slide_number: i32) !void {
     // .
     // button row
     // .
-    showBottomPanel();
+    if (context.data.showButtonMenu) {
+        showBottomPanel();
+    }
 
     showStatusMsgV(G.status_msg);
 }
@@ -513,46 +661,46 @@ const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: b
 
 fn showBottomPanel() void {
     my_fonts.pushFontScaled(16);
-    igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
+    imgui.igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
     if (anim_bottom_panel.visible) {
-        igColumns(6, null, false);
+        imgui.igColumns(6, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 0;
         if (animatedButton("a", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = false;
         }
-        igNextColumn();
-        igNextColumn();
+        imgui.igNextColumn();
+        imgui.igNextColumn();
         // TODO: using the button can cause crashes, whereas the shortcut and menu don't -- what's going on here?
         //       when button is removed, we also saw it with the shortcut
-        if (animatedButton("[f]ullscreen", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
+        if (animatedButton("[f]ullscreen", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
             cmdToggleFullscreen();
         }
-        igNextColumn();
-        if (animatedButton("[o]verview", ImVec2{ .x = igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
+        imgui.igNextColumn();
+        if (animatedButton("[o]verview", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
             setStatusMsg("Not implemented!");
         }
-        igNextColumn();
-        if (animatedButton("[e]ditor", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
+        imgui.igNextColumn();
+        if (animatedButton("[e]ditor", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
             cmdToggleEditor();
         }
-        igNextColumn();
+        imgui.igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
+            if (animatedButton("save", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
                 cmdSave();
             }
         }
-        igEndColumns();
+        imgui.igEndColumns();
     } else {
-        igColumns(5, null, false);
+        imgui.igColumns(5, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 1;
         if (animatedButton("a", ImVec2{ .x = 20, .y = 20 }, &bt_toggle_bottom_panel_anim) == .released) {
             anim_bottom_panel.visible = true;
         }
-        igNextColumn();
-        igNextColumn();
-        igNextColumn();
-        igNextColumn();
-        igEndColumns();
+        imgui.igNextColumn();
+        imgui.igNextColumn();
+        imgui.igNextColumn();
+        imgui.igNextColumn();
+        imgui.igEndColumns();
     }
     my_fonts.popFontScaled();
 }
@@ -563,6 +711,7 @@ fn showStatusMsg(msg: [*c]const u8) void {
     const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = y };
     const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
     my_fonts.pushFontScaled(64);
+    std.log.debug("showStatusMsg shows {}", .{msg});
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
     my_fonts.popFontScaled();
 }
@@ -583,14 +732,14 @@ fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
     const file = std.fs.cwd().createFile(
         filp.?,
         .{},
-    ) catch |err| {
+    ) catch {
         setStatusMsg("ERROR saving slideshow");
         return false;
     };
     defer file.close();
 
-    const contents_slice: []u8 = std.mem.spanZ(contents);
-    file.writeAll(contents_slice) catch |err| {
+    const contents_slice: []u8 = std.mem.span(contents);
+    file.writeAll(contents_slice) catch {
         setStatusMsg("ERROR saving slideshow");
         return false;
     };
@@ -625,7 +774,7 @@ fn slideAreaTL() ImVec2 {
 fn showStatusMsgV(msg: [*c]const u8) void {
     var tsize = ImVec2{};
     my_fonts.pushFontScaled(64);
-    igCalcTextSize(&tsize, msg, msg + std.mem.lenZ(msg), false, 2000.0);
+    imgui.igCalcTextSize(&tsize, msg, msg + std.mem.len(msg), false, 2000.0);
     const maxw = G.content_window_size.x * 0.9;
     if (tsize.x > maxw) {
         tsize.x = maxw;
@@ -637,9 +786,9 @@ fn showStatusMsgV(msg: [*c]const u8) void {
     const pos = ImVec2{ .x = x, .y = y };
     const flyin_pos = ImVec2{ .x = x, .y = G.content_window_size.y - tsize.y - 8 };
     const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
-    igPushTextWrapPos(maxw + x);
+    imgui.igPushTextWrapPos(maxw + x);
     showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
-    igPopTextWrapPos();
+    imgui.igPopTextWrapPos();
     my_fonts.popFontScaled();
 }
 
@@ -657,8 +806,8 @@ fn sliceToC(input: []const u8) [:0]u8 {
 }
 
 fn checkAutoReload() !bool {
+    G.hot_reload_ticker += 1;
     if (G.slideshow_filp) |filp| {
-        G.hot_reload_ticker += 1;
         if (filp.len > 0) {
             if (G.hot_reload_ticker > G.hot_reload_interval_ticks) {
                 std.log.debug("Checking for auto-reload of `{s}`", .{filp});
@@ -741,11 +890,40 @@ fn isEditorDirty() bool {
     return !std.mem.eql(u8, G.editor_memory, G.loaded_content);
 }
 
+fn isFullScreen() bool {
+    const pm = glfw.glfwGetPrimaryMonitor();
+    const mm = glfw.glfwGetVideoMode(pm);
+    glfw.glfwWindowHint(glfw.GLFW_RED_BITS, mm.*.redBits);
+    glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, mm.*.greenBits);
+    glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, mm.*.blueBits);
+    glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, mm.*.refreshRate);
+
+    const current = G.content_window_size;
+    const result = mm.*.width == @floatToInt(i32, current.x) and mm.*.height == @floatToInt(i32, current.y);
+    // std.log.debug("w={d:6.0}x{d:6.0} m={d:6.0}x{d:6.0} => {}", .{ current.x, current.y, mm.*.width, mm.*.height, result });
+    return result;
+}
 // .
 // COMMANDS
 // .
 fn cmdToggleFullscreen() void {
-    sapp_toggle_fullscreen();
+    // MAKE FULLSCREEN
+    const pm = glfw.glfwGetPrimaryMonitor();
+    std.log.info("Primary Monitor: {s}", .{pm});
+    const mm = glfw.glfwGetVideoMode(pm);
+    std.log.info("Video Mode : {any}", .{mm});
+    glfw.glfwWindowHint(glfw.GLFW_RED_BITS, mm.*.redBits);
+    glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, mm.*.greenBits);
+    glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, mm.*.blueBits);
+    glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, mm.*.refreshRate);
+
+    if (isFullScreen()) {
+        const sz = G.content_window_size_before_fullscreen;
+        glfw.glfwSetWindowMonitor(G.context.window, null, 0, 0, @floatToInt(i32, sz.x), @floatToInt(i32, sz.y), mm.*.refreshRate);
+    } else {
+        G.content_window_size_before_fullscreen = G.content_window_size;
+        glfw.glfwSetWindowMonitor(G.context.window, pm, 0, 0, mm.*.width, mm.*.height, mm.*.refreshRate);
+    }
 }
 
 fn cmdToggleEditor() void {
@@ -776,27 +954,33 @@ fn cmdSave() void {
 }
 
 fn saveSlideshowAs() void {
-    // file dialog
-    var selected_file: []const u8 = undefined;
-    var buf: [2048]u8 = undefined;
-    const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-    buf[my_path.len] = 0;
-    const x = buf[0 .. my_path.len + 1];
-    const y = x[0..my_path.len :0];
-    const sel = upaya.filebrowser.saveFileDialog("Save Slideshow as...", y, "*.sld");
-    if (sel == null) {
-        selected_file = "canceled";
-    } else {
-        selected_file = std.mem.span(sel);
-    }
+    // TODO : implement this
 
-    if (std.mem.startsWith(u8, selected_file, "canceled")) {
-        setStatusMsg("canceled");
-    } else {
-        // now load the file
-        G.slideshow_filp = selected_file;
-        _ = saveSlideshow(selected_file, ed_anim.textbuf);
-    }
+    return;
+
+    // if (false) {
+    //     // file dialog
+    //     var selected_file: []const u8 = undefined;
+    //     var buf: [2048]u8 = undefined;
+    //     const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
+    //     buf[my_path.len] = 0;
+    //     const x = buf[0 .. my_path.len + 1];
+    //     const y = x[0..my_path.len :0];
+    //     const sel = upaya.filebrowser.saveFileDialog("Save Slideshow as...", y, "*.sld");
+    //     if (sel == null) {
+    //         selected_file = "canceled";
+    //     } else {
+    //         selected_file = std.mem.span(sel);
+    //     }
+    //
+    //     if (std.mem.startsWith(u8, selected_file, "canceled")) {
+    //         setStatusMsg("canceled");
+    //     } else {
+    //         // now load the file
+    //         G.slideshow_filp = selected_file;
+    //         _ = saveSlideshow(selected_file, ed_anim.textbuf);
+    //     }
+    // }
 }
 
 fn cmdSaveAs() void {
@@ -808,28 +992,22 @@ fn doQuit() void {
 }
 
 fn doLoadSlideshow() void {
-    // file dialog
-    var selected_file: []const u8 = undefined;
-    var buf: [2048]u8 = undefined;
-    const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-    buf[my_path.len] = 0;
-    const x = buf[0 .. my_path.len + 1];
-    const y = x[0..my_path.len :0];
-    const sel = upaya.filebrowser.openFileDialog("Open Slideshow", y, "*.sld");
-    if (sel == null) {
-        selected_file = "canceled";
-    } else {
-        selected_file = std.mem.span(sel);
+    // just open the dialog and let update() do the rest
+    if (G.openfiledialog_context == null) {
+        G.openfiledialog_context = filedialog.IGFD_Create();
+        filedialog.IGFD_OpenDialog(
+            G.openfiledialog_context.?,
+            "loadsld",
+            "Load Slideshow",
+            "slide files(*.sld){.sld}",
+            ".",
+            "",
+            0,
+            @intToPtr(?*anyopaque, 0),
+            @enumToInt(filedialog.ImGuiFileDialogFlags.None),
+        );
     }
-
-    if (std.mem.startsWith(u8, selected_file, "canceled")) {
-        setStatusMsg("canceled");
-    } else {
-        // now load the file
-        loadSlideshow(selected_file) catch |err| {
-            std.log.err("loadSlideshow: {any}", .{err});
-        };
-    }
+    return;
 }
 
 fn doNewSlideshow() void {
@@ -894,20 +1072,20 @@ fn savePopup(reason: SaveAsReason) bool {
     if (reason == .none) {
         return true;
     }
-    igSetNextWindowSize(.{ .x = 500, .y = -1 }, ImGuiCond_Always);
+    imgui.igSetNextWindowSize(.{ .x = 500, .y = -1 }, imgui.ImGuiCond_Always);
     var open: bool = true;
     my_fonts.pushFontScaled(14);
     defer my_fonts.popFontScaled();
     var doit = false;
-    if (igBeginPopupModal("Save slideshow?", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
-        defer igEndPopup();
+    if (imgui.igBeginPopupModal("Save slideshow?", &open, imgui.ImGuiWindowFlags_AlwaysAutoResize)) {
+        defer imgui.igEndPopup();
 
-        igText("The slideshow has unsaved changes.\nSave it?");
-        igColumns(2, "id-x", true);
+        imgui.igText("The slideshow has unsaved changes.\nSave it?");
+        imgui.igColumns(2, "id-x", true);
 
-        var no = igButton("No", .{ .x = -1, .y = 30 });
-        igNextColumn();
-        var yes = igButton("YES", .{ .x = -1, .y = 30 });
+        var no = imgui.igButton("No", .{ .x = -1, .y = 30 });
+        imgui.igNextColumn();
+        var yes = imgui.igButton("YES", .{ .x = -1, .y = 30 });
         doit = yes or no;
         if (doit) {
             if (yes) {
@@ -938,20 +1116,20 @@ fn cmdToggleAutoRun() void {
         // started
         // goto 1st slide
         G.current_slide = 0;
-        if (!sapp_is_fullscreen()) {
+        if (!isFullScreen()) {
             cmdToggleFullscreen();
         }
         // delete the shit if present
         if (std.fs.openDirAbsolute("/tmp", .{ .access_sub_paths = true, .iterate = true, .no_follow = true })) |tmpdir| {
             // defer tmpdir.close();
             if (tmpdir.deleteTree("slide_shots")) {} else |err| {
-                std.log.err("Warning: Unable to delete /tmp/slide_shots", .{});
+                std.log.err("Warning: Unable to delete /tmp/slide_shots : {s}", .{err});
             }
             if (tmpdir.makeDir("slide_shots")) {} else |err| {
-                std.log.err("Unable to create /tmp/slide_shots", .{});
+                std.log.err("Unable to create /tmp/slide_shots : {s}", .{err});
             }
         } else |err| {
-            std.log.err("Unable to open /tmp", .{});
+            std.log.err("Unable to open /tmp : {s}", .{err});
         }
     }
 }
@@ -964,51 +1142,51 @@ fn cmdToggleAutoRun() void {
 
 fn showMenu() void {
     my_fonts.pushFontScaled(14);
-    if (igBeginMenuBar()) {
-        defer igEndMenuBar();
+    if (imgui.igBeginMenuBar()) {
+        defer imgui.igEndMenuBar();
 
-        if (igBeginMenu("File", true)) {
-            if (igMenuItemBool("New", "Ctrl + N", false, true)) {
+        if (imgui.igBeginMenu("File", true)) {
+            if (imgui.igMenuItem_Bool("New", "Ctrl + N", false, true)) {
                 cmdNewSlideshow();
             }
-            // if (igMenuItemBool("New from template...", "", false, true)) {
+            // if (imgui.igMenuItemBool("New from template...", "", false, true)) {
             //     cmdNewFromTemplate();
             // }
-            if (igMenuItemBool("Open...", "Ctrl + O", false, true)) {
+            if (imgui.igMenuItem_Bool("Open...", "Ctrl + O", false, true)) {
                 cmdLoadSlideshow();
             }
-            if (igMenuItemBool("Save", "Ctrl + S", false, isEditorDirty())) {
+            if (imgui.igMenuItem_Bool("Save", "Ctrl + S", false, isEditorDirty())) {
                 cmdSave();
             }
-            if (igMenuItemBool("Save as...", "", false, true)) {
+            if (imgui.igMenuItem_Bool("Save as...", "", false, true)) {
                 cmdSaveAs();
             }
-            if (igMenuItemBool("Quit", "Ctrl + Q", false, true)) {
+            if (imgui.igMenuItem_Bool("Quit", "Ctrl + Q", false, true)) {
                 cmdQuit();
             }
-            igEndMenu();
+            imgui.igEndMenu();
         }
-        if (igBeginMenu("View", true)) {
-            if (igMenuItemBool("Toggle editor", "E", false, true)) {
+        if (imgui.igBeginMenu("View", true)) {
+            if (imgui.igMenuItem_Bool("Toggle editor", "E", false, true)) {
                 cmdToggleEditor();
             }
-            if (igMenuItemBool("Toggle full-screen", "F", false, true)) {
+            if (imgui.igMenuItem_Bool("Toggle full-screen", "F", false, true)) {
                 cmdToggleFullscreen();
             }
-            if (igMenuItemBool("Overview", "O", false, true)) {}
-            if (igMenuItemBool("Toggle Laserpointer", "L", false, true)) {
+            if (imgui.igMenuItem_Bool("Overview", "O", false, true)) {}
+            if (imgui.igMenuItem_Bool("Toggle Laserpointer", "L", false, true)) {
                 anim_laser.toggle();
             }
-            if (igMenuItemBool("Toggle on-screen menu buttons", "M", false, true)) {
+            if (imgui.igMenuItem_Bool("Toggle on-screen menu buttons", "M", false, true)) {
                 cmdToggleBottomPanel();
             }
-            igEndMenu();
+            imgui.igEndMenu();
         }
-        if (igBeginMenu("Help", true)) {
-            if (igMenuItemBool("About", "", false, true)) {
+        if (imgui.igBeginMenu("Help", true)) {
+            if (imgui.igMenuItem_Bool("About", "", false, true)) {
                 setStatusMsg("Not implemented!");
             }
-            igEndMenu();
+            imgui.igEndMenu();
         }
     }
     my_fonts.popFontScaled();

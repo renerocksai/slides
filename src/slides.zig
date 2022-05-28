@@ -1,7 +1,8 @@
 const std = @import("std");
-const upaya = @import("upaya");
+const imgui = @import("imgui");
 
-usingnamespace upaya.imgui;
+const ImVec4 = imgui.ImVec4;
+const ImVec2 = imgui.ImVec2;
 
 pub const SlideList = std.ArrayList(*Slide);
 
@@ -23,7 +24,7 @@ pub const SlideShow = struct {
     fonts: std.ArrayList([]u8) = undefined,
     fontsizes: std.ArrayList(i32) = undefined,
 
-    pub fn new(a: *std.mem.Allocator) !*SlideShow {
+    pub fn new(a: std.mem.Allocator) !*SlideShow {
         var self = try a.create(SlideShow);
         self.* = .{};
         self.slides = SlideList.init(a);
@@ -42,8 +43,7 @@ pub const SlideShow = struct {
 pub const Slide = struct {
     pos_in_editor: usize = 0,
     line_in_editor: usize = 0,
-    // TODO: don't we want to store pointers?
-    items: std.ArrayList(SlideItem) = undefined,
+    items: ?std.ArrayList(SlideItem) = null,
     fontsize: i32 = 16,
     text_color: ImVec4 = .{ .w = 1 },
     bullet_color: ImVec4 = ImVec4{ .x = 1, .w = 1 },
@@ -52,11 +52,18 @@ pub const Slide = struct {
 
     // .
 
-    pub fn new(a: *std.mem.Allocator) !*Slide {
-        var self = try a.create(Slide);
-        self.* = .{};
-        self.items = std.ArrayList(SlideItem).init(a);
-        return self;
+    pub fn new(a: std.mem.Allocator) !*Slide {
+        std.log.debug("slide create 0 ", .{});
+        var self = a.create(Slide) catch |err| shit: {
+            std.log.err("slide creation error: {}", .{err});
+            break :shit null;
+        };
+        std.log.debug("slide create 2", .{});
+        self.?.* = .{};
+        std.log.debug("slide create 3", .{});
+        self.?.items = std.ArrayList(SlideItem).init(a);
+        std.log.debug("slide create 4", .{});
+        return self.?;
     }
     pub fn deinit(self: *Slide) void {
         self.items.deinit();
@@ -70,9 +77,9 @@ pub const Slide = struct {
         if (ctx.bullet_symbol) |bs| self.bullet_symbol = bs;
     }
 
-    pub fn fromSlide(orig: *Slide, a: *std.mem.Allocator) !*Slide {
+    pub fn fromSlide(orig: *Slide, a: std.mem.Allocator) !*Slide {
         var n = try new(a);
-        try n.items.appendSlice(orig.items.items);
+        try n.items.?.appendSlice(orig.items.?.items);
         return n;
     }
 };
@@ -105,12 +112,12 @@ pub const SlideItem = struct {
     bullet_color: ?ImVec4 = null,
     bullet_symbol: ?[]const u8 = null,
 
-    pub fn new(a: *std.mem.Allocator) !*SlideItem {
+    pub fn new(a: std.mem.Allocator) !*SlideItem {
         var self = try a.create(SlideItem);
         self.* = .{};
         return self;
     }
-    pub fn deinit(self: *Slide) void {
+    pub fn deinit(_: *Slide) void {
         // empty
     }
 
@@ -146,15 +153,15 @@ pub const SlideItem = struct {
         // does not work. Even when it is null, the B branch is always executed
         // -- I am not sure whether it is really a bug or if I just got the concept
         // of optionals wrong back then
-        if (self.underline_width) |w| {} else {
+        if (self.underline_width) |_| {} else {
             self.underline_width = slideshow.default_underline_width;
         }
 
-        if (self.bullet_color) |bc| {} else {
+        if (self.bullet_color) |_| {} else {
             self.bullet_color = slideshow.default_bullet_color;
         }
 
-        if (self.bullet_symbol) |bs| {} else {
+        if (self.bullet_symbol) |_| {} else {
             self.bullet_symbol = slideshow.default_bullet_symbol;
         }
     }
@@ -180,7 +187,7 @@ pub const SlideItem = struct {
         switch (self.kind) {
             .background => {
                 std.log.info(indent ++ "Kind: Background", .{});
-                if (self.img_path) |img| {
+                if (self.img_path) {
                     std.log.info(indent ++ "   img: {any}", .{self.img_path});
                     std.log.info(indent ++ "   pos: {any}", .{self.position});
                     std.log.info(indent ++ "  size: {any}", .{self.size});

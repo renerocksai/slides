@@ -1,7 +1,7 @@
 const std = @import("std");
-const slideszig = @import("slides.zig");
+const slides = @import("slides.zig");
 // for ImVec4 and stuff
-const upaya = @import("upaya");
+const imgui = @import("imgui");
 
 // NOTE:
 // why we have context.current_context:
@@ -23,8 +23,8 @@ const upaya = @import("upaya");
 //
 // @box
 // more text
-usingnamespace upaya.imgui;
-usingnamespace slideszig;
+usingnamespace slides;
+usingnamespace imgui;
 
 pub const ParserError = error{ Internal, Syntax };
 
@@ -35,7 +35,11 @@ pub const ParserErrorContext = struct {
     message: ?[]const u8,
     formatted: ?[:0]const u8 = null,
 
-    pub fn getFormattedStr(self: *ParserErrorContext, allocator: *std.mem.Allocator) ![*:0]const u8 {
+    pub fn init(perr: anyerror, lineno: usize, line_offset: usize, message: ?[]const u8) ParserErrorContext {
+        var pcx: ParserErrorContext = .{ .parser_error = perr, .line_number = lineno, .line_offset = line_offset, .message = message, .formatted = null };
+        return pcx;
+    }
+    pub fn getFormattedStr(self: *ParserErrorContext, allocator: std.mem.Allocator) ![*:0]const u8 {
         if (self.formatted) |txt| {
             return txt.ptr;
         }
@@ -50,7 +54,7 @@ pub const ParserErrorContext = struct {
 };
 
 pub const ParserContext = struct {
-    allocator: *std.mem.Allocator,
+    allocator: std.mem.Allocator,
     input: [:0]const u8 = undefined,
 
     parsed_line_number: usize = 0,
@@ -60,23 +64,23 @@ pub const ParserContext = struct {
 
     first_slide_emitted: bool = false,
 
-    slideshow: *SlideShow = undefined,
-    push_contexts: std.StringHashMap(ItemContext),
-    push_slides: std.StringHashMap(*Slide),
+    slideshow: *slides.SlideShow = undefined,
+    push_contexts: std.StringHashMap(slides.ItemContext),
+    push_slides: std.StringHashMap(*slides.Slide),
 
-    current_context: ItemContext = ItemContext{},
-    current_slide: *Slide,
+    current_context: slides.ItemContext = slides.ItemContext{},
+    current_slide: *slides.Slide,
 
     allErrorsCstrArray: ?[][*]const u8 = null,
 
-    fn new(a: *std.mem.Allocator) !*ParserContext {
+    fn new(a: std.mem.Allocator) !*ParserContext {
         // .
         var self = try a.create(ParserContext);
         self.* = ParserContext{
             .allocator = a,
-            .push_contexts = std.StringHashMap(ItemContext).init(a),
-            .push_slides = std.StringHashMap(*Slide).init(a),
-            .current_slide = try Slide.new(a),
+            .push_contexts = std.StringHashMap(slides.ItemContext).init(a),
+            .push_slides = std.StringHashMap(*slides.Slide).init(a),
+            .current_slide = try slides.Slide.new(a),
             .parser_errors = std.ArrayList(ParserErrorContext).init(a),
             .allErrorsCstrArray = null,
         };
@@ -98,7 +102,7 @@ pub const ParserContext = struct {
             }
         }
     }
-    pub fn allErrorsToCstrArray(self: *ParserContext, allocator: *std.mem.Allocator) ![*]const [*]const u8 {
+    pub fn allErrorsToCstrArray(self: *ParserContext, allocator: std.mem.Allocator) ![*]const [*]const u8 {
         if (self.allErrorsCstrArray) |ret| {
             return ret.ptr;
         }
@@ -124,27 +128,22 @@ fn reportErrorInContext(err: anyerror, ctx: *ParserContext, msg: ?[]const u8) vo
         .message = msg,
     };
     ctx.parser_errors.append(pec) catch |internal_err| {
-        std.log.crit("Could not add error to error list!", .{});
-        std.log.crit("    The error to be reported: {any}", .{err});
-        std.log.crit("    The error that prevented it: {any}", .{internal_err});
+        std.log.err("Could not add error to error list!", .{});
+        std.log.err("    The error to be reported: {any}", .{err});
+        std.log.err("    The error that prevented it: {any}", .{internal_err});
     };
 }
 
-fn reportErrorInParsingContext(err: anyerror, pctx: *ItemContext, ctx: *ParserContext, msg: ?[]const u8) void {
-    const pec = ParserErrorContext{
-        .parser_error = err,
-        .line_number = pctx.line_number,
-        .line_offset = pctx.line_offset,
-        .message = msg,
-    };
+fn reportErrorInParsingContext(err: anyerror, pctx: *const slides.ItemContext, ctx: *ParserContext, msg: ?[]const u8) void {
+    var pec = ParserErrorContext.init(err, pctx.line_number, pctx.line_offset, msg);
     ctx.parser_errors.append(pec) catch |internal_err| {
-        std.log.crit("Could not add error to error list!", .{});
-        std.log.crit("    The error to be reported: {any}", .{err});
-        std.log.crit("    The error that prevented it: {any}", .{internal_err});
+        std.log.err("Could not add error to error list!", .{});
+        std.log.err("    The error to be reported: {any}", .{err});
+        std.log.err("    The error that prevented it: {any}", .{internal_err});
     };
 }
 
-pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocator: *std.mem.Allocator) !*ParserContext {
+pub fn constructSlidesFromBuf(input: []const u8, slideshow: *slides.SlideShow, allocator: std.mem.Allocator) !*ParserContext {
     var context: *ParserContext = try ParserContext.new(allocator);
     context.slideshow = slideshow;
 
@@ -152,9 +151,9 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     // std.log.info("input len: {d}, context.input len: {d}", .{ input.len, context.input.len });
 
     var start: usize = if (std.mem.startsWith(u8, context.input, "\xEF\xBB\xBF")) 3 else 0;
-    var it = std.mem.split(context.input[start..], "\n");
+    var it = std.mem.split(u8, context.input[start..], "\n");
 
-    var parsing_item_context = ItemContext{};
+    var parsing_item_context = slides.ItemContext{};
 
     while (it.next()) |line_untrimmed| {
         {
@@ -172,7 +171,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
 
             std.log.info("Parsing line {d} at offset {d}", .{ context.parsed_line_number, context.parsed_line_offset });
             if (context.input[context.parsed_line_offset] != line[0]) {
-                std.log.alert("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
+                std.log.err("line {d} assumed to start at offset {} but saw {c}({}) instead of {c}({})", .{ context.parsed_line_number, context.parsed_line_offset, line[0], line[0], context.input[context.parsed_line_offset], context.input[context.parsed_line_offset] });
                 return error.Overflow;
             }
 
@@ -272,8 +271,8 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *SlideShow, allocato
     return context;
 }
 
-fn parseFontGlobals(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
-    var it = std.mem.tokenize(line, "=");
+fn parseFontGlobals(line: []const u8, slideshow: *slides.SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(u8, line, "=");
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "@fontsize")) {
             if (it.next()) |sizestr| {
@@ -311,8 +310,8 @@ fn parseFontGlobals(line: []const u8, slideshow: *SlideShow, context: *ParserCon
     }
 }
 
-fn parseUnderlineWidth(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
-    var it = std.mem.tokenize(line, "=");
+fn parseUnderlineWidth(line: []const u8, slideshow: *slides.SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(u8, line, "=");
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "@underline_width")) {
             if (it.next()) |sizestr| {
@@ -327,8 +326,8 @@ fn parseUnderlineWidth(line: []const u8, slideshow: *SlideShow, context: *Parser
     }
 }
 
-fn parseDefaultColor(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
-    var it = std.mem.tokenize(line, "=");
+fn parseDefaultColor(line: []const u8, slideshow: *slides.SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(u8, line, "=");
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "@color")) {
             slideshow.default_color = try parseColor(line[1..], context);
@@ -337,8 +336,8 @@ fn parseDefaultColor(line: []const u8, slideshow: *SlideShow, context: *ParserCo
     }
 }
 
-fn parseDefaultBulletColor(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
-    var it = std.mem.tokenize(line, "=");
+fn parseDefaultBulletColor(line: []const u8, slideshow: *slides.SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(u8, line, "=");
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "@bullet_color")) {
             slideshow.default_bullet_color = try parseColor(line[8..], context);
@@ -347,8 +346,8 @@ fn parseDefaultBulletColor(line: []const u8, slideshow: *SlideShow, context: *Pa
     }
 }
 
-fn parseDefaultBulletSymbol(line: []const u8, slideshow: *SlideShow, context: *ParserContext) !void {
-    var it = std.mem.tokenize(line, "=");
+fn parseDefaultBulletSymbol(line: []const u8, slideshow: *slides.SlideShow, context: *ParserContext) !void {
+    var it = std.mem.tokenize(u8, line, "=");
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "@bullet_symbol")) {
             if (it.next()) |sym| {
@@ -359,9 +358,9 @@ fn parseDefaultBulletSymbol(line: []const u8, slideshow: *SlideShow, context: *P
     }
 }
 
-fn parseColor(s: []const u8, context: *ParserContext) !ImVec4 {
-    var it = std.mem.tokenize(s, "=");
-    var ret = ImVec4{};
+fn parseColor(s: []const u8, context: *ParserContext) !imgui.ImVec4 {
+    var it = std.mem.tokenize(u8, s, "=");
+    var ret = imgui.ImVec4{};
     if (it.next()) |word| {
         if (std.mem.eql(u8, word, "color")) {
             if (it.next()) |colorstr| {
@@ -371,20 +370,20 @@ fn parseColor(s: []const u8, context: *ParserContext) !ImVec4 {
     }
     return ret;
 }
-fn parseColorLiteral(colorstr: []const u8, context: *ParserContext) !ImVec4 {
-    var ret = ImVec4{};
+fn parseColorLiteral(colorstr: []const u8, context: *ParserContext) !imgui.ImVec4 {
+    var ret = imgui.ImVec4{};
     if (colorstr.len != 9 or colorstr[0] != '#') {
         const errmsg = try std.fmt.allocPrint(context.allocator, "color string '{s}' not 9 chars long or missing #", .{colorstr});
         reportErrorInContext(ParserError.Syntax, context, errmsg);
         return ParserError.Syntax;
     }
-    var temp: ImVec4 = undefined;
+    var temp: imgui.ImVec4 = undefined;
     var coloru32 = std.fmt.parseInt(c_uint, colorstr[1..], 16) catch |err| {
         const errmsg = try std.fmt.allocPrint(context.allocator, "color string '{s}' not hex-parsable", .{colorstr});
         reportErrorInContext(err, context, errmsg);
         return ParserError.Syntax;
     };
-    igColorConvertU32ToFloat4(&temp, coloru32);
+    imgui.igColorConvertU32ToFloat4(&temp, coloru32);
     ret.x = temp.w;
     ret.y = temp.z;
     ret.z = temp.y;
@@ -392,9 +391,9 @@ fn parseColorLiteral(colorstr: []const u8, context: *ParserContext) !ImVec4 {
     return ret;
 }
 
-fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
-    var item_context = ItemContext{};
-    var word_it = std.mem.tokenize(line, " \t");
+fn parseItemAttributes(line: []const u8, context: *ParserContext) !slides.ItemContext {
+    var item_context = slides.ItemContext{};
+    var word_it = std.mem.tokenize(u8, line, " \t");
     if (word_it.next()) |directive| {
         item_context.directive = directive;
     } else {
@@ -420,7 +419,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
 
     while (word_it.next()) |word| {
         if (!after_text_directive) {
-            var attr_it = std.mem.tokenize(word, "=");
+            var attr_it = std.mem.tokenize(u8, word, "=");
             if (attr_it.next()) |attrname| {
                 if (std.mem.eql(u8, attrname, "x")) {
                     if (attr_it.next()) |sizestr| {
@@ -428,7 +427,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                             reportErrorInContext(err, context, "cannot parse x=");
                             continue;
                         };
-                        var pos: ImVec2 = .{};
+                        var pos: imgui.ImVec2 = .{};
                         if (item_context.position) |position| {
                             pos = position;
                         }
@@ -442,7 +441,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                             reportErrorInContext(err, context, "cannot parse y=");
                             continue;
                         };
-                        var pos: ImVec2 = .{};
+                        var pos: imgui.ImVec2 = .{};
                         if (item_context.position) |position| {
                             pos = position;
                         }
@@ -456,7 +455,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                             reportErrorInContext(err, context, "cannot parse w=");
                             continue;
                         };
-                        var size: ImVec2 = .{};
+                        var size: imgui.ImVec2 = .{};
                         if (item_context.size) |csize| {
                             size = csize;
                         }
@@ -470,7 +469,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
                             reportErrorInContext(err, context, "cannot parse h=");
                             continue;
                         };
-                        var size: ImVec2 = .{};
+                        var size: imgui.ImVec2 = .{};
                         if (item_context.size) |csize| {
                             size = csize;
                         }
@@ -560,7 +559,7 @@ fn parseItemAttributes(line: []const u8, context: *ParserContext) !ItemContext {
 // - slide defaults
 // - slideshow defaults
 //
-fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *ItemContext) void {
+fn mergeParserAndItemContext(parsing_item_context: *slides.ItemContext, item_context: *slides.ItemContext) void {
     if (parsing_item_context.text == null) parsing_item_context.text = item_context.text;
     if (parsing_item_context.fontSize == null) parsing_item_context.fontSize = item_context.fontSize;
     if (parsing_item_context.color == null) parsing_item_context.color = item_context.color;
@@ -570,7 +569,7 @@ fn mergeParserAndItemContext(parsing_item_context: *ItemContext, item_context: *
     if (parsing_item_context.bullet_color == null) parsing_item_context.bullet_color = item_context.bullet_color;
 }
 
-fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserContext) !void {
+fn commitParsingContext(parsing_item_context: *slides.ItemContext, context: *ParserContext) !void {
     // .
     std.log.debug("{s} : text=`{s}`", .{ parsing_item_context.directive, parsing_item_context.text });
 
@@ -593,7 +592,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             try context.push_slides.put(context_name, context.current_slide);
         }
-        context.current_slide = try Slide.new(context.allocator);
+        context.current_slide = try slides.Slide.new(context.allocator);
     }
 
     if (std.mem.eql(u8, parsing_item_context.directive, "@pop")) {
@@ -630,7 +629,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         if (parsing_item_context.context_name) |context_name| {
             const sld_opt = context.push_slides.get(context_name);
             if (sld_opt) |sld| {
-                context.current_slide = try Slide.fromSlide(sld, context.allocator);
+                context.current_slide = try slides.Slide.fromSlide(sld, context.allocator);
                 context.current_slide.pos_in_editor = parsing_item_context.line_offset;
                 context.current_slide.line_in_editor = parsing_item_context.line_number;
             } else {
@@ -654,7 +653,7 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         }
         context.first_slide_emitted = true;
 
-        context.current_slide = try Slide.new(context.allocator);
+        context.current_slide = try slides.Slide.new(context.allocator);
         context.current_slide.pos_in_editor = parsing_item_context.line_offset; //context.parsed_line_offset;
         context.current_slide.line_in_editor = parsing_item_context.line_number; // context.parsed_line_number;
         context.current_context = .{}; // clear the current item context, to start fresh in each new slide
@@ -672,29 +671,30 @@ fn commitParsingContext(parsing_item_context: *ItemContext, context: *ParserCont
         // - item context values : use SlideItem.applyContext(ItemContext)
         // - slide defaults
         // - slideshow defaults
-        const slide_item = try commitItemToSlide(parsing_item_context, context);
-        var text = slide_item.text orelse "";
-        // std.log.info("added a box item: `{s}`", .{text});
 
+        // const slide_item = try commitItemToSlide(parsing_item_context, context);
+        // var text = slide_item.text orelse "";
+        // std.log.info("added a box item: `{s}`", .{text});
+        _ = try commitItemToSlide(parsing_item_context, context);
         return;
     }
 
     // @bg is just for convenience. x=0, y=0, w=render_width, h=render_hight
     if (std.mem.eql(u8, parsing_item_context.directive, "@bg")) {
         // well, we can see if fun features emerge when we do all the merges
-        parsing_item_context.position = ImVec2{};
+        parsing_item_context.position = imgui.ImVec2{};
         _ = try commitItemToSlide(parsing_item_context, context);
         return;
     }
 }
 
-fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *ParserContext) !*SlideItem {
+fn commitItemToSlide(parsing_item_context: *slides.ItemContext, parser_context: *ParserContext) !*slides.SlideItem {
     mergeParserAndItemContext(parsing_item_context, &parser_context.current_context);
-    var slide_item = try SlideItem.new(parser_context.allocator);
+    var slide_item = try slides.SlideItem.new(parser_context.allocator);
     slide_item.applyContext(parsing_item_context.*);
-    slide_item.applySlideDefaultsIfNecessary(parser_context.current_slide);
+    slide_item.applySlideDefaultsIfNecessary(parser_context.*.current_slide);
     slide_item.applySlideShowDefaultsIfNecessary(parser_context.slideshow);
-    if (slide_item.img_path) |img_path| {
+    if (slide_item.img_path != null) {
         slide_item.kind = .img;
     } else {
         slide_item.kind = .textbox;
@@ -703,7 +703,7 @@ fn commitItemToSlide(parsing_item_context: *ItemContext, parser_context: *Parser
         slide_item.kind = .background;
     }
     // std.log.info("\n\n\n ADDING {s} as {any}", .{ parsing_item_context.directive, slide_item.kind });
-    try parser_context.current_slide.items.append(slide_item.*);
+    try parser_context.current_slide.items.?.append(slide_item.*);
 
     slide_item.sanityCheck() catch |err| {
         reportErrorInParsingContext(err, parsing_item_context, parser_context, "item sanity check failed");

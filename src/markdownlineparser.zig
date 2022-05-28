@@ -1,7 +1,5 @@
 const std = @import("std");
-// TODO: maybe imvec4 is not worth it creating a dependency here
-const upaya = @import("upaya");
-usingnamespace upaya.imgui;
+const imgui = @import("imgui"); // imgui.ImVec4
 
 /// We aim at the following Markdown dialect:
 ///
@@ -29,22 +27,22 @@ pub const MdTextSpan = struct {
     startpos: usize = 0,
     endpos: usize = 0,
     styleflags: u8 = 0,
-    color_override: ?ImVec4 = null,
+    color_override: ?imgui.ImVec4 = null,
     text: ?[]const u8 = null,
 };
 
 pub const MdParsingError = error{color};
 
-fn parseColorLiteral(colorstr: []const u8) !ImVec4 {
-    var ret = ImVec4{};
+fn parseColorLiteral(colorstr: []const u8) !imgui.ImVec4 {
+    var ret = imgui.ImVec4{};
     if (colorstr[0] != '#') {
         return MdParsingError.color;
     }
-    var temp: ImVec4 = undefined;
-    var coloru32 = std.fmt.parseInt(c_uint, colorstr[1..9], 16) catch |err| {
+    var temp: imgui.ImVec4 = undefined;
+    var coloru32 = std.fmt.parseInt(c_uint, colorstr[1..9], 16) catch {
         return MdParsingError.color;
     };
-    igColorConvertU32ToFloat4(&temp, coloru32);
+    imgui.igColorConvertU32ToFloat4(&temp, coloru32);
     ret.x = temp.w;
     ret.y = temp.z;
     ret.z = temp.y;
@@ -53,12 +51,12 @@ fn parseColorLiteral(colorstr: []const u8) !ImVec4 {
 }
 
 pub const MdLineParser = struct {
-    allocator: *std.mem.Allocator = undefined,
+    allocator: std.mem.Allocator = undefined,
     currentSpan: MdTextSpan = .{},
     result_spans: ?std.ArrayList(MdTextSpan) = null,
 
-    pub fn init(self: *MdLineParser, allocator: *std.mem.Allocator) void {
-        if (self.result_spans) |spans| {
+    pub fn init(self: *MdLineParser, allocator: std.mem.Allocator) void {
+        if (self.result_spans) |_| {
             self.result_spans.?.shrinkRetainingCapacity(0);
         } else {
             self.result_spans = std.ArrayList(MdTextSpan).init(allocator);
@@ -276,7 +274,7 @@ pub const MdLineParser = struct {
                         // try to start color:
                         if (peekAhead(line, pos, 1)) |next| {
                             if (next == '#') {
-                                const color_opt: ?ImVec4 = parseColorLiteral(line[pos + 1 ..]) catch null;
+                                const color_opt: ?imgui.ImVec4 = parseColorLiteral(line[pos + 1 ..]) catch null;
                                 if (color_opt) |color| {
                                     if (std.mem.indexOf(u8, line[pos + 1 ..], "</>")) |term_pos_relative| {
                                         // check if terminator is preceded by space
@@ -318,7 +316,7 @@ pub const MdLineParser = struct {
 
         const span = line[self.currentSpan.startpos..self.currentSpan.endpos];
         self.currentSpan.text = try self.makeCstr(span);
-        if (self.result_spans) |spans| {
+        if (self.result_spans != null) {
             try self.result_spans.?.append(self.currentSpan);
         } else {
             self.result_spans = std.ArrayList(MdTextSpan).init(self.allocator);
