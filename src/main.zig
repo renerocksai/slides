@@ -342,6 +342,8 @@ fn update(context: *SampleApplication.Context) void {
         std.log.debug("delta_t: {}", .{time_delta});
     }
 
+    ig.igPushFont(my_fonts.gui_font);
+
     var mousepos: ImVec2 = undefined;
     imgui.igGetMousePos(&mousepos);
     const io = imgui.igGetIO();
@@ -420,7 +422,7 @@ fn update(context: *SampleApplication.Context) void {
             };
         } else {
             // optionally show editor
-            my_fonts.pushFontScaled(16);
+            my_fonts.pushGuiFont(1);
 
             var start_y: f32 = 22;
             if (isFullScreen()) {
@@ -432,7 +434,7 @@ fn update(context: *SampleApplication.Context) void {
             }
             _ = animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size) catch unreachable;
 
-            my_fonts.popFontScaled();
+            my_fonts.popGuiFont();
             if (context.data.showButtonMenu) {
                 showBottomPanel();
             }
@@ -509,6 +511,7 @@ fn update(context: *SampleApplication.Context) void {
         if (mousepos.x > 0 and mousepos.y > 0) {
             anim_laser.anim(mousepos);
         }
+        ig.igPopFont();
     }
 }
 
@@ -684,7 +687,7 @@ fn clampSlideIndex(new_slide_index: i32) i32 {
 
 fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
     // optionally show editor
-    my_fonts.pushFontScaled(16);
+    my_fonts.pushGuiFont(1.2);
 
     var start_y: f32 = 22;
     if (isFullScreen()) {
@@ -702,7 +705,7 @@ fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
         }
     }
 
-    my_fonts.popFontScaled();
+    my_fonts.popGuiFont();
 
     // render slide
     G.slide_render_width = G.internal_render_size.x - ed_anim.current_size.x;
@@ -722,7 +725,7 @@ fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
 const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: bool = false };
 
 fn showBottomPanel() void {
-    my_fonts.pushFontScaled(16);
+    my_fonts.pushGuiFont(1);
     imgui.igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
     if (anim_bottom_panel.visible) {
         imgui.igColumns(6, null, false);
@@ -764,7 +767,7 @@ fn showBottomPanel() void {
         imgui.igNextColumn();
         imgui.igEndColumns();
     }
-    my_fonts.popFontScaled();
+    my_fonts.popGuiFont();
 }
 
 fn showStatusMsg(msg: [*c]const u8) void {
@@ -1212,7 +1215,7 @@ fn cmdToggleAutoRun() void {
 // .
 
 fn showMenu() void {
-    my_fonts.pushFontScaled(14);
+    my_fonts.pushGuiFont(1);
     if (imgui.igBeginMenuBar()) {
         defer imgui.igEndMenuBar();
 
@@ -1260,5 +1263,5 @@ fn showMenu() void {
             imgui.igEndMenu();
         }
     }
-    my_fonts.popFontScaled();
+    my_fonts.popGuiFont();
 }

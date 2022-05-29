@@ -296,7 +296,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
 
         // (optional) extra stuff
         const grow_shrink_button_panel_height = 0; // 22;
-        const find_area_height = 26;
+        const find_area_height = 32;
         const find_area_button_size = 120;
         const find_area_min_width = 70 + 70;
 
@@ -308,7 +308,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
             imgui.igPushItemWidth(textfield_width);
             anim.search_ed_active = imgui.igInputTextWithHint("##search", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
             imgui.igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
-            if (imgui.igButton("Search!", .{ .x = find_area_button_size - gap, .y = 22 })) {
+            if (imgui.igButton("Search!", .{ .x = find_area_button_size - gap, .y = 28 })) {
                 // TODO: replaced lenZ
                 if (std.mem.len(anim.search_term) > 0) {
                     // DO SEARCH
@@ -342,8 +342,6 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
 
         s.y = size.y - grow_shrink_button_panel_height - find_area_height;
         var error_panel_height = s.y * 0.15; // reserve the last quarter for shit
-        const error_panel_fontsize: i32 = 14;
-
         var show_error_panel = false;
         var parser_errors: *std.ArrayList(parser.ParserErrorContext) = undefined;
         var num_visible_error_lines: c_int = 0;
@@ -352,14 +350,14 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
             parser_errors = &ctx.parser_errors;
             if (parser_errors.items.len > 0) {
                 show_error_panel = true;
-                my_fonts.pushFontScaled(error_panel_fontsize);
+                my_fonts.pushGuiFont(1);
                 // .
-                my_fonts.popFontScaled();
+                my_fonts.popGuiFont();
                 num_visible_error_lines = @floatToInt(c_int, error_panel_height / text_line_height);
                 if (num_visible_error_lines > parser_errors.items.len) {
                     num_visible_error_lines = @intCast(c_int, parser_errors.items.len);
                 }
-                s.y -= text_line_height * @intToFloat(f32, num_visible_error_lines) + 2;
+                s.y -= text_line_height * @intToFloat(f32, num_visible_error_lines + 1) + 2;
             }
         }
 
@@ -403,14 +401,14 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
             imgui.igPushStyleColor_Vec4(imgui.ImGuiCol_FrameBg, .{ .x = 0, .y = 0.1, .z = 0.2, .w = 0.5 });
             const item_array = try anim.parser_context.?.allErrorsToCstrArray(anim.parser_context.?.allocator);
 
-            my_fonts.pushFontScaled(error_panel_fontsize);
+            my_fonts.pushGuiFont(1);
             imgui.igPushItemWidth(-1);
             if (imgui.igListBox_Str_arr("Errors", &anim.selected_error, item_array, @intCast(c_int, parser_errors.items.len), num_visible_error_lines + 1)) {
                 // an error was selected
                 anim.jumpToPosAndHighlightLine(parser_errors.items[@intCast(usize, anim.selected_error)].line_offset, true);
             }
             imgui.igPopItemWidth();
-            my_fonts.popFontScaled();
+            my_fonts.popGuiFont();
             imgui.igPopStyleColor(2);
         }
 
