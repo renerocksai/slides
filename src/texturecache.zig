@@ -36,7 +36,7 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !?Texture {
     tex = Texture.init(absp) catch null;
     if (tex) |*okTexture| {
         // std.log.debug("storing {s} as {any}", .{ p, okTexture });
-        okTexture.setLinearFilter();
+        // okTexture.setLinearFilter();
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1);
         okTexture.bind();
         const key = try allocator.dupe(u8, p);

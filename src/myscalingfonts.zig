@@ -36,6 +36,8 @@ const baked_font_sizes = [_]i32{
     300,
 };
 
+pub var gui_font: *imgui.ImFont = undefined;
+
 const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
 
 var fontdata_normal = @embedFile("../assets/fonts/GeorgiaPro-Semibold.ttf");
@@ -44,6 +46,7 @@ const fontdata_italic = @embedFile("../assets/fonts/GeorgiaPro-SemiboldItalic.tt
 const fontdata_bolditalic = @embedFile("../assets/Calibri Light.ttf");
 const fontdata_zig = @embedFile("../assets/Calibri Regular.ttf");
 
+const fontdata_gui = @embedFile("../ZT/example/assets/public-sans.ttf");
 // const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
 // const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
 // const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
@@ -60,7 +63,9 @@ var my_fonts_zig = FontMap.init(std.heap.page_allocator);
 pub fn loadFonts() error{OutOfMemory}!void {
     var io = imgui.igGetIO();
     imgui.ImFontAtlas_Clear(io.*.Fonts);
-    _ = imgui.ImFontAtlas_AddFontDefault(io.*.Fonts, null);
+
+    const gui_font_size = 16;
+    gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(io.*.Fonts, castaway_const(fontdata_gui), fontdata_gui.len, @intToFloat(f32, gui_font_size), null, imgui.ImFontAtlas_GetGlyphRangesDefault(io.*.Fonts));
 
     // init stuff
     try allFonts.put(.normal, &my_fonts);
@@ -186,6 +191,16 @@ var last_scale: f32 = 0.0;
 var last_font: *imgui.ImFont = undefined;
 
 pub const bakedFontInfo = struct { font: *imgui.ImFont, size: i32 };
+
+pub fn pushGuiFont(scale: f32) void {
+    // we assume we have a font, now scale it
+    gui_font.Scale = scale;
+    imgui.igPushFont(gui_font);
+}
+
+pub fn popGuiFont() void {
+    imgui.igPopFont();
+}
 
 pub fn pushFontScaled(pixels: i32) void {
     const font_info = getFontScaled(pixels);
