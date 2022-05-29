@@ -92,14 +92,15 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
 
     const flags = ig.ImGuiWindowFlags_NoResize;
 
-    const height = 240;
+    const height = 280;
+    const width = 300;
     ig.igSetNextWindowPos(zt.math.vec2(40, io.*.DisplaySize.y - height), ig.ImGuiCond_Once, .{});
     ig.igSetNextWindowSize(zt.math.vec2(
-        250,
+        width,
         height - 20,
     ), ig.ImGuiCond_Always);
-    if (ig.igBegin("Little helper", null, flags)) {
-        ig.igText("Settings");
+    if (ig.igBegin("Settings", null, flags)) {
+        // ig.igText("Settings");
         _ = zg.edit("Menu Bar", &ctx.data.showMenuBar);
         _ = zg.edit("Button Menu", &ctx.data.showButtonMenu);
         ig.igSeparator();
@@ -110,9 +111,16 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
             ctx.setVsync(ctx.settings.vsync);
         }
         ig.igSeparator();
+        if (ig.igInputInt("Key repeat", &G.keyRepeat, 10, 30, ig.ImGuiInputTextFlags_None)) {
+            if (G.keyRepeat <= 0) {
+                G.keyRepeat = 0;
+            }
+        }
+
+        ig.igSeparator();
 
         ig.igText("Information");
-        zg.text("{d:.1}fps", .{ctx.time.fps});
+        zg.text("Frame rate: {d:.1}fps", .{ctx.time.fps});
         ig.igSeparator();
         ig.igPushStyleColor_Vec4(ig.ImGuiCol_Text, ig.ImVec4{ .x = 1, .y = 1, .z = 0.1, .w = 1 });
         zg.text("\nHide me with the [`] key", .{});
@@ -173,6 +181,8 @@ const AppData = struct {
     is_fullscreen: bool = false,
     context: *SampleApplication.Context = undefined,
     openfiledialog_context: ?*anyopaque = null,
+    saveas_dialog_context: ?*anyopaque = null,
+    keyRepeat: i32 = 0,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -462,6 +472,28 @@ fn update(context: *SampleApplication.Context) void {
                 }
             }
         }
+        if (G.saveas_dialog_context != null) {
+            const dlg = G.saveas_dialog_context.?;
+            const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
+            const minSize = ig.ImVec2{ .x = 800, .y = 400 };
+            if (filedialog.IGFD_DisplayDialog(dlg, "saveas", ig.ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+                // actually load the slideshow
+                if (filedialog.IGFD_IsOk(dlg)) {
+                    const cfilePathName = filedialog.IGFD_GetFilePathName(dlg);
+                    std.log.debug("GetFilePathName : {s}\n", .{cfilePathName});
+                    if (!saveSlideshow(std.mem.sliceTo(cfilePathName, 0), ed_anim.textbuf)) {
+                        std.log.err("saveas error", .{});
+                    }
+                    filedialog.IGFD_CloseDialog(dlg);
+                    filedialog.IGFD_Destroy(dlg);
+                    G.saveas_dialog_context = null;
+                } else {
+                    filedialog.IGFD_CloseDialog(dlg);
+                    filedialog.IGFD_Destroy(dlg);
+                    G.saveas_dialog_context = null;
+                }
+            }
+        }
         imgui.igEnd();
 
         if (G.show_saveas) {
@@ -503,43 +535,72 @@ fn jumpToSlide(slidenumber: i32) void {
     }
 }
 
+var lastPressed: [512]i32 = undefined;
+fn handleKeyboardAutofire(key: usize) bool {
+    const io = ig.igGetIO();
+    const duration = io.*.KeysDownDuration[key];
+    if (duration < 0.0) {
+        lastPressed[key] = 0;
+        return false;
+    }
+    var interval_ms = G.keyRepeat;
+    if (interval_ms <= 0) {
+        return duration == 0.0;
+    }
+
+    const duration_ms_f = duration * 1000.0;
+    const duration_ms = @floatToInt(i32, duration_ms_f);
+    const duration_ms_prev = lastPressed[key];
+    const ret = (duration_ms - duration_ms_prev > interval_ms) or duration == 0.0;
+    if (ret) {
+        lastPressed[key] = duration_ms;
+        std.log.debug("time: {}", .{duration_ms});
+    }
+    return ret;
+}
+
+fn keyPressed(key: usize) bool {
+    const io = ig.igGetIO();
+    return io.*.KeysDownDuration[key] == 0.0;
+}
+
 fn handleKeyboard() void {
     const io = ig.igGetIO();
 
     const ctrl = io.*.KeyCtrl;
     const shift = io.*.KeyShift;
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_Q) and ctrl) {
+    if (keyPressed(glfw.GLFW_KEY_Q) and ctrl) {
         cmdQuit();
         return;
     }
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_O) and ctrl) {
+    if (keyPressed(glfw.GLFW_KEY_O) and ctrl) {
         cmdLoadSlideshow();
         return;
     }
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_N) and ctrl) {
+    if (keyPressed(glfw.GLFW_KEY_N) and ctrl) {
         cmdNewSlideshow();
         return;
     }
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_S) and ctrl) {
+    if (keyPressed(glfw.GLFW_KEY_S) and ctrl) {
         cmdSave();
         return;
     }
     // don't consume keys while the editor is visible
-    if ((ig.igGetActiveID() == ig.igGetID_Str("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (ig.igGetActiveID() == ig.igGetID_Str("##search"))) {
+    if ((ig.igGetActiveID() == ig.igGetID_Str("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (ig.igGetActiveID() == ig.igGetID_Str("##search")) or G.saveas_dialog_context != null or G.openfiledialog_context != null) {
         return;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_A)) {
+    if (keyPressed(glfw.GLFW_KEY_A)) {
         cmdToggleAutoRun();
         return;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_L) and !shift) {
+    if (keyPressed(glfw.GLFW_KEY_L) and !shift) {
         anim_laser.toggle();
         return;
     }
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_L) and shift) {
+    if (keyPressed(glfw.GLFW_KEY_L) and shift) {
         anim_laser.laserpointer_zoom *= 1.5;
         if (anim_laser.laserpointer_zoom > 10) {
             anim_laser.laserpointer_zoom = 1.0;
@@ -547,42 +608,43 @@ fn handleKeyboard() void {
         return;
     }
     var deltaindex: i32 = 0;
-    if (ig.igIsKeyReleased(' ')) {
+
+    if (handleKeyboardAutofire(glfw.GLFW_KEY_SPACE)) {
         deltaindex = 1;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_LEFT)) {
+    if (keyPressed(glfw.GLFW_KEY_LEFT)) {
         deltaindex = -1;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_RIGHT)) {
+    if (keyPressed(glfw.GLFW_KEY_RIGHT)) {
         deltaindex = 1;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_BACKSPACE)) {
+    if (handleKeyboardAutofire(glfw.GLFW_KEY_BACKSPACE)) {
         deltaindex = -1;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_PAGE_UP)) {
+    if (keyPressed(glfw.GLFW_KEY_PAGE_UP)) {
         deltaindex = -1;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_PAGE_DOWN)) {
+    if (keyPressed(glfw.GLFW_KEY_PAGE_DOWN)) {
         deltaindex = 1;
     }
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_UP)) {
+    if (keyPressed(glfw.GLFW_KEY_UP)) {
         ed_anim.grow();
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_DOWN)) {
+    if (keyPressed(glfw.GLFW_KEY_DOWN)) {
         ed_anim.shrink();
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_F)) {
+    if (keyPressed(glfw.GLFW_KEY_F)) {
         cmdToggleFullscreen();
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_M)) {
+    if (keyPressed(glfw.GLFW_KEY_M)) {
         if (shift) {
             G.app_state = .mainmenu;
         } else {
@@ -594,11 +656,11 @@ fn handleKeyboard() void {
 
     // special slide navigation: 1 and 0
     // needs to happen after applying deltaindex!!!!!
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_1) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and !shift)) {
+    if (keyPressed(glfw.GLFW_KEY_1) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and !shift)) {
         new_slide_index = 0;
     }
 
-    if (ig.igIsKeyReleased(glfw.GLFW_KEY_0) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and shift)) {
+    if (keyPressed(glfw.GLFW_KEY_0) or (ig.igIsKeyReleased(glfw.GLFW_KEY_G) and shift)) {
         new_slide_index = @intCast(i32, G.slideshow.slides.items.len - 1);
     }
 
@@ -635,7 +697,7 @@ fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
     const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
 
     if (!editor_active and !ed_anim.search_ed_active) {
-        if (ig.igIsKeyPressed(glfw.GLFW_KEY_E, false)) {
+        if (ig.igIsKeyPressed(glfw.GLFW_KEY_E, false) and G.openfiledialog_context == null and G.saveas_dialog_context == null) {
             cmdToggleEditor();
         }
     }
@@ -954,33 +1016,42 @@ fn cmdSave() void {
 }
 
 fn saveSlideshowAs() void {
-    // TODO : implement this
-
+    if (G.saveas_dialog_context == null) {
+        G.saveas_dialog_context = filedialog.IGFD_Create();
+        filedialog.IGFD_OpenDialog(
+            G.saveas_dialog_context.?,
+            "saveas",
+            "Save slideshow as...",
+            "slide files(*.sld){.sld}",
+            ".",
+            "",
+            0,
+            @intToPtr(?*anyopaque, 0),
+            @enumToInt(filedialog.ImGuiFileDialogFlags.ConfirmOverwrite),
+        );
+    } else {
+        const dlg = G.saveas_dialog_context.?;
+        const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
+        const minSize = ig.ImVec2{ .x = 800, .y = 400 };
+        if (filedialog.IGFD_DisplayDialog(dlg, "saveas", ig.ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
+            // actually load the slideshow
+            if (filedialog.IGFD_IsOk(dlg)) {
+                const cfilePathName = filedialog.IGFD_GetFilePathName(dlg);
+                std.log.debug("GetFilePathName : {s}\n", .{cfilePathName});
+                if (!saveSlideshow(std.mem.sliceTo(cfilePathName, 0), ed_anim.textbuf)) {
+                    std.log.err("saveas error", .{});
+                }
+                filedialog.IGFD_CloseDialog(dlg);
+                filedialog.IGFD_Destroy(dlg);
+                G.saveas_dialog_context = null;
+            } else {
+                filedialog.IGFD_CloseDialog(dlg);
+                filedialog.IGFD_Destroy(dlg);
+                G.saveas_dialog_context = null;
+            }
+        }
+    }
     return;
-
-    // if (false) {
-    //     // file dialog
-    //     var selected_file: []const u8 = undefined;
-    //     var buf: [2048]u8 = undefined;
-    //     const my_path: []u8 = std.os.getcwd(buf[0..]) catch |err| "";
-    //     buf[my_path.len] = 0;
-    //     const x = buf[0 .. my_path.len + 1];
-    //     const y = x[0..my_path.len :0];
-    //     const sel = upaya.filebrowser.saveFileDialog("Save Slideshow as...", y, "*.sld");
-    //     if (sel == null) {
-    //         selected_file = "canceled";
-    //     } else {
-    //         selected_file = std.mem.span(sel);
-    //     }
-    //
-    //     if (std.mem.startsWith(u8, selected_file, "canceled")) {
-    //         setStatusMsg("canceled");
-    //     } else {
-    //         // now load the file
-    //         G.slideshow_filp = selected_file;
-    //         _ = saveSlideshow(selected_file, ed_anim.textbuf);
-    //     }
-    // }
 }
 
 fn cmdSaveAs() void {
