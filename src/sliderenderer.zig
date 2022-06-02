@@ -2,7 +2,7 @@ const std = @import("std");
 const tcache = @import("texturecache.zig");
 const slides = @import("slides.zig");
 const imgui = @import("imgui");
-const my_fonts = @import("myscalingfonts.zig");
+const my_fonts = @import("fontbakery.zig");
 const markdownlineparser = @import("markdownlineparser.zig");
 const zt = @import("zt");
 
@@ -131,6 +131,8 @@ pub const SlideshowRenderer = struct {
         }
 
         if (item.fontSize) |fs| {
+            // TODO: this might be inaccurate if we use different fonts in the text block
+            // whose pixel sizes vary significantly for given font sizes
             line_height_bullet_width = self.lineHightAndBulletWidthForFontSize(fs);
             fontSize = fs;
         } else {
@@ -522,7 +524,9 @@ pub const SlideshowRenderer = struct {
         _ = self;
         var size = imgui.ImVec2{};
         var ret = imgui.ImVec2{};
-        my_fonts.pushFontScaled(fontsize);
+        // TODO: this might be inaccurate if we use different fonts in the text block
+        // whose pixel sizes vary significantly for given font sizes
+        my_fonts.pushStyledFontScaled(fontsize, .normal);
         const text: [*c]const u8 = "FontCheck";
         imgui.igCalcTextSize(&size, text, text + 5, false, 8000);
         ret.y = size.y;
@@ -558,16 +562,6 @@ pub const SlideshowRenderer = struct {
 
     fn toCString(self: *SlideshowRenderer, text: []const u8) ![*c]const u8 {
         return try self.allocator.dupeZ(u8, text);
-    }
-
-    fn heightOfTextblock_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, block_width: f32, height_out: *f32) ![*c]const u8 {
-        var size = imgui.ImVec2{};
-        my_fonts.pushFontScaled(fontsize);
-        const ctext = try self.toCString(text);
-        imgui.igCalcTextSize(&size, ctext, &ctext[std.mem.len(ctext) - 1], false, block_width);
-        my_fonts.popFontScaled();
-        height_out.* = size.y;
-        return ctext;
     }
 
     fn styledTextblockSize_toCstring(self: *SlideshowRenderer, text: []const u8, fontsize: i32, fontstyle: my_fonts.FontStyle, block_width: f32, size_out: *imgui.ImVec2) ![*c]const u8 {
