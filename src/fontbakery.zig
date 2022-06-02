@@ -175,9 +175,6 @@ pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
     var the_map = allFonts.get(style).?;
     var font: *imgui.ImFont = the_map.get(baked_font_sizes[0]).?; // we don't ever down-scale. hence, default to minimum font size
 
-    // the bloody hash map says it doesn't support field access when trying to iterate:
-    //    var it = my_fonts.iterator();
-    //     for (it.next()) |item| {
     for (baked_font_sizes) |fsize| {
         if (style == .zig) {
             if (fsize >= 192) {
@@ -186,13 +183,10 @@ pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
         }
         var diff = pixels - fsize;
 
-        // std.log.debug("diff={}, pixels={}, fsize={}", .{ diff, pixels, fsize });
-
         // we only ever upscale, hence we look for positive differences only
         if (diff >= 0) {
             // we try to find the minimum difference
             if (diff < min_diff) {
-                // std.log.debug("  diff={} is < than {}, so our new temp found_font_size={}", .{ diff, min_diff, fsize });
                 min_diff = diff;
                 font = the_map.get(fsize).?;
                 found_font_size = fsize;
@@ -200,40 +194,12 @@ pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
         }
     }
 
-    //    if (style == .zig) {
-    //        if (found_font_size >= 192) {
-    //            found_font_size = 144; // TODO: hack
-    //        }
-    //    }
-    const ret = bakedFontInfo{ .font = font, .size = found_font_size };
-
-    return ret;
-}
-
-pub fn getNearestFontSize(pixels: i32) i32 {
-    var min_diff: i32 = 1000;
-    var found_font_size: i32 = baked_font_sizes[0];
-
-    // the bloody hash map says it doesn't support field access when trying to iterate:
-    //    var it = my_fonts.iterator();
-    //     for (it.next()) |item| {
-    for (baked_font_sizes) |fsize| {
-        var diff = pixels - fsize;
-
-        // std.log.debug("diff={}, pixels={}, fsize={}", .{ diff, pixels, fsize });
-
-        // we only ever upscale, hence we look for positive differences only
-        if (diff >= 0) {
-            // we try to find the minimum difference
-            if (diff < min_diff) {
-                // std.log.debug("  diff={} is < than {}, so our new temp found_font_size={}", .{ diff, min_diff, fsize });
-                min_diff = diff;
-                found_font_size = fsize;
-            }
+    if (style == .zig) {
+        if (found_font_size >= 192) {
+            found_font_size = 144; // TODO: hack
         }
     }
-    // std.log.debug("--> Nearest font size of {} is {}", .{ pixels, found_font_size });
-    return found_font_size;
+    return bakedFontInfo{ .font = font, .size = found_font_size };
 }
 
 pub fn popFontScaled() void {
