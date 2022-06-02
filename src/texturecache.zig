@@ -9,6 +9,7 @@ var path2tex = std.StringHashMap(Texture).init(allocator);
 
 // TODO: I am not sure anymore whether it is OK to have this cache alive across
 //       multiple load / save cycles
+//       well, it's a speedup for slide reloads!
 
 // open img file relative to refpath (slideshow file)
 pub fn getImg(p: []const u8, refpath: ?[]const u8) !?Texture {
@@ -20,18 +21,7 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !?Texture {
             return path2tex.get(p).?;
         }
     }
-    var absp: []const u8 = undefined;
-    if (refpath) |rp| {
-        const pwd = std.fs.path.dirname(rp);
-        if (pwd == null) {
-            absp = p;
-        } else {
-            var buf: [1024]u8 = undefined;
-            absp = try std.fmt.bufPrint(&buf, "{s}{c}{s}", .{ pwd, std.fs.path.sep, p });
-        }
-    } else {
-        absp = p;
-    }
+    var absp = try relpathToAbspath(p, refpath);
     // std.log.debug("trying to load: {s} with refpath: {s} -> {s}", .{ p, refpath, absp });
     tex = Texture.init(absp) catch null;
     if (tex) |*okTexture| {
@@ -43,4 +33,24 @@ pub fn getImg(p: []const u8, refpath: ?[]const u8) !?Texture {
         try path2tex.put(key, okTexture.*);
     }
     return tex;
+}
+
+/// note that you need to dupe this if you store it somewhere
+pub fn relpathToAbspath(relpath: []const u8, refpath: ?[]const u8) ![]const u8 {
+    var absp: []const u8 = undefined;
+    const static_buffer = struct {
+        var b: [1024]u8 = undefined;
+    };
+
+    if (refpath) |rp| {
+        const pwd = std.fs.path.dirname(rp);
+        if (pwd == null) {
+            absp = relpath;
+        } else {
+            absp = try std.fmt.bufPrint(&static_buffer.b, "{s}{c}{s}", .{ pwd, std.fs.path.sep, relpath });
+        }
+    } else {
+        absp = relpath;
+    }
+    return absp;
 }
