@@ -6,7 +6,7 @@ const parser = @import("parser.zig");
 const render = @import("sliderenderer.zig");
 const screenshot = @import("screenshot.zig");
 const mdlineparser = @import("markdownlineparser.zig");
-const my_fonts = @import("myscalingfonts.zig");
+const my_fonts = @import("fontbakery.zig");
 const filedialog = @import("filedialog");
 
 const zt = @import("zt");
@@ -54,7 +54,7 @@ pub fn main() !void {
     init();
     var context = try SampleApplication.begin(std.heap.c_allocator);
     // Lets customize!
-    my_fonts.loadFonts() catch unreachable;
+    try my_fonts.loadDefaultFonts(null);
     context.rebuildFont();
 
     // Set up state
@@ -76,6 +76,11 @@ pub fn main() !void {
         update(context);
         inspectContext(context);
         context.endFrame();
+
+        if (G.parserChangedFonts) {
+            // TODO: load new fonts
+
+        }
     }
 
     context.deinit();
@@ -183,19 +188,13 @@ const AppData = struct {
     openfiledialog_context: ?*anyopaque = null,
     saveas_dialog_context: ?*anyopaque = null,
     keyRepeat: i32 = 0,
+    parserChangedFonts: bool = false,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
 
         self.slideshow_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         self.slideshow_allocator = self.slideshow_arena.allocator();
-        const b = try self.slideshow_allocator.create(slides.Slide);
-        std.log.debug("*b {*} ", .{b});
-        std.log.debug("b {} ", .{b.*});
-
-        std.log.debug("trying Slide.new", .{});
-        const c = try Slide.new(self.slideshow_allocator);
-        std.log.debug("*c {*} ", .{c});
 
         self.slideshow = try SlideShow.new(self.slideshow_allocator);
         self.slide_renderer = try render.SlideshowRenderer.new(self.slideshow_allocator);
@@ -342,6 +341,7 @@ fn update(context: *SampleApplication.Context) void {
         std.log.debug("delta_t: {}", .{time_delta});
     }
 
+    // push the gui font
     ig.igPushFont(my_fonts.gui_font);
 
     var mousepos: ImVec2 = undefined;
@@ -421,6 +421,7 @@ fn update(context: *SampleApplication.Context) void {
                 std.log.err("SlideShow Error: {any}", .{err});
             };
         } else {
+            std.log.debug("slideshow empty", .{});
             // optionally show editor
             my_fonts.pushGuiFont(1);
 
@@ -770,17 +771,6 @@ fn showBottomPanel() void {
     my_fonts.popGuiFont();
 }
 
-fn showStatusMsg(msg: [*c]const u8) void {
-    const y = G.content_window_size.y - 50 - 64;
-    const pos = ImVec2{ .x = 10, .y = y };
-    const flyin_pos = ImVec2{ .x = G.content_window_size.x, .y = y };
-    const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
-    my_fonts.pushFontScaled(64);
-    std.log.debug("showStatusMsg shows {}", .{msg});
-    showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
-    my_fonts.popFontScaled();
-}
-
 fn setStatusMsg(msg: [*c]const u8) void {
     G.status_msg = msg;
     anim_status_msg.anim_state = .fadein;
@@ -837,8 +827,9 @@ fn slideAreaTL() ImVec2 {
 }
 
 fn showStatusMsgV(msg: [*c]const u8) void {
+    // TODO: still uses main font, which is dependent on the slideshow's fonts
     var tsize = ImVec2{};
-    my_fonts.pushFontScaled(64);
+    my_fonts.pushStyledFontScaled(64, .normal);
     imgui.igCalcTextSize(&tsize, msg, msg + std.mem.len(msg), false, 2000.0);
     const maxw = G.content_window_size.x * 0.9;
     if (tsize.x > maxw) {
@@ -1067,6 +1058,7 @@ fn doQuit() void {
 
 fn doLoadSlideshow() void {
     // just open the dialog and let update() do the rest
+    std.log.debug("open file dialog", .{});
     if (G.openfiledialog_context == null) {
         G.openfiledialog_context = filedialog.IGFD_Create();
         filedialog.IGFD_OpenDialog(
@@ -1148,8 +1140,6 @@ fn savePopup(reason: SaveAsReason) bool {
     }
     imgui.igSetNextWindowSize(.{ .x = 500, .y = -1 }, imgui.ImGuiCond_Always);
     var open: bool = true;
-    my_fonts.pushFontScaled(14);
-    defer my_fonts.popFontScaled();
     var doit = false;
     if (imgui.igBeginPopupModal("Save slideshow?", &open, imgui.ImGuiWindowFlags_AlwaysAutoResize)) {
         defer imgui.igEndPopup();

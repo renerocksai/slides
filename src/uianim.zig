@@ -1,7 +1,7 @@
 const std = @import("std");
 const imgui = @import("imgui");
 const parser = @import("parser.zig");
-const my_fonts = @import("myscalingfonts.zig");
+const my_fonts = @import("fontbakery.zig");
 usingnamespace imgui;
 
 // .
