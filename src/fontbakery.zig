@@ -2,6 +2,7 @@ const imgui = @import("imgui");
 const zt = @import("zt");
 const Texture = zt.gl.Texture;
 const std = @import("std");
+const relpathToAbspath = @import("texturecache.zig").relpathToAbspath;
 
 pub const FontStyle = enum {
     normal,
@@ -36,6 +37,20 @@ const baked_font_sizes = [_]i32{
     300,
 };
 
+pub const FontLoadDesc = struct {
+    ttf_filn: []const u8,
+    baked_font_sizes: ?[]const i32,
+};
+
+pub const FontConfig = struct {
+    gui_font_size: ?i32 = null,
+    normal: ?FontLoadDesc = null,
+    bold: ?FontLoadDesc = null,
+    italic: ?FontLoadDesc = null,
+    bolditalic: ?FontLoadDesc = null,
+    zig: ?FontLoadDesc = null,
+};
+
 const fontdata_gui = @embedFile("../ZT/example/assets/public-sans.ttf");
 const fontdata_normal = @embedFile("../assets/Calibri Light.ttf");
 const fontdata_bold = @embedFile("../assets/Calibri Regular.ttf"); // Calibri is the bold version of Calibri Light for us
@@ -56,10 +71,10 @@ var my_fonts_zig = FontMap.init(std.heap.page_allocator);
 
 pub fn addFont(style: FontStyle, size: i32, fontdata: [:0]const u8) !void {
     if (style == .zig and size >= 192) return; // no point in super-large
-    // if you remove this check, imgui will not be able to handle it
+    // if you remove above check, imgui will not be able to handle it
     // not even the gui font will work then
 
-    // set up the font ranges
+    // set up the font rasges
     // The following spits out the range {32, 255} :
     // const default_font_ranges: [*:0]const imgui.ImWchar = imgui.ImFontAtlas_GetGlyphRangesDefault(io.*.Fonts);
     // std.log.debug("font ranges: {d}", .{default_font_ranges});
@@ -137,6 +152,48 @@ pub fn loadDefaultFonts(gui_font_size: ?i32) !void {
             try addFont(style, fsize, fontdata);
         }
     }
+}
+
+pub fn loadCustomFonts(fontConfig: FontConfig) !void {
+    var io = imgui.igGetIO();
+    imgui.ImFontAtlas_Clear(io.*.Fonts);
+    const gfs = fontConfig.gui_font_size orelse 16;
+    std.log.debug("gui font size: {}", .{gfs});
+    gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
+        io.*.Fonts,
+        castaway_const(fontdata_gui),
+        fontdata_gui.len,
+        @intToFloat(f32, gfs),
+        null,
+        imgui.ImFontAtlas_GetGlyphRangesDefault(io.*.Fonts),
+    );
+
+    // clear hash maps for different font styles
+    // TODO: deinit the actual font maps returned by imgui
+    my_fonts.deinit();
+    my_fonts_bold.deinit();
+    my_fonts_italic.deinit();
+    my_fonts_bolditalic.deinit();
+    my_fonts_zig.deinit();
+    allFonts.deinit();
+
+    // now re-init the hash maps
+    allFonts = StyledFontMap.init(std.heap.page_allocator);
+    my_fonts = FontMap.init(std.heap.page_allocator);
+    my_fonts_bold = FontMap.init(std.heap.page_allocator);
+    my_fonts_italic = FontMap.init(std.heap.page_allocator);
+    my_fonts_bolditalic = FontMap.init(std.heap.page_allocator);
+    my_fonts_zig = FontMap.init(std.heap.page_allocator);
+    try allFonts.put(.normal, &my_fonts);
+    try allFonts.put(.bold, &my_fonts_bold);
+    try allFonts.put(.italic, &my_fonts_italic);
+    try allFonts.put(.bolditalic, &my_fonts_bolditalic);
+    try allFonts.put(.zig, &my_fonts_zig);
+
+    // load the fonts from files
+    // TODO : <--------------------------------------------------- TODO : YOU : TODO ARE :TODO HERE
+
+    // and do the actual font loading
 }
 
 var last_scale: f32 = 0.0;
