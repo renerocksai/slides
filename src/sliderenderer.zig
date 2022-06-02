@@ -441,7 +441,8 @@ pub const SlideshowRenderer = struct {
                             } else {
                                 // we check how large the current string (without that last word that caused wrapping) really is, to adjust our new current_pos.x:
                                 available_width = layoutContext.origin_pos.x + layoutContext.available_size.x - layoutContext.current_pos.x;
-                                render_text = span.text.?[lastConsumedIdx..lastIdxOfSpace];
+                                const end_of_string_pos = if (lastIdxOfSpace > span.text.?.len) span.text.?.len else lastIdxOfSpace;
+                                render_text = span.text.?[lastConsumedIdx..end_of_string_pos];
                                 render_text_c = try self.styledTextblockSize_toCstring(render_text, layoutContext.fontSize, element.fontStyle, available_width, &attempted_span_size);
                                 lastConsumedIdx = lastIdxOfSpace;
                                 lastIdxOfSpace = currentIdxOfSpace;
