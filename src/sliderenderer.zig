@@ -686,17 +686,18 @@ fn renderText(item: *const RenderElement, slide_tl: imgui.ImVec2, slide_size: im
     }
     // new: box without text, but with color: make a colored box
     if (item.text == null and item.color != null) {
-        imgui.igSetCursorPos(item.position);
+        const startpos = slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size);
+        imgui.igSetCursorPos(startpos);
         var drawlist = imgui.igGetForegroundDrawList_Nil();
         if (drawlist == null) {
             std.log.warn("drawlist is null!", .{});
         } else {
-            var br = slidePosToRenderPos(item.position, slide_tl, slide_size, internal_render_size);
-            const sz = slidePosToRenderPos(item.size, slide_tl, slide_size, internal_render_size);
-            br.x += sz.x;
-            br.y += sz.y;
+            var sz = item.size;
+            sz.x += item.position.x;
+            sz.y += item.position.y;
+            const br = slidePosToRenderPos(sz, slide_tl, slide_size, internal_render_size);
             const bgcolu32 = imgui.igGetColorU32_Vec4(item.color.?);
-            imgui.igRenderFrame(item.position, br, bgcolu32, true, 0.0);
+            imgui.igRenderFrame(startpos, br, bgcolu32, true, 0.0);
         }
         return;
     }
