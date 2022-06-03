@@ -7,6 +7,7 @@ const render = @import("sliderenderer.zig");
 const screenshot = @import("screenshot.zig");
 const mdlineparser = @import("markdownlineparser.zig");
 const my_fonts = @import("fontbakery.zig");
+const fontbakery = my_fonts;
 const filedialog = @import("filedialog");
 
 const zt = @import("zt");
@@ -62,24 +63,35 @@ pub fn main() !void {
     // here, more context stuff (access to SazmpleData field members) could be done
 
     context.setWindowSize(1920, 1080);
-    context.setWindowTitle("ZT Demo");
+    context.setWindowTitle("Slides");
     context.setWindowIcon(zt.path("texture/ico.png"));
 
     G.setContext(context);
 
     // You control your own main loop, all you got to do is call begin and end frame,
     // and zt will handle the rest.
+
+    var post_load = false;
     while (context.open) {
         context.beginFrame();
+
+        // after loading, we need to pre-render in an imgui frame
+        if (post_load) {
+            G.slide_renderer.preRender(G.slideshow, G.slideshow_filp.?) catch |err| {
+                std.log.err("Pre-rendering failed: {any}", .{err});
+            };
+            post_load = false;
+        }
 
         // call update with our context
         update(context);
         inspectContext(context);
         context.endFrame();
 
-        if (G.parserChangedFonts) {
-            // TODO: load new fonts
-
+        if (G.slideshow_filp_to_load) |filp| {
+            try loadSlideshow(filp);
+            context.rebuildFont();
+            post_load = true;
         }
     }
 
@@ -99,7 +111,7 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
 
     const height = 280;
     const width = 300;
-    ig.igSetNextWindowPos(zt.math.vec2(40, io.*.DisplaySize.y - height), ig.ImGuiCond_Once, .{});
+    ig.igSetNextWindowPos(zt.math.vec2(40, 40), ig.ImGuiCond_Once, .{});
     ig.igSetNextWindowSize(zt.math.vec2(
         width,
         height - 20,
@@ -188,7 +200,7 @@ const AppData = struct {
     openfiledialog_context: ?*anyopaque = null,
     saveas_dialog_context: ?*anyopaque = null,
     keyRepeat: i32 = 0,
-    parserChangedFonts: bool = false,
+    slideshow_filp_to_load: ?[]const u8 = null,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -317,11 +329,11 @@ fn post_init() void {
     if (arg_it.next(G.allocator)) |arg| {
         // we have an arg
         const slide_fn = arg catch "";
-        var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
-        const shit = std.fs.realpath(slide_fn, &buf) catch return;
-        loadSlideshow(shit) catch |err| {
-            std.log.err("loadSlideshow: {any}", .{err});
+        const static = struct {
+            var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         };
+        const shit = std.fs.realpath(slide_fn, &static.buf) catch return;
+        G.slideshow_filp_to_load = shit; // signal that we need to load
     }
 }
 
@@ -408,9 +420,7 @@ fn update(context: *SampleApplication.Context) void {
 
         const do_reload = checkAutoReload() catch false;
         if (do_reload) {
-            loadSlideshow(G.slideshow_filp.?) catch |err| {
-                std.log.err("Unable to auto-reload: {any}", .{err});
-            };
+            G.slideshow_filp_to_load = G.slideshow_filp; // signal that we need to load
         }
 
         if (G.slideshow.slides.items.len > 0) {
@@ -451,8 +461,7 @@ fn update(context: *SampleApplication.Context) void {
         }
 
         // handle cmdLoad
-        if (G.openfiledialog_context != null) {
-            const dlg = G.openfiledialog_context.?;
+        if (G.openfiledialog_context) |dlg| {
             const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
             const minSize = ig.ImVec2{ .x = 800, .y = 400 };
 
@@ -462,9 +471,8 @@ fn update(context: *SampleApplication.Context) void {
                 if (filedialog.IGFD_IsOk(dlg)) {
                     const cfilePathName = filedialog.IGFD_GetFilePathName(dlg);
                     std.log.debug("GetFilePathName : {s}\n", .{cfilePathName});
-                    loadSlideshow(std.mem.sliceTo(cfilePathName, 0)) catch |err| {
-                        std.log.err("loadSlideshow: {any}", .{err});
-                    };
+                    G.slideshow_filp_to_load = std.mem.sliceTo(cfilePathName, 0); // signal that we need to load
+
                     filedialog.IGFD_CloseDialog(dlg);
                     filedialog.IGFD_Destroy(dlg);
                     G.openfiledialog_context = null;
@@ -475,8 +483,7 @@ fn update(context: *SampleApplication.Context) void {
                 }
             }
         }
-        if (G.saveas_dialog_context != null) {
-            const dlg = G.saveas_dialog_context.?;
+        if (G.saveas_dialog_context) |dlg| {
             const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
             const minSize = ig.ImVec2{ .x = 800, .y = 400 };
             if (filedialog.IGFD_DisplayDialog(dlg, "saveas", ig.ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
@@ -517,7 +524,6 @@ fn update(context: *SampleApplication.Context) void {
 }
 
 fn makeDefaultSlideshow() !void {
-    // const empty = try Slide.new(G.slideshow_allocator);
     const empty = try Slide.new(G.allocator);
     std.log.debug("empty slide created", .{});
     // make a grey background
@@ -778,28 +784,26 @@ fn setStatusMsg(msg: [*c]const u8) void {
 }
 
 fn saveSlideshow(filp: ?[]const u8, contents: [*c]u8) bool {
-    if (filp == null) {
+    if (filp) |filepath| {
+        std.log.debug("saving to: {s} ", .{filepath});
+        const file = std.fs.cwd().createFile(filepath, .{}) catch {
+            setStatusMsg("ERROR saving slideshow");
+            return false;
+        };
+        defer file.close();
+
+        const contents_slice: []u8 = std.mem.span(contents);
+        file.writeAll(contents_slice) catch {
+            setStatusMsg("ERROR saving slideshow");
+            return false;
+        };
+        setStatusMsg("Saved!");
+        return true;
+    } else {
         std.log.err("no filename!", .{});
         setStatusMsg("Save as -> not implemented!");
         return false;
     }
-    std.log.debug("saving to: {s} ", .{filp.?});
-    const file = std.fs.cwd().createFile(
-        filp.?,
-        .{},
-    ) catch {
-        setStatusMsg("ERROR saving slideshow");
-        return false;
-    };
-    defer file.close();
-
-    const contents_slice: []u8 = std.mem.span(contents);
-    file.writeAll(contents_slice) catch {
-        setStatusMsg("ERROR saving slideshow");
-        return false;
-    };
-    setStatusMsg("Saved!");
-    return true;
 }
 
 fn slideSizeInWindow() ImVec2 {
@@ -843,7 +847,7 @@ fn showStatusMsgV(msg: [*c]const u8) void {
     const flyin_pos = ImVec2{ .x = x, .y = G.content_window_size.y - tsize.y - 8 };
     const color = ImVec4{ .x = 1, .y = 1, .z = 0x80 / 255.0, .w = 1 };
     imgui.igPushTextWrapPos(maxw + x);
-    showMsg(msg.?, pos, flyin_pos, color, &anim_status_msg);
+    showMsg(msg, pos, flyin_pos, color, &anim_status_msg);
     imgui.igPopTextWrapPos();
     my_fonts.popFontScaled();
 }
@@ -881,12 +885,13 @@ fn checkAutoReload() !bool {
                 }
             }
         }
-    } else {}
+    }
     return false;
 }
 
 fn loadSlideshow(filp: []const u8) !void {
     std.log.debug("LOAD {s}", .{filp});
+    defer G.slideshow_filp_to_load = null;
     if (std.fs.openFileAbsolute(filp, .{ .read = true })) |f| {
         defer f.close();
         G.hot_reload_last_stat = try f.stat();
@@ -904,6 +909,12 @@ fn loadSlideshow(filp: []const u8) !void {
                 std.log.debug("filp is now {s}", .{G.slideshow_filp});
                 if (parser.constructSlidesFromBuf(G.editor_memory, G.slideshow, G.slideshow_allocator)) |pcontext| {
                     ed_anim.parser_context = pcontext;
+                    // now reload fonts
+                    if (pcontext.custom_fonts_present) {
+                        std.log.debug("reloading fonts", .{});
+                        try fontbakery.loadCustomFonts(pcontext.fontConfig, G.slideshow_filp.?);
+                        std.log.debug("reloaded fonts", .{});
+                    }
                 } else |err| {
                     std.log.err("{any}", .{err});
                     setStatusMsg("Loading failed!");
@@ -922,11 +933,6 @@ fn loadSlideshow(filp: []const u8) !void {
                             item.printToLog();
                         }
                     }
-                }
-                if (G.slide_renderer.preRender(G.slideshow, filp)) |_| {
-                    // . empty
-                } else |err| {
-                    std.log.err("Pre-rendering failed: {any}", .{err});
                 }
             } else |err| {
                 setStatusMsg("Loading failed!");
@@ -1005,26 +1011,12 @@ fn cmdSave() void {
         saveSlideshowAs();
     }
     if (G.slideshow_filp) |filp| {
-        loadSlideshow(filp) catch unreachable;
+        G.slideshow_filp_to_load = filp; // signal that we need to load
     }
 }
 
 fn saveSlideshowAs() void {
-    if (G.saveas_dialog_context == null) {
-        G.saveas_dialog_context = filedialog.IGFD_Create();
-        filedialog.IGFD_OpenDialog(
-            G.saveas_dialog_context.?,
-            "saveas",
-            "Save slideshow as...",
-            "slide files(*.sld){.sld}",
-            ".",
-            "",
-            0,
-            @intToPtr(?*anyopaque, 0),
-            @enumToInt(filedialog.ImGuiFileDialogFlags.ConfirmOverwrite),
-        );
-    } else {
-        const dlg = G.saveas_dialog_context.?;
+    if (G.saveas_dialog_context) |dlg| {
         const maxSize = ig.ImVec2{ .x = 1600, .y = 800 };
         const minSize = ig.ImVec2{ .x = 800, .y = 400 };
         if (filedialog.IGFD_DisplayDialog(dlg, "saveas", ig.ImGuiWindowFlags_NoCollapse, minSize, maxSize)) {
@@ -1044,6 +1036,19 @@ fn saveSlideshowAs() void {
                 G.saveas_dialog_context = null;
             }
         }
+    } else {
+        G.saveas_dialog_context = filedialog.IGFD_Create();
+        filedialog.IGFD_OpenDialog(
+            G.saveas_dialog_context.?,
+            "saveas",
+            "Save slideshow as...",
+            "slide files(*.sld){.sld}",
+            ".",
+            "",
+            0,
+            @intToPtr(?*anyopaque, 0),
+            @enumToInt(filedialog.ImGuiFileDialogFlags.ConfirmOverwrite),
+        );
     }
     return;
 }

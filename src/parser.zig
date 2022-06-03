@@ -2,6 +2,8 @@ const std = @import("std");
 const slides = @import("slides.zig");
 // for ImVec4 and stuff
 const imgui = @import("imgui");
+const fontbakery = @import("fontbakery.zig");
+const relpathToAbspath = @import("utils.zig").relpathToAbspath;
 
 // NOTE:
 // why we have context.current_context:
@@ -73,6 +75,15 @@ pub const ParserContext = struct {
 
     allErrorsCstrArray: ?[][*]const u8 = null,
 
+    fontConfig: fontbakery.FontConfig = .{
+        .normal = null,
+        .bold = null,
+        .italic = null,
+        .bolditalic = null,
+        .zig = null,
+    },
+    custom_fonts_present: bool = false, // signal that fonts need to be loaded after parsing
+
     fn new(a: std.mem.Allocator) !*ParserContext {
         // .
         var self = try a.create(ParserContext);
@@ -84,6 +95,14 @@ pub const ParserContext = struct {
             .parser_errors = std.ArrayList(ParserErrorContext).init(a),
             .allErrorsCstrArray = null,
         };
+        self.fontConfig = .{
+            .normal = null,
+            .bold = null,
+            .italic = null,
+            .bolditalic = null,
+            .zig = null,
+        };
+
         return self;
     }
 
@@ -285,26 +304,37 @@ fn parseFontGlobals(line: []const u8, slideshow: *slides.SlideShow, context: *Pa
         }
         if (std.mem.eql(u8, word, "@font")) {
             if (it.next()) |font| {
-                slideshow.default_font = try context.allocator.dupe(u8, font);
-                std.log.debug("global font: {s}", .{slideshow.default_font});
+                context.fontConfig.normal = fontbakery.FontLoadDesc{ .ttf_filn = try context.allocator.dupe(u8, font) };
+                std.log.debug("global font: {s}", .{context.fontConfig.normal.?.ttf_filn});
+                context.custom_fonts_present = true;
             }
         }
         if (std.mem.eql(u8, word, "@font_bold")) {
             if (it.next()) |font_bold| {
-                slideshow.default_font_bold = try context.allocator.dupe(u8, font_bold);
-                std.log.debug("global font_bold: {s}", .{slideshow.default_font_bold});
+                context.fontConfig.bold = fontbakery.FontLoadDesc{ .ttf_filn = try context.allocator.dupe(u8, font_bold) };
+                std.log.debug("global font_bold: {s}", .{context.fontConfig.bold.?.ttf_filn});
+                context.custom_fonts_present = true;
             }
         }
         if (std.mem.eql(u8, word, "@font_italic")) {
             if (it.next()) |font_italic| {
-                slideshow.default_font_italic = try context.allocator.dupe(u8, font_italic);
-                std.log.debug("global font_italic: {s}", .{slideshow.default_font_italic});
+                context.fontConfig.italic = fontbakery.FontLoadDesc{ .ttf_filn = try context.allocator.dupe(u8, font_italic) };
+                std.log.debug("global font_italic: {s}", .{context.fontConfig.italic.?.ttf_filn});
+                context.custom_fonts_present = true;
             }
         }
         if (std.mem.eql(u8, word, "@font_bold_italic")) {
             if (it.next()) |font_bold_italic| {
-                slideshow.default_font_bold_italic = try context.allocator.dupe(u8, font_bold_italic);
-                std.log.debug("global font_bold_italic: {s}", .{slideshow.default_font_bold_italic});
+                context.fontConfig.bolditalic = fontbakery.FontLoadDesc{ .ttf_filn = try context.allocator.dupe(u8, font_bold_italic) };
+                std.log.debug("global font_bold_italic: {s}", .{context.fontConfig.bolditalic.?.ttf_filn});
+                context.custom_fonts_present = true;
+            }
+        }
+        if (std.mem.eql(u8, word, "@font_extra")) {
+            if (it.next()) |font_zig| {
+                context.fontConfig.zig = fontbakery.FontLoadDesc{ .ttf_filn = try context.allocator.dupe(u8, font_zig) };
+                std.log.debug("global font_extra: {s}", .{context.fontConfig.zig.?.ttf_filn});
+                context.custom_fonts_present = true;
             }
         }
     }

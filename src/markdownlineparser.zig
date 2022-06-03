@@ -56,8 +56,8 @@ pub const MdLineParser = struct {
     result_spans: ?std.ArrayList(MdTextSpan) = null,
 
     pub fn init(self: *MdLineParser, allocator: std.mem.Allocator) void {
-        if (self.result_spans) |_| {
-            self.result_spans.?.shrinkRetainingCapacity(0);
+        if (self.result_spans) |*spans| {
+            spans.shrinkRetainingCapacity(0);
         } else {
             self.result_spans = std.ArrayList(MdTextSpan).init(allocator);
         }
@@ -316,8 +316,8 @@ pub const MdLineParser = struct {
 
         const span = line[self.currentSpan.startpos..self.currentSpan.endpos];
         self.currentSpan.text = try self.makeCstr(span);
-        if (self.result_spans != null) {
-            try self.result_spans.?.append(self.currentSpan);
+        if (self.result_spans) |*spans| {
+            try spans.append(self.currentSpan);
         } else {
             self.result_spans = std.ArrayList(MdTextSpan).init(self.allocator);
             try self.result_spans.?.append(self.currentSpan);
