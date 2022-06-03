@@ -1,5 +1,6 @@
 const std = @import("std");
 const imgui = @import("imgui");
+const FontConfig = @import("fontbakery.zig").FontConfig;
 
 const ImVec4 = imgui.ImVec4;
 const ImVec2 = imgui.ImVec2;
@@ -10,10 +11,6 @@ pub const SlideShow = struct {
     slides: SlideList = undefined,
 
     // defaults that can be overridden while parsing
-    default_font: []const u8 = "assets/Calibri Regular.ttf",
-    default_font_bold: []const u8 = "assets/Calibri Regular.ttf",
-    default_font_italic: []const u8 = "assets/Calibri Regular.ttf",
-    default_font_bold_italic: []const u8 = "assets/Calibri Regular.ttf",
     default_fontsize: i32 = 16,
     default_underline_width: i32 = 1,
     default_color: ImVec4 = .{ .w = 0.9 },
@@ -54,10 +51,9 @@ pub const Slide = struct {
 
     pub fn new(a: std.mem.Allocator) !*Slide {
         std.log.debug("slide create 0 ", .{});
-        var self = a.create(Slide) catch |err| shit: {
-            std.log.err("slide creation error: {}", .{err});
-            break :shit null;
-        };
+        // FIXME: loog above. why does zig want to return an optional here?
+        var self: ?*Slide = try a.create(Slide);
+
         std.log.debug("slide create 2", .{});
         self.?.* = .{};
         std.log.debug("slide create 3", .{});

@@ -2,7 +2,8 @@ const imgui = @import("imgui");
 const zt = @import("zt");
 const Texture = zt.gl.Texture;
 const std = @import("std");
-const relpathToAbspath = @import("texturecache.zig").relpathToAbspath;
+const relpathToAbspath = @import("utils.zig").relpathToAbspath;
+const gl = @import("gl");
 
 pub const FontStyle = enum {
     normal,
@@ -30,16 +31,19 @@ const baked_font_sizes = [_]i32{
     72,
     90,
     96,
-    104,
-    136,
-    144,
-    192,
-    300,
+
+    // for some reason, adding too many sizes just leads to font loading not working at all
+
+    // 104,
+    // 136,
+    // 144,
+    // 192,
+    // 300,
 };
 
 pub const FontLoadDesc = struct {
     ttf_filn: []const u8,
-    baked_font_sizes: ?[]const i32,
+    baked_font_sizes: ?[]const i32 = null,
 };
 
 pub const FontConfig = struct {
@@ -71,10 +75,11 @@ var my_fonts_zig = FontMap.init(std.heap.page_allocator);
 
 pub fn addFont(style: FontStyle, size: i32, fontdata: [:0]const u8) !void {
     if (style == .zig and size >= 192) return; // no point in super-large
+
     // if you remove above check, imgui will not be able to handle it
     // not even the gui font will work then
 
-    // set up the font rasges
+    // set up the font ranges
     // The following spits out the range {32, 255} :
     // const default_font_ranges: [*:0]const imgui.ImWchar = imgui.ImFontAtlas_GetGlyphRangesDefault(io.*.Fonts);
     // std.log.debug("font ranges: {d}", .{default_font_ranges});
@@ -101,8 +106,6 @@ pub fn addFont(style: FontStyle, size: i32, fontdata: [:0]const u8) !void {
         &my_font_ranges,
     );
 
-    std.log.debug("loaded font: style={}, size={}, bufferlen: {} => {*}", .{ style, size, fontdata.len, font });
-
     var fontmap = switch (style) {
         .normal => &my_fonts,
         .bold => &my_fonts_bold,
@@ -122,7 +125,6 @@ pub fn loadDefaultFonts(gui_font_size: ?i32) !void {
     var io = imgui.igGetIO();
     imgui.ImFontAtlas_Clear(io.*.Fonts);
     const gfs = gui_font_size orelse 16;
-    std.log.debug("gui font size: {}", .{gfs});
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
         io.*.Fonts,
         castaway_const(fontdata_gui),
@@ -154,11 +156,22 @@ pub fn loadDefaultFonts(gui_font_size: ?i32) !void {
     }
 }
 
-pub fn loadCustomFonts(fontConfig: FontConfig) !void {
+pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void {
     var io = imgui.igGetIO();
-    imgui.ImFontAtlas_Clear(io.*.Fonts);
+
+    // first, delete the texture from the previous font atlas
+    var texId = @intCast(c_uint, @ptrToInt(io.*.Fonts.*.TexID));
+    gl.glDeleteTextures(1, &texId);
+
+    // then, create a new font atlas
+    io.*.Fonts = imgui.ImFontAtlas_ImFontAtlas();
+    std.log.debug("cleared font atlas", .{});
+
+    // std.log.debug("clearing fonts", .{});
+    // imgui.ImFontAtlas_ClearFonts(io.*.Fonts);
+    // std.log.debug("cleared fonts", .{});
+
     const gfs = fontConfig.gui_font_size orelse 16;
-    std.log.debug("gui font size: {}", .{gfs});
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
         io.*.Fonts,
         castaway_const(fontdata_gui),
@@ -169,7 +182,6 @@ pub fn loadCustomFonts(fontConfig: FontConfig) !void {
     );
 
     // clear hash maps for different font styles
-    // TODO: deinit the actual font maps returned by imgui
     my_fonts.deinit();
     my_fonts_bold.deinit();
     my_fonts_italic.deinit();
@@ -191,9 +203,63 @@ pub fn loadCustomFonts(fontConfig: FontConfig) !void {
     try allFonts.put(.zig, &my_fonts_zig);
 
     // load the fonts from files
-    // TODO : <--------------------------------------------------- TODO : YOU : TODO ARE :TODO HERE
+    var custom_fontdata_normal: [:0]const u8 = fontdata_normal;
+    var custom_fontdata_bold: [:0]const u8 = fontdata_bold;
+    var custom_fontdata_italic: [:0]const u8 = fontdata_italic;
+    var custom_fontdata_bolditalic: [:0]const u8 = fontdata_bolditalic;
+    var custom_fontdata_zig: [:0]const u8 = fontdata_zig;
+
+    if (fontConfig.normal) |fc| custom_fontdata_normal = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_normal;
+    if (fontConfig.bold) |fc| custom_fontdata_bold = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_bold;
+    if (fontConfig.italic) |fc| custom_fontdata_italic = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_italic;
+    if (fontConfig.bolditalic) |fc| custom_fontdata_bolditalic = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_bolditalic;
+    if (fontConfig.zig) |fc| custom_fontdata_zig = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_zig;
 
     // and do the actual font loading
+    // actual font loading
+    for (baked_font_sizes) |fsize| {
+        for (std.enums.values(FontStyle)) |style| {
+            var fontdata: [:0]const u8 = switch (style) {
+                .normal => custom_fontdata_normal,
+                .bold => custom_fontdata_bold,
+                .italic => custom_fontdata_italic,
+                .bolditalic => custom_fontdata_bolditalic,
+                .zig => custom_fontdata_zig,
+            };
+            try addFont(style, fsize, fontdata);
+        }
+    }
+    _ = imgui.ImFontAtlas_Build(io.*.Fonts);
+}
+
+const FontLoadError = error{
+    FileNotFoundError,
+    ReadReturnedTooLittle,
+};
+
+fn loadTTF(ttf_filn: []const u8, slideshow_filp: []const u8) ![:0]const u8 {
+    // careful: relpathToAbspath returns static buffer
+    const abspath = try relpathToAbspath(ttf_filn, slideshow_filp);
+    const file = try std.fs.openFileAbsolute(abspath, .{ .read = true });
+    defer file.close();
+
+    // now stat the file to get filesize
+    const stat = try file.stat();
+    const filesize = stat.size;
+
+    // allocate mem for the file
+    const allocator = std.heap.page_allocator;
+    var buffer: []u8 = try allocator.alloc(u8, filesize);
+    errdefer allocator.free(buffer);
+    defer allocator.free(buffer);
+
+    var howmany = try file.read(buffer);
+    if (howmany != filesize)
+        return FontLoadError.ReadReturnedTooLittle;
+
+    var buffer2 = try std.cstr.addNullByte(allocator, buffer);
+
+    return buffer2;
 }
 
 var last_scale: f32 = 0.0;
@@ -212,51 +278,60 @@ pub fn popGuiFont() void {
 }
 
 pub fn pushStyledFontScaled(pixels: i32, style: FontStyle) void {
-    const font_info = getStyledFontScaled(pixels, style);
+    var font_info = getStyledFontScaled(pixels, style);
 
-    // TURN THIS ON to see what font sizes you need
-    // std.log.info("fontsize {}", .{pixels});
+    if (font_info) |finfo| {
+        // TURN THIS ON to see what font sizes you need
+        // std.log.info("fontsize {}", .{pixels});
 
-    // we assume we have a font, now scale it
-    last_scale = font_info.font.*.Scale;
-    const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, font_info.size);
-    font_info.font.*.Scale = new_scale;
-    imgui.igPushFont(font_info.font);
-    last_font = font_info.font;
+        // we assume we have a font, now scale it
+        last_scale = finfo.font.*.Scale;
+        const new_scale: f32 = @intToFloat(f32, pixels) / @intToFloat(f32, finfo.size);
+        finfo.font.*.Scale = new_scale;
+        imgui.igPushFont(finfo.font);
+        last_font = finfo.font;
+    } else {
+        // we cannot get the font, so don't change it
+        // however, we must push something because the app wants to pop it off afterwards
+        std.log.warn("Could not push font style {}, size {} -> pushing default font", .{ style, pixels });
+        imgui.igPushFont(imgui.igGetDefaultFont());
+    }
 }
 
-pub fn getStyledFontScaled(pixels: i32, style: FontStyle) bakedFontInfo {
+pub fn getStyledFontScaled(pixels: i32, style: FontStyle) ?bakedFontInfo {
     var min_diff: i32 = 1000;
     var found_font_size: i32 = baked_font_sizes[0];
 
-    var the_map = allFonts.get(style).?;
-    var font: *imgui.ImFont = the_map.get(baked_font_sizes[0]).?; // we don't ever down-scale. hence, default to minimum font size
+    var the_map = allFonts.get(style);
+    if (the_map) |map| {
+        var the_font: ?*imgui.ImFont = map.get(baked_font_sizes[0]); // we don't ever down-scale. hence, default to minimum font size
+        if (the_font) |_| {
+            for (baked_font_sizes) |fsize| {
+                if (style == .zig) {
+                    if (fsize >= 192) {
+                        continue;
+                    }
+                }
+                var diff = pixels - fsize;
 
-    for (baked_font_sizes) |fsize| {
-        if (style == .zig) {
-            if (fsize >= 192) {
-                continue;
+                // we only ever upscale, hence we look for positive differences only
+                if (diff >= 0) {
+                    // we try to find the minimum difference
+                    if (diff < min_diff) {
+                        min_diff = diff;
+                        the_font = map.get(fsize).?; // HERE we get the font out of the map
+                        found_font_size = fsize;
+                    }
+                }
             }
-        }
-        var diff = pixels - fsize;
 
-        // we only ever upscale, hence we look for positive differences only
-        if (diff >= 0) {
-            // we try to find the minimum difference
-            if (diff < min_diff) {
-                min_diff = diff;
-                font = the_map.get(fsize).?;
-                found_font_size = fsize;
-            }
+            return bakedFontInfo{ .font = the_font.?, .size = found_font_size };
+        } else {
+            return null;
         }
+    } else {
+        return null;
     }
-
-    if (style == .zig) {
-        if (found_font_size >= 192) {
-            found_font_size = 144; // TODO: hack
-        }
-    }
-    return bakedFontInfo{ .font = font, .size = found_font_size };
 }
 
 pub fn popFontScaled() void {
