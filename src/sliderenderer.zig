@@ -179,7 +179,7 @@ pub const SlideshowRenderer = struct {
 
             // slide number
             var slideNumStr: [10]u8 = undefined;
-            _ = try std.fmt.bufPrint(&slideNumStr, "{d}", .{slide_number});
+            _ = try std.fmt.bufPrintZ(&slideNumStr, "{d}", .{slide_number});
             const new_t = try std.mem.replaceOwned(u8, self.allocator, t, "$slide_number", &slideNumStr);
 
             // split into lines
