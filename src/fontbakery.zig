@@ -62,6 +62,13 @@ const fontdata_italic = @embedFile("../assets/Calibri Light Italic.ttf");
 const fontdata_bolditalic = @embedFile("../assets/Calibri Italic.ttf"); // Calibri is the bold version of Calibri Light for us
 const fontdata_zig = @embedFile("../assets/press-start-2p.ttf");
 
+// custom font data if loaded from the slide
+var custom_fontdata_normal: [:0]const u8 = fontdata_normal;
+var custom_fontdata_bold: [:0]const u8 = fontdata_bold;
+var custom_fontdata_italic: [:0]const u8 = fontdata_italic;
+var custom_fontdata_bolditalic: [:0]const u8 = fontdata_bolditalic;
+var custom_fontdata_zig: [:0]const u8 = fontdata_zig;
+
 const StyledFontMap = std.AutoHashMap(FontStyle, *FontMap);
 var allFonts: StyledFontMap = StyledFontMap.init(std.heap.page_allocator);
 
@@ -156,8 +163,54 @@ pub fn loadDefaultFonts(gui_font_size: ?i32) !void {
     }
 }
 
+fn cleanFontMap(m: *FontMap) void {
+    var it = m.valueIterator();
+    while (it.next()) |fontptrptr| {
+        imgui.ImFont_destroy(fontptrptr.*);
+    }
+
+    // the following is probably not necessary, as .deinit() should take care of it
+    var kit = m.keyIterator();
+    while (kit.next()) |p| {
+        _ = m.remove(p.*);
+    }
+}
+
 pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void {
     var io = imgui.igGetIO();
+
+    // try to delete all fonts
+    cleanFontMap(&my_fonts);
+    cleanFontMap(&my_fonts_bold);
+    cleanFontMap(&my_fonts_italic);
+    cleanFontMap(&my_fonts_bolditalic);
+    cleanFontMap(&my_fonts_zig);
+
+    // deinit hash maps for different font styles
+    my_fonts.deinit();
+    my_fonts_bold.deinit();
+    my_fonts_italic.deinit();
+    my_fonts_bolditalic.deinit();
+    my_fonts_zig.deinit();
+    allFonts.deinit();
+
+    // we don't want to leak ttf binary data from a previous loadCustomFonts
+    if (custom_fontdata_normal.ptr != fontdata_normal) std.heap.page_allocator.free(custom_fontdata_normal);
+    if (custom_fontdata_bold.ptr != fontdata_bold) std.heap.page_allocator.free(custom_fontdata_bold);
+    if (custom_fontdata_italic.ptr != fontdata_italic) std.heap.page_allocator.free(custom_fontdata_italic);
+    if (custom_fontdata_bolditalic.ptr != fontdata_bolditalic) std.heap.page_allocator.free(custom_fontdata_bolditalic);
+    if (custom_fontdata_zig.ptr != fontdata_zig) std.heap.page_allocator.free(custom_fontdata_zig);
+
+    if (custom_fontdata_normal.ptr != fontdata_normal) std.log.debug("===================================\n\n\n\nfreed ttf data", .{});
+
+    std.log.debug("clearing font atlas", .{});
+    // all commented-out functions fail
+    // imgui.ImFontAtlas_ClearFonts(io.*.Fonts);
+    // imgui.ImFontAtlas_Clear(io.*.Fonts);
+    // imgui.ImFontAtlas_ClearInputData(io.*.Fonts);
+    imgui.ImFontAtlas_ClearTexData(io.*.Fonts);
+    // imgui.ImFontAtlas_destroy(io.*.Fonts);
+    std.log.debug("cleared font atlas", .{});
 
     // first, delete the texture from the previous font atlas
     var texId = @intCast(c_uint, @ptrToInt(io.*.Fonts.*.TexID));
@@ -166,10 +219,6 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
     // then, create a new font atlas
     io.*.Fonts = imgui.ImFontAtlas_ImFontAtlas();
     std.log.debug("cleared font atlas", .{});
-
-    // std.log.debug("clearing fonts", .{});
-    // imgui.ImFontAtlas_ClearFonts(io.*.Fonts);
-    // std.log.debug("cleared fonts", .{});
 
     const gfs = fontConfig.gui_font_size orelse 16;
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
@@ -180,14 +229,6 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
         null,
         imgui.ImFontAtlas_GetGlyphRangesDefault(io.*.Fonts),
     );
-
-    // clear hash maps for different font styles
-    my_fonts.deinit();
-    my_fonts_bold.deinit();
-    my_fonts_italic.deinit();
-    my_fonts_bolditalic.deinit();
-    my_fonts_zig.deinit();
-    allFonts.deinit();
 
     // now re-init the hash maps
     allFonts = StyledFontMap.init(std.heap.page_allocator);
@@ -203,11 +244,6 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
     try allFonts.put(.zig, &my_fonts_zig);
 
     // load the fonts from files
-    var custom_fontdata_normal: [:0]const u8 = fontdata_normal;
-    var custom_fontdata_bold: [:0]const u8 = fontdata_bold;
-    var custom_fontdata_italic: [:0]const u8 = fontdata_italic;
-    var custom_fontdata_bolditalic: [:0]const u8 = fontdata_bolditalic;
-    var custom_fontdata_zig: [:0]const u8 = fontdata_zig;
 
     if (fontConfig.normal) |fc| custom_fontdata_normal = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_normal;
     if (fontConfig.bold) |fc| custom_fontdata_bold = loadTTF(fc.ttf_filn, slideshow_filp) catch fontdata_bold;
