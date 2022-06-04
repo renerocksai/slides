@@ -201,16 +201,12 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
     if (custom_fontdata_bolditalic.ptr != fontdata_bolditalic) std.heap.page_allocator.free(custom_fontdata_bolditalic);
     if (custom_fontdata_zig.ptr != fontdata_zig) std.heap.page_allocator.free(custom_fontdata_zig);
 
-    if (custom_fontdata_normal.ptr != fontdata_normal) std.log.debug("===================================\n\n\n\nfreed ttf data", .{});
-
-    std.log.debug("clearing font atlas", .{});
     // all commented-out functions fail
     // imgui.ImFontAtlas_ClearFonts(io.*.Fonts);
     // imgui.ImFontAtlas_Clear(io.*.Fonts);
     // imgui.ImFontAtlas_ClearInputData(io.*.Fonts);
     imgui.ImFontAtlas_ClearTexData(io.*.Fonts);
     // imgui.ImFontAtlas_destroy(io.*.Fonts);
-    std.log.debug("cleared font atlas", .{});
 
     // first, delete the texture from the previous font atlas
     var texId = @intCast(c_uint, @ptrToInt(io.*.Fonts.*.TexID));
@@ -218,7 +214,6 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
 
     // then, create a new font atlas
     io.*.Fonts = imgui.ImFontAtlas_ImFontAtlas();
-    std.log.debug("cleared font atlas", .{});
 
     const gfs = fontConfig.gui_font_size orelse 16;
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
