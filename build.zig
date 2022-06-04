@@ -2,6 +2,13 @@ const std = @import("std");
 const ztBuild = @import("./ZT/build.zig");
 const Builder = std.build.Builder;
 
+pub const filedlgPkg = std.build.Pkg{ .name = "filedialog", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/filedialog.zig" }, .dependencies = &[_]std.build.Pkg{ztBuild.imguiPkg} };
+
+fn getRelativePath() []const u8 {
+    comptime var src: std.builtin.SourceLocation = @src();
+    return std.fs.path.dirname(src.file).? ++ std.fs.path.sep_str;
+}
+
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
 
@@ -30,6 +37,8 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
     exe.setOutputDir(std.fs.path.join(b.allocator, &[_][]const u8{ b.cache_root, "bin" }) catch unreachable);
     exe.setTarget(target);
 
+    exe.linkLibrary(filedialogLibrary(exe));
+    exe.addPackage(filedlgPkg);
     ztBuild.link(exe);
 
     const run_cmd = exe.run();
@@ -38,4 +47,48 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
     b.default_step.dependOn(&exe.step);
     b.installArtifact(exe);
     ztBuild.addBinaryContent("ZT/example/assets") catch unreachable;
+}
+
+// Filedialog
+pub fn filedialogLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+    comptime var path = getRelativePath();
+    var b = exe.builder;
+    var target = exe.target;
+    var filedialog = b.addStaticLibrary("filedialog", null);
+    filedialog.linkLibC();
+    filedialog.linkSystemLibrary("c++");
+
+    // Generate flags.
+    var flagContainer = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    if (b.is_release) flagContainer.append("-Os") catch unreachable;
+    flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
+    flagContainer.append("-fno-sanitize=undefined") catch unreachable;
+
+    // Link libraries.
+    if (target.isWindows()) {
+        filedialog.linkSystemLibrary("winmm");
+        filedialog.linkSystemLibrary("user32");
+        filedialog.linkSystemLibrary("imm32");
+        filedialog.linkSystemLibrary("gdi32");
+    }
+
+    if (target.isDarwin()) {
+        // !! Mac TODO
+        // Here we need to add the include the system libs needed for mac filedialog
+    }
+
+    // Include dirs.
+    filedialog.addIncludeDir(path ++ "src/dep/filedialog");
+    if (target.isWindows()) {
+        filedialog.addIncludeDir(path ++ "ZT/src/dep/filedialog/dirent");
+    }
+    filedialog.addIncludeDir(path ++ "ZT/src/dep/filedialog/stb");
+    filedialog.addIncludeDir(path ++ "ZT/src/dep/cimgui/imgui");
+
+    // Add C
+    filedialog.addCSourceFiles(&.{
+        path ++ "src/dep/filedialog/ImGuiFileDialog.cpp",
+    }, flagContainer.items);
+
+    return filedialog;
 }
