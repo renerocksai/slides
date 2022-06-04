@@ -1,4 +1,32 @@
 const std = @import("std");
+const gl = @import("gl");
+const ig = @import("imgui");
+pub fn screenShot() !void {
+    //
+    const width = @floatToInt(usize, ig.igGetIO().*.DisplaySize.x);
+    const height = @floatToInt(usize, ig.igGetIO().*.DisplaySize.y);
+    const size = width * height * 3;
+    var buffer = std.heap.page_allocator.alloc(u8, size) catch |err| {
+        std.log.debug("failed allocating {} bytes: {any}", .{ size, err });
+        return;
+    };
+    std.log.debug("allocated buffer for screenshot :{}x{}x3 = {} -> {}", .{ width, height, size, buffer.len });
+    var file = std.fs.cwd().createFile("screenshot.bmp", .{ .truncate = true }) catch |err| {
+        std.log.debug("could not create file: {any}", .{err});
+        return;
+        // return err;
+    };
+    gl.glReadBuffer(gl.GL_FRONT);
+    gl.glReadPixels(0, 0, @intCast(c_int, width), @intCast(c_int, height), gl.GL_RGB, gl.GL_UNSIGNED_BYTE, buffer.ptr);
+
+    std.log.debug("created file: {}", .{file});
+    defer file.close();
+
+    const howmany = file.writeAll(buffer[0..buffer.len]) catch |err| {
+        std.log.debug("could not write to file: {any}", .{err});
+    };
+    std.log.debug("write to file file: {} bytes", .{howmany});
+}
 
 pub fn flameShotLinux(alloc: std.mem.Allocator) !bool {
     const args = [_][]const u8{

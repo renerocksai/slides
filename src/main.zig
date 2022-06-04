@@ -602,7 +602,8 @@ fn handleKeyboard() void {
     }
 
     if (keyPressed(glfw.GLFW_KEY_A)) {
-        cmdToggleAutoRun();
+        // cmdToggleAutoRun();
+        screenshot.screenShot() catch unreachable;
         return;
     }
 

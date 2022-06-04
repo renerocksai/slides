@@ -14,15 +14,17 @@ pub const glPkg = std.build.Pkg{
     .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/gl.zig" },
 };
 pub const imguiPkg = std.build.Pkg{ .name = "imgui", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/imgui.zig" } };
-pub const filedlgPkg = std.build.Pkg{ .name = "filedialog", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/filedialog.zig" }, .dependencies = &[_]std.build.Pkg{imguiPkg} };
 pub const glfwPkg = std.build.Pkg{ .name = "glfw", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/glfw.zig" } };
-pub const ztPkg = std.build.Pkg{ .name = "zt", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/zt.zig" }, .dependencies = &[_]std.build.Pkg{
-    glfwPkg,
-    glPkg,
-    imguiPkg,
-    stbPkg,
-    filedlgPkg,
-} };
+pub const ztPkg = std.build.Pkg{
+    .name = "zt",
+    .path = std.build.FileSource{ .path = getRelativePath() ++ "src/zt.zig" },
+    .dependencies = &[_]std.build.Pkg{
+        glfwPkg,
+        glPkg,
+        imguiPkg,
+        stbPkg,
+    },
+};
 
 // Build here only exists to build the example. to use ZT you'll want to import this file and use the link function in
 // your build.zig
@@ -54,13 +56,11 @@ pub fn link(exe: *std.build.LibExeObjStep) void {
     exe.linkLibrary(glfwLibrary(exe));
     exe.linkLibrary(glLibrary(exe));
     exe.linkLibrary(stbLibrary(exe));
-    exe.linkLibrary(filedialogLibrary(exe));
 
     exe.addPackage(glfwPkg);
     exe.addPackage(glPkg);
     exe.addPackage(stbPkg);
     exe.addPackage(imguiPkg);
-    exe.addPackage(filedlgPkg);
     exe.addPackage(ztPkg);
 }
 
@@ -149,50 +149,6 @@ pub fn imguiLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     imgui.addCSourceFiles(&.{ path ++ "src/dep/cimgui/imgui/imgui.cpp", path ++ "src/dep/cimgui/imgui/imgui_demo.cpp", path ++ "src/dep/cimgui/imgui/imgui_draw.cpp", path ++ "src/dep/cimgui/imgui/imgui_tables.cpp", path ++ "src/dep/cimgui/imgui/imgui_widgets.cpp", path ++ "src/dep/cimgui/cimgui.cpp" }, flagContainer.items);
 
     return imgui;
-}
-
-// Filedialog
-pub fn filedialogLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
-    comptime var path = getRelativePath();
-    var b = exe.builder;
-    var target = exe.target;
-    var filedialog = b.addStaticLibrary("filedialog", null);
-    filedialog.linkLibC();
-    filedialog.linkSystemLibrary("c++");
-
-    // Generate flags.
-    var flagContainer = std.ArrayList([]const u8).init(std.heap.page_allocator);
-    if (b.is_release) flagContainer.append("-Os") catch unreachable;
-    flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
-    flagContainer.append("-fno-sanitize=undefined") catch unreachable;
-
-    // Link libraries.
-    if (target.isWindows()) {
-        filedialog.linkSystemLibrary("winmm");
-        filedialog.linkSystemLibrary("user32");
-        filedialog.linkSystemLibrary("imm32");
-        filedialog.linkSystemLibrary("gdi32");
-    }
-
-    if (target.isDarwin()) {
-        // !! Mac TODO
-        // Here we need to add the include the system libs needed for mac filedialog
-    }
-
-    // Include dirs.
-    filedialog.addIncludeDir(path ++ "src/dep/filedialog");
-    if (target.isWindows()) {
-        filedialog.addIncludeDir(path ++ "src/dep/filedialog/dirent");
-    }
-    filedialog.addIncludeDir(path ++ "src/dep/filedialog/stb");
-    filedialog.addIncludeDir(path ++ "src/dep/cimgui/imgui");
-
-    // Add C
-    filedialog.addCSourceFiles(&.{
-        path ++ "src/dep/filedialog/ImGuiFileDialog.cpp",
-    }, flagContainer.items);
-
-    return filedialog;
 }
 
 // GLFW
