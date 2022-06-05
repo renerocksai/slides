@@ -156,7 +156,7 @@ Internal render buffer resolution is 1920x1080. So always use coordinates in thi
 
 More documentation to follow.
 
-Example of the current text format - see `test_public.sld` for a more realistic example:
+Example of the current text format - see [test_public.sld](./test_public.sld) for a more realistic example:
 
 ```
 # -------------------------------------------------------------
