@@ -39,12 +39,11 @@ With the `key repeat` setting, accessible by the settings widget, you can set th
 
 See it in action here:
 
-https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4
+<https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4>
 
-Opening slideshows, text-search, editing: 
+Opening slideshows, text-search, editing:
 
-https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4
-
+<https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4>
 
 # Motivation
 
@@ -124,6 +123,8 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>0</kbd> | Goto last slide |
 | <kbd>G</kbd> | Goto first slide |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Goto last slide |
+| <kbd>Ctrl</kbd> + <kbd>P</kbd> | Save screenshot to current directory |
+| <kbd>A</kbd> | Auto-run through slideshow, saving screenshots to /tmp/slide_shots/|
 
 # Slideshow Text Format
 
