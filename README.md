@@ -125,7 +125,7 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>G</kbd> | Goto first slide |
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Goto last slide |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Save screenshot to current directory |
-| <kbd>A</kbd> | Auto-run through slideshow, saving screenshots to /tmp/slide_shots/|
+| <kbd>A</kbd> | Auto-run through slideshow, saving screenshots to ./slide_shots/|
 
 # Slideshow Text Format
 
