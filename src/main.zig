@@ -123,7 +123,7 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
 
     const flags = ig.ImGuiWindowFlags_NoResize;
 
-    const height = 280;
+    const height = 300;
     const width = 300;
     ig.igSetNextWindowPos(zt.math.vec2(40, 40), ig.ImGuiCond_Once, .{});
     ig.igSetNextWindowSize(zt.math.vec2(
@@ -151,7 +151,8 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
         ig.igSeparator();
 
         ig.igText("Information");
-        zg.text("Frame rate: {d:.1}fps", .{ctx.time.fps});
+        zg.text("Frame rate: {d:6.1} fps", .{ctx.time.fps});
+        zg.text("Frame time: {d:6.3} ms", .{1000.0 / ctx.time.fps});
         ig.igSeparator();
         ig.igPushStyleColor_Vec4(ig.ImGuiCol_Text, ig.ImVec4{ .x = 1, .y = 1, .z = 0.1, .w = 1 });
         zg.text("\nHide me with the [ ` ] key", .{});
