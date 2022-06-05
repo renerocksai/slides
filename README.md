@@ -39,7 +39,7 @@ With the `key repeat` setting, accessible by the settings widget, you can set th
 
 See it in action here:
 
-![](./screenshots/slideskeyrepeat.mp4)
+https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4
 
 # Motivation
 
