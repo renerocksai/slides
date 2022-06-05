@@ -41,6 +41,11 @@ pub const SampleData = struct {
 
 pub const SampleApplication = zt.App(SampleData);
 
+const WINDOW_START_WIDTH = 1200;
+const WINDOW_START_HEIGHT = 800;
+
+var screenshot_requested: bool = false;
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator = arena.allocator();
@@ -62,7 +67,7 @@ pub fn main() !void {
     context.settings.energySaving = false; // Some examples are games, and will benefit from this.
     // here, more context stuff (access to SazmpleData field members) could be done
 
-    context.setWindowSize(1920, 1080);
+    context.setWindowSize(WINDOW_START_WIDTH, WINDOW_START_HEIGHT);
     context.setWindowTitle("Slides");
     context.setWindowIcon(zt.path("texture/ico.png"));
 
@@ -72,10 +77,17 @@ pub fn main() !void {
     // and zt will handle the rest.
 
     var post_load = false;
+    var once = true;
     while (context.open) {
+        if (once) context.setWindowSize(WINDOW_START_WIDTH, WINDOW_START_HEIGHT);
+        once = false;
+        if (screenshot_requested) doSaveScreen();
+        screenshot_requested = false;
+
+        // BEGIN FRAME
         context.beginFrame();
 
-        // after loading, we need to pre-render in an imgui frame
+        // after loading, we need to PRE-render in an imgui frame
         if (post_load) {
             G.slide_renderer.preRender(G.slideshow, G.slideshow_filp.?) catch |err| {
                 std.log.err("Pre-rendering failed: {any}", .{err});
@@ -101,6 +113,8 @@ pub fn main() !void {
 // This is a simple side panel that will display information about the scene, your context, and settings.
 fn inspectContext(ctx: *SampleApplication.Context) void {
     // Basic toggle
+    my_fonts.pushGuiFont(1);
+    defer my_fonts.popGuiFont();
     var io = ig.igGetIO();
     if (io.*.KeysDownDuration[glfw.GLFW_KEY_GRAVE_ACCENT] == 0.0) {
         ctx.data.consoleOpen = !ctx.data.consoleOpen;
@@ -140,7 +154,7 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
         zg.text("Frame rate: {d:.1}fps", .{ctx.time.fps});
         ig.igSeparator();
         ig.igPushStyleColor_Vec4(ig.ImGuiCol_Text, ig.ImVec4{ .x = 1, .y = 1, .z = 0.1, .w = 1 });
-        zg.text("\nHide me with the [`] key", .{});
+        zg.text("\nHide me with the [ ` ] key", .{});
         ig.igPopStyleColor(1);
     }
     ig.igEnd();
@@ -408,7 +422,7 @@ fn update(context: *SampleApplication.Context) void {
             if (anim_autorun.flag_start_screenshot) {
                 const pngname = std.fmt.allocPrintZ(G.allocator, "/tmp/slide_shots/{s}_{d:0>4}.png", .{ std.fs.path.basename(slideshow_filp), @intCast(u32, G.current_slide) }) catch null;
                 if (pngname) |pngfn| {
-                    screenshot.screenShotPng(pngfn) catch |err| {
+                    screenshot.screenShotPngNoAlpha(pngfn) catch |err| {
                         std.log.err("screenshot error: {any}", .{err});
                         setStatusMsg("Screenshot failed - try debug build!");
                         anim_autorun.stop();
@@ -597,6 +611,12 @@ fn handleKeyboard() void {
         cmdSave();
         return;
     }
+
+    if (keyPressed(glfw.GLFW_KEY_P) and ctrl) {
+        cmdSaveScreen();
+        return;
+    }
+
     // don't consume keys while the editor is visible
     if ((ig.igGetActiveID() == ig.igGetID_Str("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (ig.igGetActiveID() == ig.igGetID_Str("##search")) or G.saveas_dialog_context != null or G.openfiledialog_context != null) {
         return;
@@ -1014,6 +1034,17 @@ fn cmdSave() void {
     if (G.slideshow_filp) |filp| {
         G.slideshow_filp_to_load = filp; // signal that we need to load
     }
+}
+
+fn cmdSaveScreen() void {
+    screenshot_requested = true;
+}
+
+fn doSaveScreen() void {
+    const t: i64 = std.time.milliTimestamp();
+    const screenshot_fn = std.fmt.allocPrintZ(G.allocator, "screenshot_{}.png", .{t}) catch return; // ignore error
+    screenshot.screenShotPngNoAlpha(screenshot_fn) catch {}; // ignore error
+    setStatusMsg("Screenshot saved.");
 }
 
 fn saveSlideshowAs() void {
