@@ -2,7 +2,7 @@
 
 This project is both a case study and also marks my first steps in the programming language [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
-**Danger - this is alpha stuff**. I have used it to give a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint.
+**Danger - this is alpha stuff**. I have used it to give quite a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint. It is my zig programming toy - please don't be disappointed if it doesn't do everything you expect.
 
 This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
 
@@ -20,9 +20,26 @@ If you want to play with _slides_ you can download the current release from the 
 - support for clickers
 - virtual laser pointer in different sizes
 
-See it in action: We open a slideshow, go through the slides, activate the laserpointer, open the editor, make and save changes to the subtitle of the last slide, then close the editor.
+### Rendering Slideshows with 10 000 FPS
 
-<https://user-images.githubusercontent.com/30892199/119229946-73b94e80-bb1a-11eb-84ad-cae5251d4bbe.mp4>
+Slides is FAST (gotta go fast)! It pre-renders slideshows into easy to execute
+drawing structures on load and save, so that the actual rendering takes as
+little time as necessary. Rendering the little sample slideshow
+(`test_public.sld`) with 10 000 FPS is easily achievable on a modern, but not
+too beefy GPU. Obviously, you need to turn off v-sync in the settings menu so
+that slides just keeps generating frames as fast as possible, not minding if
+they can actually be displayed on your screen that fast. For everyday use,
+leaving v-sync on (default), saves energy 🔋.
+
+![](./screenshots/10000fps.png)
+
+### Can your PowerPoint do that?
+
+With the `key repeat` setting, accessible by the settings widget, you can set the rate you want to flick through your presentation in steps of 10ms (1/100 s). If vsync is off, this will be accurate. With v-sync on and a screen refresh rate of 60fps, the time resolution of redraws is 16.6ms. So 10ms and 20ms will behave identically.
+
+See it in action here:
+
+![](./screenshots/slideskeyrepeat.mp4)
 
 # Motivation
 
