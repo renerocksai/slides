@@ -38,6 +38,7 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
     exe.setTarget(target);
 
     exe.linkLibrary(filedialogLibrary(exe));
+    exe.linkSystemLibrary("png");
     exe.addPackage(filedlgPkg);
     ztBuild.link(exe);
 

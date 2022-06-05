@@ -30,9 +30,11 @@ images.sort(key=natural_keys)
 h = int(297/1920*1080)
 w = 297
 print(f'{w}x{h}')
-pdf = FPDF('L', 'px', (1920, 1080))
+pdf = FPDF('L', 'mm', (h, w))
+# --> this doesn't work anymore: pdf = FPDF('L', 'px', (1920, 1080))
 
 for f in sorted(images, key=natural_keys):
     pdf.add_page()
+    print(f)
     pdf.image(os.path.join(imgdir, f), x=0, y=0, w=297, h=h)
 pdf.output('output.pdf', 'F')

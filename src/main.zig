@@ -371,7 +371,7 @@ fn update(context: *SampleApplication.Context) void {
 
     flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar;
     // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-    if (!isFullScreen()) {
+    if (!(isFullScreen() or anim_autorun.running)) {
         if (context.data.showMenuBar) {
             flags |= imgui.ImGuiWindowFlags_MenuBar;
         }
@@ -381,7 +381,7 @@ fn update(context: *SampleApplication.Context) void {
         imgui.igSetWindowPos_Str("main", .{ .x = 0, .y = 0 }, imgui.ImGuiCond_Always);
         imgui.igSetWindowSize_Str("main", G.content_window_size, imgui.ImGuiCond_Always);
 
-        if (!isFullScreen()) {
+        if (!(isFullScreen() or anim_autorun.running)) {
             if (context.data.showMenuBar) {
                 showMenu();
             }
@@ -398,24 +398,25 @@ fn update(context: *SampleApplication.Context) void {
             if (current_slide_index == new_slide_index) {
                 // stop, can't advance any further
                 anim_autorun.stop();
-                setStatusMsg("Screen-shotting finished!");
+                setStatusMsg("Screen-shotting to /tmp/slide_shots/ finished!");
             } else {
                 // OK, doit
                 jumpToSlide(new_slide_index);
             }
         }
-        if (anim_autorun.flag_start_screenshot) {
-            // TODO: start screenshot
-            if (screenshot.flameShotLinux(G.allocator)) |ret| {
-                if (ret == false) {
-                    setStatusMsg("Screenshot failed - try debug build!");
-                    anim_autorun.stop();
+        if (G.slideshow_filp) |slideshow_filp| {
+            if (anim_autorun.flag_start_screenshot) {
+                const pngname = std.fmt.allocPrintZ(G.allocator, "/tmp/slide_shots/{s}_{d:0>4}.png", .{ std.fs.path.basename(slideshow_filp), @intCast(u32, G.current_slide) }) catch null;
+                if (pngname) |pngfn| {
+                    screenshot.screenShotPng(pngfn) catch |err| {
+                        std.log.err("screenshot error: {any}", .{err});
+                        setStatusMsg("Screenshot failed - try debug build!");
+                        anim_autorun.stop();
+                    };
                 }
-            } else |err| {
-                std.log.err("screenshot error: {any}", .{err});
-                setStatusMsg("Screenshot failed - try debug build!");
-                anim_autorun.stop();
             }
+        } else {
+            anim_autorun.stop();
         }
 
         const do_reload = checkAutoReload() catch false;
@@ -435,7 +436,7 @@ fn update(context: *SampleApplication.Context) void {
             // optionally show editor
             my_fonts.pushGuiFont(1);
 
-            var start_y: f32 = 22;
+            var start_y: f32 = 0; // FIXME: the 22 here is obsolete, isn't it?
             if (isFullScreen()) {
                 start_y = 0;
             }
@@ -602,8 +603,7 @@ fn handleKeyboard() void {
     }
 
     if (keyPressed(glfw.GLFW_KEY_A)) {
-        // cmdToggleAutoRun();
-        screenshot.screenShot() catch unreachable;
+        cmdToggleAutoRun();
         return;
     }
 
@@ -1187,9 +1187,11 @@ fn cmdToggleAutoRun() void {
         // goto 1st slide
         G.current_slide = 0;
         if (!isFullScreen()) {
-            cmdToggleFullscreen();
+            G.context.setWindowSize(1920, 1080);
+            //     cmdToggleFullscreen();
         }
-        // delete the shit if present
+
+        // delete if present
         if (std.fs.openDirAbsolute("/tmp", .{ .access_sub_paths = true, .iterate = true, .no_follow = true })) |tmpdir| {
             // defer tmpdir.close();
             if (tmpdir.deleteTree("slide_shots")) {} else |err| {

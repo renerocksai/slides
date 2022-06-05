@@ -18,6 +18,7 @@ pkgs.mkShell {
     xorg.libXrandr
     pkgs.gtk3
     libGL
+    libpng
     zig
   ];
 
@@ -35,6 +36,6 @@ pkgs.mkShell {
   ]);
 
   hardeningDisable = [ "all" ];
-  LD_LIBRARY_PATH = with pkgs ; "${libGL}/lib:${xorg.libX11}/lib";
+  LD_LIBRARY_PATH = with pkgs ; "${libGL}/lib:${xorg.libX11}/lib:${libpng}/lib";
 }
 
