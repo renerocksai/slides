@@ -19,6 +19,7 @@ If you want to play with _slides_ you can download the current release from the 
 - Built-in editor: create, edit, and present with one small program - or make last-minute changes while presenting
 - support for clickers
 - virtual laser pointer in different sizes
+- export slideshow to PNGs with a single key-press
 
 ### Rendering Slideshows with 10 000 FPS
 
