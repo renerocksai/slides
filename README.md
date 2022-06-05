@@ -8,7 +8,7 @@ This app is supposed to be much simpler and quicker to use (for people like me) 
 
 If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit.
 
-![image](https://user-images.githubusercontent.com/30892199/119228360-f9d19700-bb12-11eb-9cc2-f04e7f18e8d9.png)
+![image](./screenshots/slides.png)
 
 ## Highlights
 
@@ -71,7 +71,7 @@ To make the changes you made take effect, save the presentation using the save b
 
 **Note:** You can resize the editor pane by dragging it by the lighter blue handle that separates slide content from the editor in the vertical center of the editor:
 
-![image](https://user-images.githubusercontent.com/30892199/119230156-53d65a80-bb1b-11eb-805e-02f9f8708232.png)
+![image](./screenshots/editor_resize.png)
 
 **Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic features of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
