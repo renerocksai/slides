@@ -420,7 +420,8 @@ fn update(context: *SampleApplication.Context) void {
         }
         if (G.slideshow_filp) |slideshow_filp| {
             if (anim_autorun.flag_start_screenshot) {
-                const pngname = std.fmt.allocPrintZ(G.allocator, "/tmp/slide_shots/{s}_{d:0>4}.png", .{ std.fs.path.basename(slideshow_filp), @intCast(u32, G.current_slide) }) catch null;
+                // screenshot uses fopen, so relative paths are OK
+                const pngname = std.fmt.allocPrintZ(G.allocator, "./slide_shots/{s}_{d:0>4}.png", .{ std.fs.path.basename(slideshow_filp), @intCast(u32, G.current_slide) }) catch null;
                 if (pngname) |pngfn| {
                     screenshot.screenShotPngNoAlpha(pngfn) catch |err| {
                         std.log.err("screenshot error: {any}", .{err});
@@ -1222,17 +1223,13 @@ fn cmdToggleAutoRun() void {
             //     cmdToggleFullscreen();
         }
 
-        // delete if present
-        if (std.fs.openDirAbsolute("/tmp", .{ .access_sub_paths = true, .iterate = true, .no_follow = true })) |tmpdir| {
-            // defer tmpdir.close();
-            if (tmpdir.deleteTree("slide_shots")) {} else |err| {
-                std.log.err("Warning: Unable to delete /tmp/slide_shots : {s}", .{err});
-            }
-            if (tmpdir.makeDir("slide_shots")) {} else |err| {
-                std.log.err("Unable to create /tmp/slide_shots : {s}", .{err});
-            }
-        } else |err| {
-            std.log.err("Unable to open /tmp : {s}", .{err});
+        // delete ./slide_shots/ if present, then (re-) create it
+        var tmpdir = std.fs.cwd();
+        if (tmpdir.deleteTree("slide_shots")) {} else |err| {
+            std.log.err("Warning: Unable to delete ./slide_shots : {s}", .{err});
+        }
+        if (tmpdir.makeDir("slide_shots")) {} else |err| {
+            std.log.err("Unable to create /tmp/slide_shots : {s}", .{err});
         }
     }
 }
