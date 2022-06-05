@@ -29,8 +29,6 @@ pub fn screenShotPng(abspath: []const u8) !void {
 
     gl.glReadBuffer(gl.GL_FRONT);
     gl.glReadPixels(0, 0, @intCast(c_int, width), @intCast(c_int, height), gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buffer.ptr);
-    std.log.debug("read pixels into buffer", .{});
-
     var png = cpng.png_create_write_struct(cpng.PNG_LIBPNG_VER_STRING, null, null, null);
     if (png == null) {
         return PngWriteError.CreateWriteStructError;
