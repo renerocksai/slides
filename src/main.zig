@@ -325,7 +325,7 @@ const AppData = struct {
     keyRepeat: i32 = 0,
     slideshow_filp_to_load: ?[]const u8 = null,
     elementInspectorIndex: i32 = 0,
-    showElementInspector: bool = true,
+    showElementInspector: bool = false,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -608,7 +608,7 @@ fn update(context: *SampleApplication.Context) void {
             _ = animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size) catch unreachable;
 
             my_fonts.popGuiFont();
-            if (context.data.showButtonMenu) {
+            if (context.data.showButtonMenu and !anim_autorun.running) {
                 showBottomPanel();
             }
             showStatusMsgV(G.status_msg);
@@ -766,6 +766,11 @@ fn handleKeyboard() void {
         return;
     }
 
+    if (keyPressed(glfw.GLFW_KEY_I) and ctrl) {
+        G.showElementInspector = !G.showElementInspector;
+        return;
+    }
+
     // don't consume keys while the editor is visible
     if ((ig.igGetActiveID() == ig.igGetID_Str("editor")) or ed_anim.search_ed_active or ed_anim.search_ed_active or (ig.igGetActiveID() == ig.igGetID_Str("##search")) or G.saveas_dialog_context != null or G.openfiledialog_context != null) {
         return;
@@ -892,7 +897,7 @@ fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
     // .
     // button row
     // .
-    if (context.data.showButtonMenu) {
+    if (context.data.showButtonMenu and !anim_autorun.running) {
         showBottomPanel();
     }
 
@@ -1429,7 +1434,7 @@ fn showMenu() void {
                 cmdToggleBottomPanel();
             }
 
-            if (imgui.igMenuItem_Bool("Toggle inspector gadget", null, false, true)) {
+            if (imgui.igMenuItem_Bool("Toggle inspector gadget", "Ctrl + I", false, true)) {
                 G.showElementInspector = !G.showElementInspector;
             }
             imgui.igEndMenu();
