@@ -20,6 +20,7 @@ If you want to play with _slides_ you can download the current release from the 
 - support for clickers
 - virtual laser pointer in different sizes
 - export slideshow to PNGs with a single key-press
+- inspector gadget: view and modify render elements
 
 ### Rendering Slideshows with 10 000 FPS
 
@@ -97,6 +98,28 @@ To make the changes you made take effect, save the presentation using the save b
 
 **Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic features of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
+## Using Inspector Gadget
+
+Pressing <kbd>Ctrl</kbd> + <kbd>I</kbd> opens up the inspector gadget. With it, you can inspect and modify render elements.
+
+![](./screenshots/inspector_gadget.png)
+
+It is helpful when trying to align text blocks or images, sizing them properly, or figuring out the correct color/alpha.
+
+Use the <kbd>+</kbd> and <kbd>-</kbd> buttons next to `index` to walk through the available render elements of the current slide. The selected render element will be highlighted by a flashing rectangle.
+
+You can then do the following to each render element:
+
+- change position
+- change size
+- change color
+- change font size
+- view text
+
+Please note that render elements do necessarily correspond 1:1 with slide elements you put in the source file of a slideshow. For example, if a text contains a color or style change, or a linebreak, the pre-renderer will split that text into multiple render elements.
+
+The idea of the inspector gadget is to play around with the slides in a visual manner, and then copy the color codes, coordinates into the text editor.
+
 ## Presentation and Slide Navigation
 
 See the next section for keyboard shortcuts for slideshow control and slide navigation. In addition to using the keyboard, you can also use a "clicker" / "presenter" device.
@@ -126,6 +149,7 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>Shift</kbd> + <kbd>G</kbd> | Goto last slide |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Save screenshot to current directory |
 | <kbd>A</kbd> | Auto-run through slideshow, saving screenshots to ./slide_shots/|
+| <kbd>Ctrl</kbd> + <kbd>I</kbd> | bring up the inspector gadget|
 
 # Slideshow Text Format
 
