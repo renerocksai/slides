@@ -16,8 +16,6 @@ const imgui = @import("imgui");
 const ig = imgui;
 const glfw = @import("glfw");
 
-// usingnamespace stopped working?
-
 const SlideShow = slides.SlideShow;
 const Slide = slides.Slide;
 const SlideItem = slides.SlideItem;
@@ -98,6 +96,10 @@ pub fn main() !void {
         // call update with our context
         update(context);
         inspectContext(context);
+        elementInspector() catch |err| {
+            showStatusMsgV("Ooops!");
+            std.log.debug("Ooopsie {}", .{err});
+        };
         context.endFrame();
 
         if (G.slideshow_filp_to_load) |filp| {
@@ -108,6 +110,70 @@ pub fn main() !void {
     }
 
     context.deinit();
+}
+
+fn elementInspector() !void {
+    if (!G.showElementInspector or G.slideshow.slides.items.len == 0) return;
+    my_fonts.pushGuiFont(1);
+
+    // var io = ig.igGetIO();
+    const flags = 0 | ig.ImGuiWindowFlags_NoSavedSettings;
+    const height = 200;
+    const width = 300;
+    const startposx = 500;
+    const startposy = 40;
+
+    ig.igSetNextWindowPos(zt.math.vec2(startposx, startposy), ig.ImGuiCond_Once, .{});
+    ig.igSetNextWindowSize(zt.math.vec2(width, height), ig.ImGuiCond_Always);
+
+    if (ig.igBegin("Inspector Gadget", null, flags)) {
+        const slideIndex: usize = @intCast(usize, G.current_slide);
+        const crs = G.slide_renderer.renderedSlides.items[slideIndex];
+
+        if (ig.igInputInt("renderElementIndex", &G.elementInspectorIndex, 1, 1, ig.ImGuiInputTextFlags_None)) {
+            if (G.elementInspectorIndex >= crs.elements.items.len) {
+                G.elementInspectorIndex = @intCast(i32, crs.elements.items.len - 1);
+            }
+            if (G.elementInspectorIndex < 0) G.elementInspectorIndex = 0;
+        }
+    }
+    my_fonts.popGuiFont();
+    ig.igEnd();
+}
+
+fn renderElementInspectorEffects() void {
+    if (!G.showElementInspector or G.slideshow.slides.items.len == 0) return;
+    const slideIndex: usize = @intCast(usize, G.current_slide);
+    const crs = G.slide_renderer.renderedSlides.items[slideIndex];
+    var elIndex = G.elementInspectorIndex;
+    const renderElement = crs.elements.items[@intCast(usize, elIndex)];
+    std.log.debug("slide_index: {}, elementIndex: {}, element: {}", .{
+        slideIndex,
+        elIndex,
+        renderElement,
+    });
+
+    const slide_tl = slideAreaTL();
+    const slide_size = slideSizeInWindow();
+
+    ig.igSetCursorPos(slide_tl);
+    var drawlist = ig.igGetForegroundDrawList_Nil();
+    if (drawlist == null) {
+        std.log.warn("drawlist is null!", .{});
+    } else {
+        const screenPos = render.slidePosToRenderPos(renderElement.position, slide_tl, slide_size, G.internal_render_size);
+        const screenSize = render.slideSizeToRenderSize(renderElement.size, slide_size, G.internal_render_size);
+        var inner_rect = ig.ImRect{ .Min = screenPos, .Max = screenPos };
+        inner_rect.Max.x = screenSize.x + screenPos.x;
+        inner_rect.Max.y = screenSize.y + screenPos.y;
+        var outer_rect = inner_rect;
+        outer_rect.Min.x -= 2;
+        outer_rect.Min.y -= 2;
+        outer_rect.Max.x += 2;
+        outer_rect.Max.y += 2;
+        const bgcolu32 = imgui.igGetColorU32_Vec4(.{ .x = 1, .y = 0, .z = 0, .w = 1 });
+        ig.igRenderRectFilledWithHole(drawlist, outer_rect, inner_rect, bgcolu32, 3.0);
+    }
 }
 
 // This is a simple side panel that will display information about the scene, your context, and settings.
@@ -121,14 +187,15 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
     }
     if (!ctx.data.consoleOpen) return;
 
-    const flags = ig.ImGuiWindowFlags_NoResize;
+    const flags = ig.ImGuiWindowFlags_NoResize | ig.ImGuiWindowFlags_NoSavedSettings;
 
-    const height = 300;
+    const height = 280;
     const width = 300;
     ig.igSetNextWindowPos(zt.math.vec2(40, 40), ig.ImGuiCond_Once, .{});
     ig.igSetNextWindowSize(zt.math.vec2(
         width,
-        height - 20,
+        // height - 20,
+        height,
     ), ig.ImGuiCond_Always);
     if (ig.igBegin("Settings", null, flags)) {
         // ig.igText("Settings");
@@ -216,6 +283,8 @@ const AppData = struct {
     saveas_dialog_context: ?*anyopaque = null,
     keyRepeat: i32 = 0,
     slideshow_filp_to_load: ?[]const u8 = null,
+    elementInspectorIndex: i32 = 0,
+    showElementInspector: bool = false,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -384,7 +453,7 @@ fn update(context: *SampleApplication.Context) void {
     var flags: c_int = 0;
     // flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoResize | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar | imgui.ImGuiWindowFlags_NoDecoration;
 
-    flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar;
+    flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar | imgui.ImGuiWindowFlags_NoBringToFrontOnFocus;
     // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     if (!(isFullScreen() or anim_autorun.running)) {
         if (context.data.showMenuBar) {
@@ -521,6 +590,7 @@ fn update(context: *SampleApplication.Context) void {
                 }
             }
         }
+        renderElementInspectorEffects();
         imgui.igEnd();
 
         if (G.show_saveas) {
@@ -560,6 +630,7 @@ fn jumpToSlide(slidenumber: i32) void {
     if (ed_anim.visible) {
         ed_anim.jumpToPosAndHighlightLine(pos_in_editor, false);
     }
+    G.elementInspectorIndex = 0;
 }
 
 var lastPressed: [512]i32 = undefined;
@@ -1280,6 +1351,10 @@ fn showMenu() void {
             }
             if (imgui.igMenuItem_Bool("Toggle on-screen menu buttons", "M", false, true)) {
                 cmdToggleBottomPanel();
+            }
+
+            if (imgui.igMenuItem_Bool("Toggle inspector gadget", null, false, true)) {
+                G.showElementInspector = !G.showElementInspector;
             }
             imgui.igEndMenu();
         }
