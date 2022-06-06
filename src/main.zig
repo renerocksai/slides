@@ -111,7 +111,7 @@ pub fn main() !void {
 }
 
 fn elementInspector() !void {
-    if (!G.showElementInspector or G.slideshow.slides.items.len == 0) return;
+    if (!G.showElementInspector or G.slideshow.slides.items.len == 0 or anim_autorun.running) return;
     my_fonts.pushGuiFont(1);
 
     // var io = ig.igGetIO();
@@ -182,7 +182,7 @@ fn elementInspector() !void {
 }
 
 fn renderElementInspectorEffects() void {
-    if (!G.showElementInspector or G.slideshow.slides.items.len == 0) return;
+    if (!G.showElementInspector or G.slideshow.slides.items.len == 0 or anim_autorun.running) return;
     const slideIndex: usize = @intCast(usize, G.current_slide);
     const crs = G.slide_renderer.renderedSlides.items[slideIndex];
     var elIndex = G.elementInspectorIndex;
@@ -219,6 +219,7 @@ fn renderElementInspectorEffects() void {
 
 // This is a simple side panel that will display information about the scene, your context, and settings.
 fn inspectContext(ctx: *SampleApplication.Context) void {
+    if (anim_autorun.running) return;
     // Basic toggle
     my_fonts.pushGuiFont(1);
     defer my_fonts.popGuiFont();
