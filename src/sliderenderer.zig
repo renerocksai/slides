@@ -635,7 +635,7 @@ pub const SlideshowRenderer = struct {
     }
 };
 
-fn slidePosToRenderPos(pos: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
+pub fn slidePosToRenderPos(pos: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
     const my_tl = imgui.ImVec2{
         .x = slide_tl.x + pos.x * slide_size.x / internal_render_size.x,
         .y = slide_tl.y + pos.y * slide_size.y / internal_render_size.y,
@@ -643,7 +643,7 @@ fn slidePosToRenderPos(pos: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: im
     return my_tl;
 }
 
-fn slideSizeToRenderSize(size: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
+pub fn slideSizeToRenderSize(size: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
     const my_size = imgui.ImVec2{
         .x = size.x * slide_size.x / internal_render_size.x,
         .y = size.y * slide_size.y / internal_render_size.y,
