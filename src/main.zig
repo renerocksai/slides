@@ -32,7 +32,7 @@ const ImVec4 = imgui.ImVec4;
 
 /// SampleData will be available through the application's context.data.
 pub const SampleData = struct {
-    consoleOpen: bool = true,
+    consoleOpen: bool = false,
     showMenuBar: bool = true,
     showButtonMenu: bool = true,
 };
@@ -49,9 +49,7 @@ pub fn main() !void {
     const allocator = arena.allocator();
     defer arena.deinit();
 
-    std.log.debug("1a", .{});
     try G.init(allocator);
-    std.log.debug("2a", .{});
     defer G.deinit();
 
     // init our stuff
@@ -118,23 +116,65 @@ fn elementInspector() !void {
 
     // var io = ig.igGetIO();
     const flags = 0 | ig.ImGuiWindowFlags_NoSavedSettings;
-    const height = 200;
+    const height = 600;
     const width = 300;
     const startposx = 500;
     const startposy = 40;
 
     ig.igSetNextWindowPos(zt.math.vec2(startposx, startposy), ig.ImGuiCond_Once, .{});
-    ig.igSetNextWindowSize(zt.math.vec2(width, height), ig.ImGuiCond_Always);
+    ig.igSetNextWindowSize(zt.math.vec2(width, height), ig.ImGuiCond_Once);
 
     if (ig.igBegin("Inspector Gadget", null, flags)) {
         const slideIndex: usize = @intCast(usize, G.current_slide);
         const crs = G.slide_renderer.renderedSlides.items[slideIndex];
 
-        if (ig.igInputInt("renderElementIndex", &G.elementInspectorIndex, 1, 1, ig.ImGuiInputTextFlags_None)) {
+        // index
+        if (ig.igInputInt("index", &G.elementInspectorIndex, 1, 1, ig.ImGuiInputTextFlags_None)) {
             if (G.elementInspectorIndex >= crs.elements.items.len) {
                 G.elementInspectorIndex = @intCast(i32, crs.elements.items.len - 1);
             }
             if (G.elementInspectorIndex < 0) G.elementInspectorIndex = 0;
+        }
+        var elIndex = G.elementInspectorIndex;
+        var renderElement = &crs.elements.items[@intCast(usize, elIndex)];
+
+        // kind
+        ig.igSeparator();
+        const textbuffers = struct {
+            var strKind: [40]u8 = undefined;
+            var strKindAll: [80]u8 = undefined;
+        };
+        _ = std.fmt.bufPrintZ(&textbuffers.strKind, "{}", .{renderElement.kind}) catch unreachable;
+        _ = std.fmt.bufPrintZ(&textbuffers.strKindAll, "Kind: {s}", .{textbuffers.strKind[18..]}) catch unreachable;
+        ig.igText(&textbuffers.strKindAll);
+
+        // position
+        ig.igSeparator();
+        ig.igText("Position:");
+        _ = zg.edit("pos.X", &renderElement.position.x);
+        _ = zg.edit("pos.Y", &renderElement.position.y);
+
+        // size
+        ig.igSeparator();
+        ig.igText("Size:");
+        _ = zg.edit("size.X", &renderElement.size.x);
+        _ = zg.edit("size.Y", &renderElement.size.y);
+
+        // color
+        if (renderElement.color) |*color| {
+            ig.igSeparator();
+            ig.igText("Color:");
+            const colorflags = 0; // | ig.ImGuiColorEditFlags_Float;
+            _ = ig.igColorPicker4("###color", @intToPtr(*f32, @ptrToInt(color)), colorflags, null);
+        }
+
+        // text
+        if (renderElement.text) |text| {
+            ig.igSeparator();
+            // font size
+            _ = zg.edit("Font size", &renderElement.fontSize.?);
+            ig.igText("TEXT:");
+            ig.igText(text);
         }
     }
     my_fonts.popGuiFont();
@@ -147,11 +187,11 @@ fn renderElementInspectorEffects() void {
     const crs = G.slide_renderer.renderedSlides.items[slideIndex];
     var elIndex = G.elementInspectorIndex;
     const renderElement = crs.elements.items[@intCast(usize, elIndex)];
-    std.log.debug("slide_index: {}, elementIndex: {}, element: {}", .{
-        slideIndex,
-        elIndex,
-        renderElement,
-    });
+    // std.log.debug("slide_index: {}, elementIndex: {}, element: {}", .{
+    //     slideIndex,
+    //     elIndex,
+    //     renderElement,
+    // });
 
     const slide_tl = slideAreaTL();
     const slide_size = slideSizeInWindow();
@@ -167,11 +207,12 @@ fn renderElementInspectorEffects() void {
         inner_rect.Max.x = screenSize.x + screenPos.x;
         inner_rect.Max.y = screenSize.y + screenPos.y;
         var outer_rect = inner_rect;
-        outer_rect.Min.x -= 2;
-        outer_rect.Min.y -= 2;
-        outer_rect.Max.x += 2;
-        outer_rect.Max.y += 2;
-        const bgcolu32 = imgui.igGetColorU32_Vec4(.{ .x = 1, .y = 0, .z = 0, .w = 1 });
+        const thickness = 8;
+        outer_rect.Min.x -= thickness;
+        outer_rect.Min.y -= thickness;
+        outer_rect.Max.x += thickness;
+        outer_rect.Max.y += thickness;
+        const bgcolu32 = imgui.igGetColorU32_Vec4(anim_elementinspector.anim());
         ig.igRenderRectFilledWithHole(drawlist, outer_rect, inner_rect, bgcolu32, 3.0);
     }
 }
@@ -284,7 +325,7 @@ const AppData = struct {
     keyRepeat: i32 = 0,
     slideshow_filp_to_load: ?[]const u8 = null,
     elementInspectorIndex: i32 = 0,
-    showElementInspector: bool = false,
+    showElementInspector: bool = true,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -397,6 +438,41 @@ const LaserpointerAnim = struct {
 };
 
 var anim_laser = LaserpointerAnim{};
+
+const ElemInspectorFrameAnim = struct {
+    frame_ticker: usize = 0,
+    color: ImVec4 = .{ .x = 0, .y = 0, .z = 0, .w = 1 },
+    speed: usize = 3,
+    progress: f32 = 0.0,
+    delta: f32 = 0.1,
+    maxValue: f32 = 0.8,
+
+    fn anim(self: *ElemInspectorFrameAnim) ImVec4 {
+        if (G.showElementInspector) {
+            self.frame_ticker += 1;
+            if (self.frame_ticker >= self.speed) {
+                self.frame_ticker = 0;
+                self.progress += self.delta;
+
+                var others = self.progress;
+                if (others > self.maxValue) {
+                    self.delta *= -1;
+                    others = self.maxValue;
+                    self.progress = self.maxValue;
+                } else if (others < -0.8) {
+                    self.delta *= -1;
+                    if (others < 0) others = 0;
+                    self.progress = 0;
+                }
+                if (others < 0) others = 0;
+                self.color = .{ .x = 1, .y = others, .z = others, .w = 1 };
+            }
+        }
+        return self.color;
+    }
+};
+
+var anim_elementinspector = ElemInspectorFrameAnim{};
 
 // .
 // Main Update Frame Loop
