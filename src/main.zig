@@ -9,6 +9,7 @@ const mdlineparser = @import("markdownlineparser.zig");
 const my_fonts = @import("fontbakery.zig");
 const fontbakery = my_fonts;
 const filedialog = @import("filedialog");
+const pptx = @import("pptx.zig");
 
 const zt = @import("zt");
 const zg = zt.custom_components;
@@ -769,6 +770,13 @@ fn handleKeyboard() void {
 
     if (keyPressed(glfw.GLFW_KEY_I) and ctrl) {
         G.showElementInspector = !G.showElementInspector;
+        return;
+    }
+
+    if (keyPressed(glfw.GLFW_KEY_T) and ctrl) {
+        pptx.copyFixedAssetsTo("export_pptx", G.allocator) catch |err| {
+            std.log.debug("failed pptx : {}", .{err});
+        };
         return;
     }
 
