@@ -106,6 +106,8 @@ pub fn main() !void {
             context.rebuildFont();
             post_load = true;
         }
+
+        if (G.doZipIt) doExportPowerpoint();
     }
 
     context.deinit();
@@ -328,6 +330,8 @@ const AppData = struct {
     slideshow_filp_to_load: ?[]const u8 = null,
     elementInspectorIndex: i32 = 0,
     showElementInspector: bool = false,
+    autoRunTriggeredByPowerpointExport: bool = false,
+    doZipIt: bool = false,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -560,7 +564,12 @@ fn update(context: *SampleApplication.Context) void {
             if (current_slide_index == new_slide_index) {
                 // stop, can't advance any further
                 anim_autorun.stop();
-                setStatusMsg("Screen-shotting to /tmp/slide_shots/ finished!");
+                if (G.autoRunTriggeredByPowerpointExport) {
+                    G.doZipIt = true;
+                } else {
+                    setStatusMsg("Screen-shotting to /tmp/slide_shots/ finished!");
+                }
+                G.autoRunTriggeredByPowerpointExport = false;
             } else {
                 // OK, doit
                 jumpToSlide(new_slide_index);
@@ -669,6 +678,15 @@ fn update(context: *SampleApplication.Context) void {
             }
         }
         renderElementInspectorEffects();
+        if (G.doZipIt) {
+            ig.igSetCursorPos(.{ .x = 100, .y = 100 });
+            my_fonts.pushStyledFontScaled(128, .bold);
+            imgui.igPushStyleColor_Vec4(imgui.ImGuiCol_Text, .{ .x = 1, .w = 1 });
+            ig.igText("Exporting...");
+            ig.igPopStyleColor(1);
+            my_fonts.popFontScaled();
+        }
+
         imgui.igEnd();
 
         if (G.show_saveas) {
@@ -774,15 +792,7 @@ fn handleKeyboard() void {
     }
 
     if (keyPressed(glfw.GLFW_KEY_T) and ctrl) {
-        if (G.slideshow_filp) |slideshow_filp_really| {
-            pptx.copyFixedAssetsTo("export_pptx", G.allocator) catch |err| {
-                std.log.debug("failed pptx : {}", .{err});
-            };
-            pptx.exportPptx("export_pptx", slideshow_filp_really, G.slideshow.slides.items.len, G.allocator) catch |err| {
-                std.log.debug("failed pptx : {}", .{err});
-            };
-        }
-        return;
+        cmdExportPowerpoint();
     }
 
     // don't consume keys while the editor is visible
@@ -1428,6 +1438,9 @@ fn showMenu() void {
             if (imgui.igMenuItem_Bool("Save as...", "", false, true)) {
                 cmdSaveAs();
             }
+            if (imgui.igMenuItem_Bool("Export to Powerpoint...", "Ctrl + T", false, true)) {
+                cmdExportPowerpoint();
+            }
             if (imgui.igMenuItem_Bool("Quit", "Ctrl + Q", false, true)) {
                 cmdQuit();
             }
@@ -1461,4 +1474,33 @@ fn showMenu() void {
         }
     }
     my_fonts.popGuiFont();
+}
+
+fn cmdExportPowerpoint() void {
+    G.autoRunTriggeredByPowerpointExport = true;
+    cmdToggleAutoRun();
+}
+
+fn doExportPowerpoint() void {
+    if (G.slideshow_filp) |slideshow_filp_really| {
+        pptx.copyFixedAssetsTo("export_pptx", G.allocator) catch |err| {
+            std.log.debug("failed pptx : {}", .{err});
+        };
+        pptx.exportPptx("export_pptx", slideshow_filp_really, G.slideshow.slides.items.len, G.allocator) catch |err| {
+            std.log.debug("failed pptx : {}", .{err});
+        };
+        std.log.debug("zipping it...", .{});
+        const zipNameMaybe = std.fmt.allocPrintZ(G.allocator, "{s}.pptx", .{slideshow_filp_really}) catch null;
+        if (zipNameMaybe) |zipName| {
+            pptx.zipIt("export_pptx", zipName, G.allocator) catch |err| {
+                std.log.debug("failed pptx : {}", .{err});
+            };
+            std.log.debug("zipped it!", .{});
+            const msg = std.fmt.allocPrintZ(G.slideshow_allocator, "Zip created: {s}", .{zipName}) catch null;
+            if (msg) |m| setStatusMsg(m);
+        } else {
+            std.log.debug("no memory for zipName creation", .{});
+        }
+    }
+    G.doZipIt = false;
 }
