@@ -1,4 +1,4 @@
-name: Release Linux, Windows (beta)
+name: ZIG-9.1 Release Linux, Windows (beta)
 
 on: workflow_dispatch
 
