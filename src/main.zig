@@ -774,9 +774,14 @@ fn handleKeyboard() void {
     }
 
     if (keyPressed(glfw.GLFW_KEY_T) and ctrl) {
-        pptx.copyFixedAssetsTo("export_pptx", G.allocator) catch |err| {
-            std.log.debug("failed pptx : {}", .{err});
-        };
+        if (G.slideshow_filp) |slideshow_filp_really| {
+            pptx.copyFixedAssetsTo("export_pptx", G.allocator) catch |err| {
+                std.log.debug("failed pptx : {}", .{err});
+            };
+            pptx.exportPptx("export_pptx", slideshow_filp_really, G.slideshow.slides.items.len, G.allocator) catch |err| {
+                std.log.debug("failed pptx : {}", .{err});
+            };
+        }
         return;
     }
 

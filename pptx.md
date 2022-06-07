@@ -10,12 +10,12 @@
 - Change number of slides:
   - from `<Slides>1`
   - to `<Slides>n`
-  - ==replace `$NUM_SLIDES`==
+  - replace `$NUM_SLIDES`
 
 ## ppt/_rels/presentation.xml.rels
 
 - Add a new <Relationship> like for slide1 with a new Id `"rId{ 11 + n }"`
-- ==replace `$RELATIONSHIPS`==
+- replace `$RELATIONSHIPS`
 
 ```xml
 <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>

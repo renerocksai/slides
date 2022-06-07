@@ -100,9 +100,9 @@ pub fn initToCopy(allocator: std.mem.Allocator) !*PptxEmbedList {
     return &toCopy.?;
 }
 
-const mod_cpy_app_xml = PptxEmbed{ .filename = "docProps/app.xml", .content = @embedFile("pptx_template/docProps/app.xml") };
-const mod_cpy_Content_Types_xml = PptxEmbed{ .filename = "[Content_Types].xml", .content = @embedFile("pptx_template/[Content_Types].xml") };
-const mod_cpy_presentation_xml_rels = PptxEmbed{ .filename = "ppt/_rels/presentation.xml.rels", .content = @embedFile("pptx_template/ppt/_rels/presentation.xml.rels") };
-const mod_cpy_slide1_xml_rels = PptxEmbed{ .filename = "ppt/slides/_rels/slide1.xml.rels", .content = @embedFile("pptx_template/ppt/slides/_rels/slide1.xml.rels") };
-const mod_cpy_slide1_xml = PptxEmbed{ .filename = "ppt/slides/slide1.xml", .content = @embedFile("pptx_template/ppt/slides/slide1.xml") };
-const mod_cpy_presentation_xml = PptxEmbed{ .filename = "ppt/presentation.xml", .content = @embedFile("pptx_template/ppt/presentation.xml") };
+pub const mod_cpy_app_xml = PptxEmbed{ .filename = "docProps/app.xml", .content = @embedFile("../pptx_template/docProps/app.xml") };
+pub const mod_cpy_Content_Types_xml = PptxEmbed{ .filename = "[Content_Types].xml", .content = @embedFile("../pptx_template/[Content_Types].xml") };
+pub const mod_cpy_presentation_xml_rels = PptxEmbed{ .filename = "ppt/_rels/presentation.xml.rels", .content = @embedFile("../pptx_template/ppt/_rels/presentation.xml.rels") };
+pub const mod_cpy_slide1_xml_rels = PptxEmbed{ .filename = "ppt/slides/_rels/slide1.xml.rels", .content = @embedFile("../pptx_template/ppt/slides/_rels/slide1.xml.rels") };
+pub const mod_cpy_slide1_xml = PptxEmbed{ .filename = "ppt/slides/slide1.xml", .content = @embedFile("../pptx_template/ppt/slides/slide1.xml") };
+pub const mod_cpy_presentation_xml = PptxEmbed{ .filename = "ppt/presentation.xml", .content = @embedFile("../pptx_template/ppt/presentation.xml") };
