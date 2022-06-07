@@ -21,17 +21,17 @@ fn ensureDestPaths(destpath: []const u8, allocator: std.mem.Allocator) !void {
 
 pub fn copyFixedAssetsTo(destpath: []const u8, allocator: std.mem.Allocator) !void {
     try ensureDestPaths(destpath, allocator);
-    std.log.debug("created dirs", .{});
+    // std.log.debug("created dirs", .{});
     const toCopy = embeds.initToCopy(std.heap.page_allocator) catch return;
 
     for (toCopy.items) |fdesc| {
         const dp = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ destpath, fdesc.filename });
-        std.log.debug("trying {s}", .{dp});
+        // std.log.debug("trying {s}", .{dp});
         const file = try std.fs.cwd().createFile(dp, .{});
-        std.log.debug("{s} created", .{dp});
+        // std.log.debug("{s} created", .{dp});
         errdefer file.close();
         try file.writeAll(fdesc.content);
-        std.log.debug("{s} written", .{dp});
+        // std.log.debug("{s} written", .{dp});
         file.close();
     }
 }
@@ -52,12 +52,12 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         const dp = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ destpath, embed.filename });
         const numStr = try std.fmt.allocPrint(allocator, "{d}", .{num_slides});
         const content = try std.mem.replaceOwned(u8, allocator, embed.content, "$NUM_SLIDES", numStr);
-        std.log.debug("trying {s}", .{dp});
+        // std.log.debug("trying {s}", .{dp});
         const file = try std.fs.cwd().createFile(dp, .{});
-        std.log.debug("{s} created", .{dp});
+        // std.log.debug("{s} created", .{dp});
         errdefer file.close();
         try file.writeAll(content);
-        std.log.debug("{s} written", .{dp});
+        // std.log.debug("{s} written", .{dp});
         file.close();
     }
 
@@ -74,7 +74,7 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         const dp = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ destpath, embed.filename });
         var i: usize = 1;
         var replacement: []const u8 = "";
-        std.log.debug("trying {s}", .{dp});
+        // std.log.debug("trying {s}", .{dp});
         while (i < num_slides) : (i += 1) {
             const rid = try std.fmt.allocPrint(allocator, "{d}", .{i + 11});
             const current = try std.fmt.allocPrint(allocator, "<Relationship Id=\"rId{s}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" Target=\"slides/slide{d}.xml\"/>", .{ rid, i + 1 });
@@ -82,10 +82,10 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         }
         const content = try std.mem.replaceOwned(u8, allocator, embed.content, "$RELATIONSHIPS", replacement);
         const file = try std.fs.cwd().createFile(dp, .{});
-        std.log.debug("{s} created", .{dp});
+        // std.log.debug("{s} created", .{dp});
         errdefer file.close();
         try file.writeAll(content);
-        std.log.debug("{s} written", .{dp});
+        // std.log.debug("{s} written", .{dp});
         file.close();
     }
     // ## ppt/slides/slide[1].xml -> slide[n].xml
@@ -106,7 +106,7 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         while (i < num_slides) : (i += 1) {
             const filename_start = try std.mem.replaceOwned(u8, allocator, embed.filename, "1.xml", "");
             const dp = try std.fmt.allocPrint(allocator, "{s}/{s}{d}.xml", .{ destpath, filename_start, i + 1 });
-            std.log.debug("trying {s}", .{dp});
+            // std.log.debug("trying {s}", .{dp});
             const graphic_id = try std.fmt.allocPrint(allocator, "{d}", .{i + 3});
             const guid = try std.fmt.allocPrint(allocator, "6A92AC38-201A-B559-9037-63C6F3D779{X:0>2}", .{i & 255});
             const id = try std.fmt.allocPrint(allocator, "{d}", .{i + 1577499883});
@@ -117,10 +117,10 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
             content = try std.mem.replaceOwned(u8, allocator, content, "$ID", id);
             content = try std.mem.replaceOwned(u8, allocator, content, "$GRAPHIC_DESC", descr);
             const file = try std.fs.cwd().createFile(dp, .{});
-            std.log.debug("{s} created", .{dp});
+            // std.log.debug("{s} created", .{dp});
             errdefer file.close();
             try file.writeAll(content);
-            std.log.debug("{s} written", .{dp});
+            // std.log.debug("{s} written", .{dp});
             file.close();
         }
     }
@@ -135,14 +135,14 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         while (i < num_slides) : (i += 1) {
             const filename_start = try std.mem.replaceOwned(u8, allocator, embed.filename, "1.xml.rels", "");
             const dp = try std.fmt.allocPrint(allocator, "{s}/{s}{d}.xml.rels", .{ destpath, filename_start, i + 1 });
-            std.log.debug("trying {s}", .{dp});
+            // std.log.debug("trying {s}", .{dp});
             const pngname = try std.fmt.allocPrint(allocator, "{s}_{d:0>4}.png", .{ std.fs.path.basename(slideshow_filp), i });
             var content = try std.mem.replaceOwned(u8, allocator, embed.content, "$IMG_NAME", pngname);
             const file = try std.fs.cwd().createFile(dp, .{});
-            std.log.debug("{s} created", .{dp});
+            // std.log.debug("{s} created", .{dp});
             errdefer file.close();
             try file.writeAll(content);
-            std.log.debug("{s} written", .{dp});
+            // std.log.debug("{s} written", .{dp});
             file.close();
         }
     }
@@ -156,17 +156,17 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         const dp = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ destpath, embed.filename });
         var i: usize = 1;
         var replacement: []const u8 = "";
-        std.log.debug("trying {s}", .{dp});
+        // std.log.debug("trying {s}", .{dp});
         while (i < num_slides) : (i += 1) {
             const current = try std.fmt.allocPrint(allocator, "<p:sldId id=\"{d}\" r:id=\"rId{}\"/>", .{ 256 + i, 11 + i });
             replacement = try std.fmt.allocPrint(allocator, "{s}{s}", .{ replacement, current });
         }
         const content = try std.mem.replaceOwned(u8, allocator, embed.content, "$SLIDE_IDS", replacement);
         const file = try std.fs.cwd().createFile(dp, .{});
-        std.log.debug("{s} created", .{dp});
+        // std.log.debug("{s} created", .{dp});
         errdefer file.close();
         try file.writeAll(content);
-        std.log.debug("{s} written", .{dp});
+        // std.log.debug("{s} written", .{dp});
         file.close();
     }
     //
@@ -183,17 +183,17 @@ pub fn exportPptx(destpath: []const u8, slideshow_filp: []const u8, num_slides: 
         const dp = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ destpath, embed.filename });
         var i: usize = 1;
         var replacement: []const u8 = "";
-        std.log.debug("trying {s}", .{dp});
+        // std.log.debug("trying {s}", .{dp});
         while (i < num_slides) : (i += 1) {
             const current = try std.fmt.allocPrint(allocator, "<Override PartName=\"/ppt/slides/slide{d}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>", .{1 + i});
             replacement = try std.fmt.allocPrint(allocator, "{s}{s}", .{ replacement, current });
         }
         const content = try std.mem.replaceOwned(u8, allocator, embed.content, "$SLIDES", replacement);
         const file = try std.fs.cwd().createFile(dp, .{});
-        std.log.debug("{s} created", .{dp});
+        // std.log.debug("{s} created", .{dp});
         errdefer file.close();
         try file.writeAll(content);
-        std.log.debug("{s} written", .{dp});
+        // std.log.debug("{s} written", .{dp});
         file.close();
     }
 
@@ -232,5 +232,109 @@ fn copy(from: []const u8, to: []const u8, filename: []const u8) !void {
     } else {
         defer dfile.close();
         std.debug.print("SKIP: {s}\\{s}\n", .{ from, filename });
+    }
+}
+
+pub fn zipIt(destpath: []const u8, zipPath: []const u8, allocator: std.mem.Allocator) !void {
+    const args = [_][]const u8{
+        "zip",
+        // "-b",
+        // destpath,
+        "-9",
+        "-r",
+        "-v",
+        "-q",
+        zipPath,
+        ".",
+    };
+
+    if (std.ChildProcess.init(args[0..], allocator)) |child| {
+        defer child.deinit();
+        child.cwd = destpath;
+
+        // TODO: this only works in debug builds
+        // release builds return unexpected (literally) errors
+        // one release mode, release-fast I think, returns some panic in thread
+        if (child.spawnAndWait()) |_| {
+            return;
+        } else |err| {
+            std.log.err("Unable to spawn and wait:  {any}", .{err});
+            switch (err) {
+                error.AccessDenied => {
+                    std.log.err("AccessDenied", .{});
+                },
+                error.BadPathName => {
+                    std.log.err("BadPathName", .{});
+                },
+                error.CurrentWorkingDirectoryUnlinked => {
+                    std.log.err("CurrentWorkingDirectoryUnlinked", .{});
+                },
+                error.FileBusy => {
+                    std.log.err("FileBusy", .{});
+                },
+                error.FileNotFound => {
+                    std.log.err("FileNotFound", .{});
+                },
+                error.FileSystem => {
+                    std.log.err("FileSystem", .{});
+                },
+                error.InvalidExe => {
+                    std.log.err("InvalidExe", .{});
+                },
+                error.InvalidName => {
+                    std.log.err("InvalidName", .{});
+                },
+                error.InvalidUserId => {
+                    std.log.err("InvalidUserId", .{});
+                },
+                error.InvalidUtf8 => {
+                    std.log.err("InvalidUtf8", .{});
+                },
+                error.IsDir => {
+                    std.log.err("IsDir", .{});
+                },
+                error.NameTooLong => {
+                    std.log.err("NameTooLong", .{});
+                },
+                error.NoDevice => {
+                    std.log.err("NoDevice", .{});
+                },
+                error.NotDir => {
+                    std.log.err("NotDir", .{});
+                },
+                error.OutOfMemory => {
+                    std.log.err("OutOfMemory", .{});
+                },
+                error.PermissionDenied => {
+                    std.log.err("PermissionDenied", .{});
+                },
+                error.ProcessFdQuotaExceeded => {
+                    std.log.err("ProcessFdQuotaExceeded", .{});
+                },
+                error.ResourceLimitReached => {
+                    std.log.err("ResourceLimitReached", .{});
+                },
+                error.SymLinkLoop => {
+                    std.log.err("SymLinkLoop", .{});
+                },
+                error.SystemFdQuotaExceeded => {
+                    std.log.err("SystemFdQuotaExceeded", .{});
+                },
+                error.SystemResources => {
+                    std.log.err("SystemResources", .{});
+                },
+                error.Unexpected => {
+                    std.log.err("Unexpected", .{});
+                },
+                error.WaitAbandoned => {
+                    std.log.err("WaitAbandoned", .{});
+                },
+                error.WaitTimeOut => {
+                    std.log.err("WaitTimeOut", .{});
+                },
+            }
+        }
+    } else |err| {
+        std.log.err("Unable to init child process: {any}", .{err});
     }
 }
