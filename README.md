@@ -22,7 +22,7 @@ If you want to play with _slides_ you can download the current release from the 
 - export slideshow to PNGs with a single key-press
 - inspector gadget: view and modify render elements
 
-### Rendering Slideshows with 10 000 FPS
+### Rendering Slideshows at 10 000 FPS
 
 Slides is FAST (gotta go fast)! It pre-renders slideshows into easy to execute
 drawing structures on load and save, so that the actual rendering takes as
@@ -33,17 +33,17 @@ that slides just keeps generating frames as fast as possible, not minding if
 they can actually be displayed on your screen that fast. For everyday use,
 leaving v-sync on (default), saves energy 🔋.
 
-![](./screenshots/10000fps.png)
+![](./screenshots/12000fps.png)
 
 ### Can your PowerPoint do that?
 
 With the `key repeat` setting, accessible by the settings widget, you can set the rate you want to flick through your presentation in steps of 10ms (1/100 s). If vsync is off, this will be accurate. With v-sync on and a screen refresh rate of 60fps, the time resolution of redraws is 16.6ms. So 10ms and 20ms will behave identically.
 
-See it in action here:
+See it in action [here](https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4)
 
 <https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4>
 
-Opening slideshows, text-search, editing:
+Opening slideshows, text-search, editing: [here](https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4):
 
 <https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4>
 
@@ -119,6 +119,10 @@ You can then do the following to each render element:
 Please note that render elements do necessarily correspond 1:1 with slide elements you put in the source file of a slideshow. For example, if a text contains a color or style change, or a linebreak, the pre-renderer will split that text into multiple render elements.
 
 The idea of the inspector gadget is to play around with the slides in a visual manner, and then copy the color codes, coordinates into the text editor.
+
+Little video demo: [here](https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4)
+
+<https://user-images.githubusercontent.com/30892199/172287106-c9323eac-c9d8-4d48-87e0-d069d6649f37.mp4>
 
 ## Presentation and Slide Navigation
 
