@@ -1,0 +1,135 @@
+name: Release Linux, Windows (beta)
+
+on: workflow_dispatch
+
+jobs:
+  draft_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }} ${{ github.sha }}
+          body: |
+            Automated Release by GitHub Action CI
+            The linux build is a fast release build.
+            The windows build is a (slower) debug build.
+          draft: false
+          prerelease: true
+
+  build-ubuntu:
+    needs: draft_release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Ubuntu
+        run: |
+          lsb_release -a
+          sudo apt-get update
+          sudo apt-get install -y libglew-dev libsdl2-dev libpng-dev xorg-dev
+
+      - name: Build executable
+        run: zig build -Drelease-safe --verbose
+
+      - name: Zip it
+        run: gzip ./zig-out/bin/slides
+
+      - name: Ship it (Linux x64)
+        id: upload-release-asset-linux-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
+          asset_path: ./zig-out/bin/slides.gz
+          asset_name: slides-linux-release.gz
+          asset_content_type: application/gzip
+
+  build-windows:
+    needs: draft_release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install msvc-dev
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install 7Zip PowerShell Module
+        shell: powershell
+        run: Install-Module 7Zip4PowerShell -Force -Verbose
+
+      - name: Build executable
+        run: zig build --verbose
+
+      - name: Zip it
+        shell: powershell
+        run: Compress-7Zip "zig-out/bin/slides.exe" -ArchiveFileName "slides-win64.zip" -Format Zip
+
+      - name: Ship it (Windows x64)
+        id: upload-release-asset-windows-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
+          asset_path: ./slides-win64.zip
+          asset_name: slides-win64-debug.zip
+          asset_content_type: application/zip
+
+# macos needs a little work
+# debug dies unexpectedly, release breaks during compilation
+  # build-macos:
+  #   needs: draft_release
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: 'recursive'
+  #
+  #     - uses: goto-bus-stop/setup-zig@v1
+  #       with:
+  #         # it died unexpectedly with 0.8.1
+  #         version: 0.8.0
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #
+  #     - name: Build macos executable
+  #       # run: zig build -Drelease-safe
+  #       run: zig build --verbose
+  #
+  #     - name: Find out what's happening
+  #       run: find .
+  #
+  #     - name: Zip it
+  #       run: gzip ./zig-cache/bin/slides
+  #
+  #     - name: Ship it (macos)
+  #       id: upload-release-asset-macos-x64
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.draft_release.outputs.upload_url }}
+  #         asset_path: ./zig-cache/bin/slides.gz
+  #         asset_name: slides-macos.gz
+  #         asset_content_type: application/gzip
