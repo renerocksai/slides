@@ -248,6 +248,14 @@ Clone this repository
 git clone https://github.com/renerocksai/slides.git
 ```
 
+## dependencies
+
+### Linux / Ubuntu
+
+```console
+sudo apt-get install -y libpng-dev xorg-dev
+```
+
 ### NixOS
 
 This applies to NixOS only. To make sure all dependencies are met, I highly recommend using the provided nix shell (via
@@ -256,6 +264,10 @@ This applies to NixOS only. To make sure all dependencies are met, I highly reco
 ```console
 nix-shell
 ```
+
+### Windows
+
+To be done. Need to figure out how to automate download of libpng sources. Might vendor them in and let zig build them. This takes time...
 
 ## build and run
 
