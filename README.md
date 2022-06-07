@@ -37,6 +37,8 @@ Here, what it looks like in release mode:
 
 ![](./screenshots/10000fps.png)
 
+Hint: **16 000 FPS !!!**
+
 ### Can your PowerPoint do that?
 
 With the `key repeat` setting, accessible by the settings widget, you can set the rate you want to flick through your presentation in steps of 10ms (1/100 s). If vsync is off, this will be accurate. With v-sync on and a screen refresh rate of 60fps, the time resolution of redraws is 16.6ms. So 10ms and 20ms will behave identically.
