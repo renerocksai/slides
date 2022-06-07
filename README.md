@@ -28,12 +28,14 @@ Slides is FAST (gotta go fast)! It pre-renders slideshows into easy to execute
 drawing structures on load and save, so that the actual rendering takes as
 little time as necessary. Rendering the little sample slideshow
 (`test_public.sld`) with 10 000 FPS is easily achievable on a modern, but not
-too beefy GPU. Obviously, you need to turn off v-sync in the settings menu so
+too beefy GPU. In DEBUG mode. Obviously, you need to turn off v-sync in the settings menu so
 that slides just keeps generating frames as fast as possible, not minding if
 they can actually be displayed on your screen that fast. For everyday use,
 leaving v-sync on (default), saves energy 🔋.
 
-![](./screenshots/12000fps.png)
+Here, what it looks like in release mode:
+
+![](./screenshots/10000fps.png)
 
 ### Can your PowerPoint do that?
 
