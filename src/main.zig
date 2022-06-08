@@ -702,6 +702,7 @@ fn update(context: *SampleApplication.Context) void {
         if (mousepos.x > 0 and mousepos.y > 0) {
             anim_laser.anim(mousepos);
         }
+        render.updateRenderDistortion();
         ig.igPopFont();
     }
 }
@@ -1463,6 +1464,9 @@ fn showMenu() void {
 
             if (imgui.igMenuItem_Bool("Toggle inspector gadget", "Ctrl + I", false, true)) {
                 G.showElementInspector = !G.showElementInspector;
+            }
+            if (imgui.igMenuItem_Bool("Toggle Distortion", null, false, true)) {
+                render.renderDistortionAnimation.running = !render.renderDistortionAnimation.running;
             }
             imgui.igEndMenu();
         }
