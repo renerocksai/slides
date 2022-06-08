@@ -332,6 +332,7 @@ const AppData = struct {
     showElementInspector: bool = false,
     autoRunTriggeredByPowerpointExport: bool = false,
     doZipIt: bool = false,
+    showWindowBorder: bool = true,
 
     fn init(self: *AppData, alloc: std.mem.Allocator) !void {
         self.allocator = alloc;
@@ -535,12 +536,27 @@ fn update(context: *SampleApplication.Context) void {
     var flags: c_int = 0;
     // flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoResize | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar | imgui.ImGuiWindowFlags_NoDecoration;
 
-    flags = imgui.ImGuiWindowFlags_NoSavedSettings | imgui.ImGuiWindowFlags_NoMove | imgui.ImGuiWindowFlags_NoDocking | imgui.ImGuiWindowFlags_NoTitleBar | imgui.ImGuiWindowFlags_NoScrollbar | imgui.ImGuiWindowFlags_NoBringToFrontOnFocus;
+    flags = 0 //
+    | imgui.ImGuiWindowFlags_NoSavedSettings //
+    | imgui.ImGuiWindowFlags_NoMove //
+    | imgui.ImGuiWindowFlags_NoDocking //
+    | imgui.ImGuiWindowFlags_NoTitleBar //
+    | imgui.ImGuiWindowFlags_NoScrollbar //
+    | imgui.ImGuiWindowFlags_NoBringToFrontOnFocus //
+    | ig.ImGuiWindowFlags_NoBackground //
+    | ig.ImGuiWindowFlags_NoScrollbar;
+
     // flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     if (!(isFullScreen() or anim_autorun.running)) {
         if (context.data.showMenuBar) {
             flags |= imgui.ImGuiWindowFlags_MenuBar;
         }
+    }
+
+    const doHideBorder: bool = !G.showWindowBorder or anim_autorun.running;
+    if (doHideBorder) {
+        ig.igPushStyleVar_Vec2(ig.ImGuiStyleVar_WindowPadding, .{});
+        ig.igPushStyleVar_Float(ig.ImGuiStyleVar_WindowBorderSize, 0.0);
     }
     if (imgui.igBegin("main", null, flags)) {
         // make the "window" fill the whole available area
@@ -704,6 +720,9 @@ fn update(context: *SampleApplication.Context) void {
         }
         render.updateRenderDistortion();
         ig.igPopFont();
+    }
+    if (doHideBorder) {
+        ig.igPopStyleVar(2);
     }
 }
 
@@ -1453,6 +1472,9 @@ fn showMenu() void {
             }
             if (imgui.igMenuItem_Bool("Toggle full-screen", "F", false, true)) {
                 cmdToggleFullscreen();
+            }
+            if (imgui.igMenuItem_Bool("Toggle Window Border", "F", false, true)) {
+                G.showWindowBorder = !G.showWindowBorder;
             }
             if (imgui.igMenuItem_Bool("Overview", "O", false, true)) {}
             if (imgui.igMenuItem_Bool("Toggle Laserpointer", "L", false, true)) {
