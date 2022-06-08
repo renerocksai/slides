@@ -9,6 +9,19 @@ const zt = @import("zt");
 usingnamespace slides;
 usingnamespace markdownlineparser;
 
+const RenderDistortion = struct { dx: f32 = 0.0, dy: f32 = 0.0 };
+
+const RenderDistortionAnimation = struct { framecount: f32 = 0, scale: f32 = 10.0, running: bool = false };
+
+pub var renderDistortion = RenderDistortion{};
+pub var renderDistortionAnimation = RenderDistortionAnimation{};
+
+pub fn updateRenderDistortion() void {
+    renderDistortionAnimation.framecount += 1;
+    renderDistortion.dx = std.math.cos(renderDistortionAnimation.framecount) * renderDistortionAnimation.scale;
+    renderDistortion.dy = std.math.sin(renderDistortionAnimation.framecount) * renderDistortionAnimation.scale;
+}
+
 const RenderElementKind = enum {
     background,
     text,
@@ -636,10 +649,15 @@ pub const SlideshowRenderer = struct {
 };
 
 pub fn slidePosToRenderPos(pos: imgui.ImVec2, slide_tl: imgui.ImVec2, slide_size: imgui.ImVec2, internal_render_size: imgui.ImVec2) imgui.ImVec2 {
-    const my_tl = imgui.ImVec2{
+    var my_tl = imgui.ImVec2{
         .x = slide_tl.x + pos.x * slide_size.x / internal_render_size.x,
         .y = slide_tl.y + pos.y * slide_size.y / internal_render_size.y,
     };
+
+    if (renderDistortionAnimation.running and pos.y > 0) {
+        my_tl.x += renderDistortion.dx;
+        my_tl.y += renderDistortion.dy;
+    }
     return my_tl;
 }
 
