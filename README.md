@@ -19,7 +19,7 @@ If you want to play with _slides_ you can download the current release from the 
 - Built-in editor: create, edit, and present with one small program - or make last-minute changes while presenting
 - support for clickers
 - virtual laser pointer in different sizes
-- export slideshow to PNGs with a single key-press
+- export slideshow to PNGs **or Powerpoint (.pptx)** with a single key-press
 - inspector gadget: view and modify render elements
 
 ### Rendering Slideshows at 10 000 FPS
@@ -158,6 +158,7 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> | Save screenshot to current directory |
 | <kbd>A</kbd> | Auto-run through slideshow, saving screenshots to ./slide_shots/|
 | <kbd>Ctrl</kbd> + <kbd>I</kbd> | bring up the inspector gadget|
+| <kbd>Ctrl</kbd> + <kbd>T</kbd> | Powerpoint export: auto-runs through all slides, saves them as PNGs, creates .pptx|
 
 # Slideshow Text Format
 
@@ -179,6 +180,7 @@ Normal text.
 _italic_ text.
 _**Bold italic**_ text.
 ~~Underlined~~ text.
+!rendered with "font_extra" (e.g. "zig showtime" font)!
 <#rrggbbaa>Colored with alpha</> text. E.g. <#ff0000ff>red full opacity</>
 ```
 
@@ -191,26 +193,28 @@ More documentation to follow.
 Example of the current text format - see [test_public.sld](./test_public.sld) for a more realistic example:
 
 ```
+# lines starting with a # sign are comments
+
 # -------------------------------------------------------------
-# --define intro slide template
+# -- intro slide template
 # -------------------------------------------------------------
 
 # Background image
-@bg img=assets/nim/1.png
 
+@bg img=assets/bgwater.jpg
 # or for a simple colored background:
 # @bg color=#000000000
 
-# lines starting with a # sign are comments BTW
+# often-used text elements
+@push intro_title    x=150 y=400 w=1700 h=223 fontsize=96 color=#7A7A7AFF
+@push intro_subtitle x=219 y=728 w=836 h=246 fontsize=45 color=#cd0f2dff
+@push intro_authors  x=219 y=818 w=836 h=246 fontsize=45 color=#993366ff
 
-# title, subtitle, authors
-@push intro_title    x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
-@push intro_subtitle x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
-@push intro_authors  x=0 y=0 w=100 h=100 fontsize=16 color=#123456aa
+# the following pushslide will the slide cause to be pushed ("remembered as template"), not rendered
+@pushslide intro
 
-# the following pushslide command will cause everything up to here to be
-# "remembered as template" named `intro`, it will not be rendered immediately
-@pushslide intro     fontsize=16 bullet_color=#12345678 color=#bbccddee
+# auto-incrementing slide-number is in $slide_number
+@push slide_number x=1803 y=1027 w=40   h=40  fontsize=20 color=#404040ff text=$slide_number
 
 
 # #############################################################
@@ -218,12 +222,11 @@ Example of the current text format - see [test_public.sld](./test_public.sld) fo
 # #############################################################
 
 # -------------------------------------------------------------
-# Intro slide
-# -------------------------------------------------------------
 @popslide intro
-@pop intro_title    text=**Slides** - Slideshows for Hackers
-@pop intro_subtitle text=A prototype
-@pop intro_authors text=@renerocksai
+@pop intro_title text=!Slideshows in <#F7A41DFF>ZIG</>!
+@pop intro_subtitle text=_**Easy, text-based slideshows for Hackers**_
+@pop intro_authors text=_@renerocksai_
+
 
 # -------------------------------------------------------------
 # Some slide without slide template
