@@ -82,7 +82,6 @@
 @popslide intro
 @pop intro_title_shadow text=!Slideshows in ZIG!
 @pop intro_title text=!Slideshows in <#F7A41DFF>ZIG</>!
-#@pop intro_title text=**Slideshows in ZIG**
 @pop intro_subtitle text=_**Easy, text-based slideshows for Hackers**_
 @pop intro_authors text=_@renerocksai_
 
