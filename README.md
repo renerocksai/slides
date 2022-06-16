@@ -19,6 +19,7 @@ If you want to play with _slides_ you can download the current release from the 
 - Built-in editor: create, edit, and present with one small program - or make last-minute changes while presenting
 - support for clickers
 - virtual laser pointer in different sizes
+  - that you can draw with
 - export slideshow to PNGs **or Powerpoint (.pptx)** with a single key-press
 - inspector gadget: view and modify render elements
 
@@ -102,6 +103,12 @@ To make the changes you made take effect, save the presentation using the save b
 
 **Note:** The internal editor is not suitable for smooth and comfortable editing, as it only covers the basic features of an editor. For authoring presentations, I recommend using a real editor. I prefer neovim - but you know best what works for you. Slides watches the file of the open presentation and reloads it when you save it in your editor of choice.
 
+## Using the laser pointer
+
+Press <kbd>L</kbd> to toggle the laser pointer on and off. With <kbd>SHIFT</kbd> + <kbd>L</kbd> you can increase the laser pointer's size. It will roll over to the smallest size automatically.
+
+While in laser pointer mode, you can draw by clicking the left mouse-button. To delete your drawing, press <kbd>D</kbd>.
+
 ## Using Inspector Gadget
 
 Pressing <kbd>Ctrl</kbd> + <kbd>I</kbd> opens up the inspector gadget. With it, you can inspect and modify render elements.
@@ -144,6 +151,7 @@ See the next section for keyboard shortcuts for slideshow control and slide navi
 | <kbd>F</kbd> | Toggle fullscreen |
 | <kbd>L</kbd> | Toggle laserpointer |
 | <kbd>Shift</kbd> + <kbd>L</kbd> | cycle through laserpointer sizes |
+| <kbd>D</kbd> | delete current drawing |
 | <kbd>M</kbd> | Toggle on-screen menu buttons |
 | Cursor <kbd><-</kbd> | Goto previous slide |
 | <kbd>PgUp</kbd> | Goto previous slide |
