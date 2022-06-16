@@ -1,10 +1,5 @@
 # Backlog
 
-- laserpointer:
-  - allow for much smaller size(s)
-  - laserpointer tail
-  - drawing in laserpointer mode
-
 ## BUGS
 
 - [ ] render bug: breaking line after a formatted section: seems like the formatting moves the left margin
@@ -26,6 +21,7 @@
 - laserpointer:
   - allow for much smaller size(s)
   - laserpointer tail
+  - drawing in laserpointer mode
 
 - linking to self-built libpng, zlib
 - exporting to powerpoint
