@@ -105,6 +105,8 @@ To make the changes you made take effect, save the presentation using the save b
 
 ## Using the laser pointer
 
+![](./screenshots/laserpointer.png)
+
 Press <kbd>L</kbd> to toggle the laser pointer on and off. With <kbd>SHIFT</kbd> + <kbd>L</kbd> you can increase the laser pointer's size. It will roll over to the smallest size automatically.
 
 While in laser pointer mode, you can draw by clicking the left mouse-button. To delete your drawing, press <kbd>D</kbd>.
