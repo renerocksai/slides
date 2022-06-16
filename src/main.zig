@@ -402,6 +402,7 @@ const LaserpointerAnim = struct {
     frame_ticker: usize = 0,
     anim_ticker: f32 = 0,
     show_laserpointer: bool = false,
+    show_laserpointer_prev: bool = false,
     laserpointer_size: f32 = 15,
     laserpointer_zoom: f32 = laserpointerZoomDefault,
     alpha_table: [6]f32 = [_]f32{ 0.875, 0.875, 0.85, 0.85, 0.825, 0.825 },
@@ -411,14 +412,59 @@ const LaserpointerAnim = struct {
     size_jiggle_index_step: i32 = 1,
     size_jiggle_index: i32 = 0,
     posbuffer: PosBuffer = .{},
+    drawVertices: ?std.ArrayList(imgui.ImVec2) = null,
+    mousepos_prev: ImVec2 = .{},
+    mousebutton_left_prev: bool = false,
+    line_draw_thickness: f32 = 5,
 
-    fn anim(self: *LaserpointerAnim, mousepos: ImVec2) void {
+    fn reinitDrawVertices(self: *LaserpointerAnim, alloc: std.mem.Allocator) !void {
+        if (self.drawVertices) |*d| {
+            if (d.items.len > 0)
+                d.deinit();
+        }
+        self.drawVertices = std.ArrayList(imgui.ImVec2).init(alloc);
+    }
+
+    fn anim(self: *LaserpointerAnim, mousepos: ImVec2, alloc: std.mem.Allocator) !void {
+        if (self.show_laserpointer and self.show_laserpointer_prev == false) {
+            try self.reinitDrawVertices(alloc);
+        }
+        self.show_laserpointer_prev = self.show_laserpointer;
+
+        const colu32 = imgui.igGetColorU32_Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
+        var drawlist = imgui.igGetForegroundDrawList_Nil();
+
         if (self.show_laserpointer) {
+            // add vertex only if the mousepos has changed
+            if (self.mousepos_prev.x != mousepos.x and self.mousepos_prev.y != mousepos.y) {
+                if (self.drawVertices) |*vertices| {
+                    const mouse_left_down = imgui.igIsMouseDown(imgui.ImGuiMouseButton_Left);
+                    if (mouse_left_down) {
+                        try vertices.append(mousepos);
+                    }
+                    if (self.mousebutton_left_prev == true and !mouse_left_down) {
+                        try vertices.append(.{});
+                    }
+                    self.mousebutton_left_prev = mouse_left_down;
+                }
+            }
+            // draw vertices
+            if (self.drawVertices) |*vertices| {
+                for (vertices.items) |vertex, i| {
+                    if (i == 0) continue;
+
+                    // draw a line
+                    const prev_pos = vertices.items[i - 1];
+                    if (vertex.x != 0 and vertex.y != 0 and prev_pos.x != 0 and prev_pos.y != 0) {
+                        imgui.ImDrawList_AddLine(drawlist, vertex, prev_pos, colu32, self.line_draw_thickness);
+                    }
+                }
+            }
+            self.mousepos_prev = mousepos;
+
             imgui.igSetCursorPos(mousepos);
             self.posbuffer.addPosition(mousepos);
             // TODO: sapp_show_mouse(false);
-            var drawlist = imgui.igGetForegroundDrawList_Nil();
-            const colu32 = imgui.igGetColorU32_Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
             for (self.posbuffer.getPositions()) |pos, i| {
                 if (pos) |p| {
                     var scale: f32 = 1.0;
@@ -733,7 +779,7 @@ fn update(context: *SampleApplication.Context) void {
 
         // laser pointer
         if (mousepos.x > 0 and mousepos.y > 0) {
-            anim_laser.anim(mousepos);
+            anim_laser.anim(mousepos, G.slideshow_allocator) catch {};
         }
 
         imgui.igEnd();
@@ -770,6 +816,7 @@ fn jumpToSlide(slidenumber: i32) void {
     if (G.current_slide == slidenumber) {
         return;
     }
+    anim_laser.reinitDrawVertices(G.allocator) catch {};
     G.current_slide = slidenumber;
     const pos_in_editor = G.slideshow.slides.items[@intCast(usize, slidenumber)].pos_in_editor;
     if (ed_anim.visible) {
@@ -853,6 +900,10 @@ fn handleKeyboard() void {
         cmdToggleAutoRun();
         return;
     }
+    if (keyPressed(glfw.GLFW_KEY_D)) {
+        anim_laser.reinitDrawVertices(G.allocator) catch {};
+        return;
+    }
 
     if (keyPressed(glfw.GLFW_KEY_L) and !shift) {
         anim_laser.toggle();
@@ -860,7 +911,6 @@ fn handleKeyboard() void {
     }
     if (keyPressed(glfw.GLFW_KEY_L) and shift) {
         const zoom: f32 = if (anim_laser.laserpointer_zoom < laserpointerZoomDefault * 7.5) 7.5 else 1.5;
-        std.log.debug("our zoom is now: {}", .{zoom});
         anim_laser.laserpointer_zoom *= zoom;
         if (anim_laser.laserpointer_zoom > 10) {
             anim_laser.laserpointer_zoom = laserpointerZoomDefault;
