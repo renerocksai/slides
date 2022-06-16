@@ -379,26 +379,54 @@ var anim_bottom_panel = bottomPanelAnim{};
 var anim_status_msg = MsgAnim{};
 var anim_autorun = AutoRunAnim{};
 
+const laserpointerZoomDefault = 0.1;
+
+const posbufferSize: usize = 15;
+const PosBuffer = struct {
+    posArray: [posbufferSize]?imgui.ImVec2 = .{ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null },
+
+    fn getPositions(self: *PosBuffer) []?imgui.ImVec2 {
+        return &self.posArray;
+    }
+
+    fn addPosition(self: *PosBuffer, pos: imgui.ImVec2) void {
+        var i: usize = self.posArray.len - 1;
+        while (i >= 1) : (i -= 1) {
+            self.posArray[i] = self.posArray[i - 1];
+        }
+        self.posArray[0] = pos;
+    }
+};
+
 const LaserpointerAnim = struct {
     frame_ticker: usize = 0,
     anim_ticker: f32 = 0,
     show_laserpointer: bool = false,
     laserpointer_size: f32 = 15,
-    laserpointer_zoom: f32 = 1.0,
+    laserpointer_zoom: f32 = laserpointerZoomDefault,
     alpha_table: [6]f32 = [_]f32{ 0.875, 0.875, 0.85, 0.85, 0.825, 0.825 },
     alpha_index_step: i32 = 1,
     alpha_index: i32 = 0,
     size_jiggle_table: [6]f32 = [_]f32{ 1.5, 1.4, 1.30, 1.2, 1.1, 1.0 },
     size_jiggle_index_step: i32 = 1,
     size_jiggle_index: i32 = 0,
+    posbuffer: PosBuffer = .{},
 
     fn anim(self: *LaserpointerAnim, mousepos: ImVec2) void {
         if (self.show_laserpointer) {
             imgui.igSetCursorPos(mousepos);
+            self.posbuffer.addPosition(mousepos);
             // TODO: sapp_show_mouse(false);
             var drawlist = imgui.igGetForegroundDrawList_Nil();
             const colu32 = imgui.igGetColorU32_Vec4(ImVec4{ .x = 1, .w = self.alpha_table[@intCast(usize, self.alpha_index)] });
-            imgui.ImDrawList_AddCircleFilled(drawlist, mousepos, self.laserpointer_size * self.laserpointer_zoom + 10 * self.size_jiggle_table[@intCast(usize, self.size_jiggle_index)], colu32, 256);
+            for (self.posbuffer.getPositions()) |pos, i| {
+                if (pos) |p| {
+                    var scale: f32 = 1.0;
+                    if (i > 1) scale = 0.8;
+                    const size = scale * (self.laserpointer_size * self.laserpointer_zoom + 10 * self.size_jiggle_table[@intCast(usize, self.size_jiggle_index)]);
+                    imgui.ImDrawList_AddCircleFilled(drawlist, p, size, colu32, 256);
+                }
+            }
 
             self.frame_ticker += 1;
 
@@ -703,6 +731,11 @@ fn update(context: *SampleApplication.Context) void {
             my_fonts.popFontScaled();
         }
 
+        // laser pointer
+        if (mousepos.x > 0 and mousepos.y > 0) {
+            anim_laser.anim(mousepos);
+        }
+
         imgui.igEnd();
 
         if (G.show_saveas) {
@@ -714,10 +747,6 @@ fn update(context: *SampleApplication.Context) void {
             G.show_saveas_reason = .none;
         }
 
-        // laser pointeer
-        if (mousepos.x > 0 and mousepos.y > 0) {
-            anim_laser.anim(mousepos);
-        }
         render.updateRenderDistortion();
         ig.igPopFont();
     }
@@ -830,9 +859,11 @@ fn handleKeyboard() void {
         return;
     }
     if (keyPressed(glfw.GLFW_KEY_L) and shift) {
-        anim_laser.laserpointer_zoom *= 1.5;
+        const zoom: f32 = if (anim_laser.laserpointer_zoom < laserpointerZoomDefault * 7.5) 7.5 else 1.5;
+        std.log.debug("our zoom is now: {}", .{zoom});
+        anim_laser.laserpointer_zoom *= zoom;
         if (anim_laser.laserpointer_zoom > 10) {
-            anim_laser.laserpointer_zoom = 1.0;
+            anim_laser.laserpointer_zoom = laserpointerZoomDefault;
         }
         return;
     }
