@@ -81,9 +81,9 @@ pub fn filedialogLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep
     // Include dirs.
     filedialog.addIncludeDir(path ++ "src/dep/filedialog");
     if (target.isWindows()) {
-        filedialog.addIncludeDir(path ++ "ZT/src/dep/filedialog/dirent");
+        filedialog.addIncludeDir(path ++ "src/dep/filedialog/dirent");
     }
-    filedialog.addIncludeDir(path ++ "ZT/src/dep/filedialog/stb");
+    filedialog.addIncludeDir(path ++ "src/dep/filedialog/stb");
     filedialog.addIncludeDir(path ++ "ZT/src/dep/cimgui/imgui");
 
     // Add C
