@@ -1,6 +1,5 @@
 # Backlog
 
-- linking to self-built libpng, zlib
 - laserpointer:
   - allow for much smaller size(s)
   - laserpointer tail
@@ -24,6 +23,11 @@
 
 ## Baklog and stuff in random order
 
+- laserpointer:
+  - allow for much smaller size(s)
+  - laserpointer tail
+
+- linking to self-built libpng, zlib
 - exporting to powerpoint
 
 - inspector window
