@@ -12,6 +12,10 @@ const PngWriteError = error{
     CreateInfoStructError,
 };
 
+pub fn pngVersionString() [:0]const u8 {
+    return cpng.PNG_LIBPNG_VER_STRING;
+}
+
 pub fn screenShotPng(abspath: []const u8) !void {
     const width = @floatToInt(usize, ig.igGetIO().*.DisplaySize.x);
     const height = @floatToInt(usize, ig.igGetIO().*.DisplaySize.y);

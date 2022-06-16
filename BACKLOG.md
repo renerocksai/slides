@@ -1,9 +1,10 @@
 # Backlog
 
-- inspector window
-  - shows @box attributes: x, y, w, h, color, img, text - and lets them edit / pick ... sliders
-  - replaces text inline if possible
-  - auto-bake font sizes: after loading an .sld file
+- linking to self-built libpng, zlib
+- laserpointer:
+  - allow for much smaller size(s)
+  - laserpointer tail
+  - drawing in laserpointer mode
 
 ## BUGS
 
@@ -22,6 +23,13 @@
 ```
 
 ## Baklog and stuff in random order
+
+- exporting to powerpoint
+
+- inspector window
+  - shows @box attributes: x, y, w, h, color, img, text - and lets them edit / pick ... sliders
+  - replaces text inline if possible
+  - auto-bake font sizes: after loading an .sld file
 
 - [x] font hot reloading - fonts declared in slideshows
 - [x] custom bullet symbol (char)
