@@ -44,8 +44,14 @@ jobs:
       - name: Build executable
         run: zig build -Drelease-fast --verbose
 
+      - name: Copy data files
+        run: cp -pr assets ./zig-out/bin/
+
+      - name: Delete unnecessary files
+        run: rm -fr ./zig-out/bin/assets/pptx
+
       - name: Zip it
-        run: gzip ./zig-out/bin/slides
+        run: tar -C ./zig-out/bin -cvzf slides.tar.gz .
 
       - name: Ship it (Linux x64)
         id: upload-release-asset-linux-x64
@@ -54,8 +60,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
-          asset_path: ./zig-out/bin/slides.gz
-          asset_name: slides-linux-release.gz
+          asset_path: ./zig-out/bin/slides.tar.gz
+          asset_name: slides-linux-release.tar.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -94,7 +100,7 @@ jobs:
 
       - name: Zip it
         shell: powershell
-        run: Compress-Archive -Path "zig-out/bin" -DestinationPath slides-win64.zip
+        run: Compress-Archive -Path "zig-out/bin/*" -DestinationPath slides-win64.zip
 
       - name: Ship it (Windows x64)
         id: upload-release-asset-windows-x64
