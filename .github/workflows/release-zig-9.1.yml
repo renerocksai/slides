@@ -73,16 +73,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
+      # - name: Install 7Zip PowerShell Module
+      #   shell: powershell
+      #   run: Install-Module 7Zip4PowerShell -Force -Verbose
 
       - name: Build executable
         run: zig build -Drelease-fast --verbose
 
+      - name: Copy data files
+        shell: powershell
+        run: Copy-Item -Path "assets" -Destination "zig-out/bin/assets" -Recurse
+
+      - name: Delete unnecessary files
+        shell: powershell
+        run: rm -R "zig-out/bin/assets/pptx"
+
+      # - name: Zip it
+      #   shell: powershell
+      #   run: Compress-7Zip "zig-out/bin/slides.exe" -ArchiveFileName "slides-win64.zip" -Format Zip
+
       - name: Zip it
         shell: powershell
-        run: Compress-7Zip "zig-out/bin/slides.exe" -ArchiveFileName "slides-win64.zip" -Format Zip
+        run: Compress-Archive -Path "zig-out/bin" -DestinationPath slides-win64.zip
 
       - name: Ship it (Windows x64)
         id: upload-release-asset-windows-x64
@@ -92,7 +104,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides-win64.zip
-          asset_name: slides-win64-debug.zip
+          asset_name: slides-win64-release.zip
           asset_content_type: application/zip
 
 # macos needs a little work
