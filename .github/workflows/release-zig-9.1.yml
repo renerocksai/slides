@@ -61,7 +61,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides.tar.gz
-          asset_name: slides-linux-release-${{ github.refname }}.tar.gz
+          asset_name: slides-linux-release-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -110,7 +110,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides-win64.zip
-          asset_name: slides-win64-release-${{ github.refname }}.zip
+          asset_name: slides-win64-release-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
 # macos needs a little work
