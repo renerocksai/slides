@@ -1,5 +1,8 @@
 # Backlog
 
+- cleanup any messes from prev commits, i.e. getPositions()
+- use zlib to create zip files in pptx export, if possible
+
 ## BUGS
 
 - [ ] render bug: breaking line after a formatted section: seems like the formatting moves the left margin
