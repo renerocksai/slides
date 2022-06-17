@@ -202,23 +202,29 @@ fn copy(from: []const u8, to: []const u8, filename: []const u8, destfilename: []
 
     var sfile = source.openFile(filename, .{}) catch return error.FileError;
     defer sfile.close();
-    var dfile = dest.openFile(destfilename, .{}) catch {
+    // var dfile = dest.openFile(destfilename, .{}) catch {
+    _ = dest.openFile(destfilename, .{}) catch {
         std.debug.print("TRYING: {s}/{s} to {s}/{s}\n", .{ from, filename, to, filename });
         source.copyFile(filename, dest, destfilename, .{}) catch return error.PermissionError;
         std.debug.print("COPY: {s}/{s} to {s}/{s}\n", .{ from, filename, to, filename });
         return;
     };
 
-    var sstat = sfile.stat() catch return error.FileError;
-    var dstat = dfile.stat() catch return error.FileError;
+    // else: the file exists, so we're happy. Since we checked it in, it always exists. TODO: maybe delete the
+    //       from the repository, add it to .gitignore
 
-    if (sstat.mtime > dstat.mtime) {
-        dfile.close();
-        dest.deleteFile(filename) catch return error.PermissionError;
-        source.copyFile(filename, dest, destfilename, .{}) catch return error.PermissionError;
-        std.debug.print("OVERWRITE: {s}\\{s} to {s}\\{s}\n", .{ from, filename, to, filename });
-    } else {
-        defer dfile.close();
-        std.debug.print("SKIP: {s}\\{s}\n", .{ from, filename });
-    }
+    return;
+
+    // var sstat = sfile.stat() catch return error.FileError;
+    // var dstat = dfile.stat() catch return error.FileError;
+    //
+    // if (sstat.mtime > dstat.mtime) {
+    //     dfile.close();
+    //     dest.deleteFile(filename) catch return error.PermissionError;
+    //     source.copyFile(filename, dest, destfilename, .{}) catch return error.PermissionError;
+    //     std.debug.print("OVERWRITE: {s}\\{s} to {s}\\{s}\n", .{ from, filename, to, filename });
+    // } else {
+    //     defer dfile.close();
+    //     std.debug.print("SKIP: {s}\\{s}\n", .{ from, filename });
+    // }
 }
