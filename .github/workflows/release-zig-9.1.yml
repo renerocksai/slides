@@ -45,7 +45,7 @@ jobs:
         run: zig build -Drelease-fast --verbose
 
       - name: Copy data files
-        run: cp -pr assets ./zig-out/bin/
+        run: cp -pr *.sld assets ./zig-out/bin/
 
       - name: Delete unnecessary files
         run: rm -fr ./zig-out/bin/assets/pptx
@@ -89,6 +89,11 @@ jobs:
       - name: Copy data files
         shell: powershell
         run: Copy-Item -Path "assets" -Destination "zig-out/bin/assets" -Recurse
+
+      - name: Copy slide files
+        shell: powershell
+        run: Copy-Item -Path "*" -Include "*.sld" -Destination "zig-out/bin"
+
 
       - name: Delete unnecessary files
         shell: powershell
