@@ -60,8 +60,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
-          asset_path: ./zig-out/bin/slides.tar.gz
-          asset_name: slides-linux-release.tar.gz
+          asset_path: ./slides.tar.gz
+          asset_name: slides-linux-release-${{ github.refname }}.tar.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -110,7 +110,7 @@ jobs:
         with:
           upload_url: ${{ needs.draft_release.outputs.upload_url }}
           asset_path: ./slides-win64.zip
-          asset_name: slides-win64-release.zip
+          asset_name: slides-win64-release-${{ github.refname }}.zip
           asset_content_type: application/zip
 
 # macos needs a little work
