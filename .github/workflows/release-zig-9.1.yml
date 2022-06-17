@@ -84,7 +84,9 @@ jobs:
       #   run: Install-Module 7Zip4PowerShell -Force -Verbose
 
       - name: Build executable
-        run: zig build -Drelease-fast --verbose
+        # run: zig build -Drelease-fast --verbose
+        # for some reason, win exes don't want to be in release-fast mode
+        run: zig build --verbose
 
       - name: Copy data files
         shell: powershell
