@@ -1,0 +1,57 @@
+name: ZIG-9.1 Release macOS (beta)
+
+on: workflow_dispatch
+
+jobs:
+  draft_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }} macOS
+          body: |
+            Automated Release by GitHub Action CI
+          draft: true
+          prerelease: true
+
+# macos needs a little work
+  build-macos:
+    needs: draft_release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build macos executable
+        # run: zig build -Drelease-safe
+        run: zig build --verbose
+
+      - name: Find out what's happening
+        run: find .
+
+      - name: Zip it
+        run: gzip ./zig-cache/bin/slides
+
+      - name: Ship it (macos)
+        id: upload-release-asset-macos-x64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.draft_release.outputs.upload_url }}
+          asset_path: ./zig-cache/bin/slides.gz
+          asset_name: slides-macos.gz
+          asset_content_type: application/gzip

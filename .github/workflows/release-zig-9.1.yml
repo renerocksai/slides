@@ -114,19 +114,15 @@ jobs:
           asset_content_type: application/zip
 
 # macos needs a little work
-# debug dies unexpectedly, release breaks during compilation
   # build-macos:
   #   needs: draft_release
   #   runs-on: macos-latest
   #   steps:
   #     - uses: actions/checkout@v2
-  #       with:
-  #         submodules: 'recursive'
   #
   #     - uses: goto-bus-stop/setup-zig@v1
   #       with:
-  #         # it died unexpectedly with 0.8.1
-  #         version: 0.8.0
+  #         version: 0.9.1
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   #
