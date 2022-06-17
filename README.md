@@ -8,7 +8,7 @@ This project is both a case study and also marks my first steps in the programmi
 
 This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
 
-If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit. Please note, that currently, the releases are a bit outdated. I am re-working the build and release pipeline.
+If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit.
 
 ## Highlights
 
@@ -60,7 +60,7 @@ In addition, this project also serves as a case study for myself where I test ou
 
 This project achieves what I set out for in the following ways:
 
-- **portability:** zig allows for cross-platform development. If it weren't for OpenGL and SDL dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
+- **portability:** zig allows for cross-platform development. If it weren't for OpenGL (, ...) dependencies, even cross-compilation for all platforms would work out of the box. While that can probably be solved, I am OK with building releases on two platforms for now.
   - the result is a free-standing executable, only a few MB in size that needs no installer
 - **easy to get started with:** just download, start and go!
 - **no external dependencies:** all you need to create presentations is the program itself. No other software is required. The builtin editor is not the greatest but since slides watches your files, you can use an external editor, too. Changes will be loaded everytime you save.
@@ -293,10 +293,6 @@ zig build slides
 ```
 
 To just build: `zig build`. This will create the executable `slides` in `./zig-out/bin/`.
-
-**Note regarding Windows:** while I can make release builds on my windows laptop, I could not reproduce a working
-windows setup via GitHub actions, starting from a clean machine. So I can only release debug builds for windows
-automatically (GitHub Actions).
 
 ## Tested with
 
