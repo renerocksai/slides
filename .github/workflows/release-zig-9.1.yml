@@ -19,8 +19,7 @@ jobs:
           release_name: Release ${{ github.ref_name }} ${{ github.sha }}
           body: |
             Automated Release by GitHub Action CI
-            The linux build is a fast release build.
-            The windows build is a (slower) debug build.
+            All builds are release-fast builds
           draft: false
           prerelease: true
 
@@ -43,7 +42,7 @@ jobs:
           sudo apt-get install -y libglew-dev libsdl2-dev libpng-dev xorg-dev
 
       - name: Build executable
-        run: zig build -Drelease-safe --verbose
+        run: zig build -Drelease-fast --verbose
 
       - name: Zip it
         run: gzip ./zig-out/bin/slides
@@ -79,7 +78,7 @@ jobs:
         run: Install-Module 7Zip4PowerShell -Force -Verbose
 
       - name: Build executable
-        run: zig build --verbose
+        run: zig build -Drelease-fast --verbose
 
       - name: Zip it
         shell: powershell
