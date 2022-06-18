@@ -1,7 +1,9 @@
 # Backlog
 
+- check out what went wrong with win build after 2022-06-03
 - cleanup any messes from prev commits, i.e. getPositions()
-- use zlib to create zip files in pptx export, if possible
+- use zlib to create zip files in pptx exports
+  - minizip.c
 
 ## BUGS
 

@@ -85,8 +85,9 @@ jobs:
 
       - name: Build executable
         # run: zig build -Drelease-fast --verbose
-        # for some reason, win exes don't want to be in release-fast mode
-        run: zig build --verbose
+        # let's try with a debug build first
+        # for try to pin the build to an old sandybridge cpu
+        run: zig build --verbose -target x86_64-native -mcpu sandybridge
 
       - name: Copy data files
         shell: powershell
