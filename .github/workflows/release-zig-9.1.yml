@@ -87,7 +87,7 @@ jobs:
         # run: zig build -Drelease-fast --verbose
         # let's try with a debug build first
         # for try to pin the build to an old sandybridge cpu
-        run: zig build --verbose -target x86_64-native -mcpu sandybridge
+        run: zig build --verbose -Dtarget=x86_64-native -Dcpu=sandybridge
 
       - name: Copy data files
         shell: powershell
