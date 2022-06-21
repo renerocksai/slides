@@ -1,7 +1,5 @@
 # Backlog
 
-- use zlib to create zip files in pptx exports
-  - minizip.c
 - check out what went wrong with win build after 2022-06-03
   - gh action for zig build wonky?
   - gh win builds just stopped working - "illegal instruction"
@@ -27,18 +25,21 @@
 
 ## Baklog and stuff in random order
 
-- laserpointer:
-  - allow for much smaller size(s)
-  - laserpointer tail
-  - drawing in laserpointer mode
+- [x] use zlib to create zip files in pptx exports
+  - [x] minizip.c
 
-- linking to self-built libpng, zlib
-- exporting to powerpoint
+- [x] laserpointer:
+  - [x] allow for much smaller size(s)
+  - [x] laserpointer tail
+  - [x] drawing in laserpointer mode
 
-- inspector window
-  - shows @box attributes: x, y, w, h, color, img, text - and lets them edit / pick ... sliders
-  - replaces text inline if possible
-  - auto-bake font sizes: after loading an .sld file
+- [x] linking to self-built libpng, zlib
+- [x] exporting to powerpoint
+
+- [x] inspector window
+  - [x] shows @box attributes: x, y, w, h, color, img, text - and lets them edit / pick ... sliders
+  - [x] replaces text inline if possible
+  - [x] auto-bake font sizes: after loading an .sld file
 
 - [x] font hot reloading - fonts declared in slideshows
 - [x] custom bullet symbol (char)
