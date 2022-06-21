@@ -291,12 +291,13 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
     }
 
     if (show) {
+        editor_pos.y += 12;
         imgui.igSetCursorPos(editor_pos);
         var s: imgui.ImVec2 = trxy(anim.current_size, content_window_size, internal_render_size);
 
         // (optional) extra stuff
         const grow_shrink_button_panel_height = 0; // 22;
-        const find_area_height = 32;
+        const find_area_height = 50;
         const find_area_button_size = 120;
         const find_area_min_width = 70 + 70;
 
@@ -308,7 +309,7 @@ pub fn animatedEditor(anim: *EditAnim, start_y: f32, content_window_size: imgui.
             imgui.igPushItemWidth(textfield_width);
             anim.search_ed_active = imgui.igInputTextWithHint("##search", "search term...", anim.search_term, anim.search_term_size, 0, null, null);
             imgui.igSetCursorPos(.{ .x = editor_pos.x + textfield_width + gap, .y = editor_pos.y });
-            if (imgui.igButton("Search!", .{ .x = find_area_button_size - gap, .y = 28 })) {
+            if (imgui.igButton("Search!", .{ .x = find_area_button_size - gap, .y = 35 })) {
                 // TODO: replaced lenZ
                 if (std.mem.len(anim.search_term) > 0) {
                     // DO SEARCH

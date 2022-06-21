@@ -1000,9 +1000,9 @@ fn showSlide2(slide_number: i32, context: *SampleApplication.Context) !void {
     if (isFullScreen()) {
         start_y = 0;
     }
-    ed_anim.desired_size.y = G.content_window_size.y - 37 - start_y;
+    ed_anim.desired_size.y = G.content_window_size.y - 46 - start_y;
     if (!anim_bottom_panel.visible) {
-        ed_anim.desired_size.y += 20.0;
+        ed_anim.desired_size.y += 40.0;
     }
     const editor_active = try animatedEditor(&ed_anim, start_y, G.content_window_size, G.internal_render_size);
 
@@ -1033,7 +1033,7 @@ const bottomPanelAnim = struct { visible: bool = false, visible_before_editor: b
 
 fn showBottomPanel() void {
     my_fonts.pushGuiFont(1);
-    imgui.igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 30 });
+    imgui.igSetCursorPos(ImVec2{ .x = 0, .y = G.content_window_size.y - 42 });
     if (anim_bottom_panel.visible) {
         imgui.igColumns(6, null, false);
         bt_toggle_bottom_panel_anim.arrow_dir = 0;
@@ -1044,20 +1044,20 @@ fn showBottomPanel() void {
         imgui.igNextColumn();
         // TODO: using the button can cause crashes, whereas the shortcut and menu don't -- what's going on here?
         //       when button is removed, we also saw it with the shortcut
-        if (animatedButton("[f]ullscreen", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 22 }, &bt_toggle_fullscreen_anim) == .released) {
+        if (animatedButton("[f]ullscreen", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 38 }, &bt_toggle_fullscreen_anim) == .released) {
             cmdToggleFullscreen();
         }
         imgui.igNextColumn();
-        if (animatedButton("[o]verview", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 22 }, &bt_overview_anim) == .released) {
+        if (animatedButton("[o]verview", ImVec2{ .x = imgui.igGetColumnWidth(1), .y = 38 }, &bt_overview_anim) == .released) {
             setStatusMsg("Not implemented!");
         }
         imgui.igNextColumn();
-        if (animatedButton("[e]ditor", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 22 }, &bt_toggle_ed_anim) == .released) {
+        if (animatedButton("[e]ditor", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 38 }, &bt_toggle_ed_anim) == .released) {
             cmdToggleEditor();
         }
         imgui.igNextColumn();
         if (ed_anim.visible) {
-            if (animatedButton("save", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 22 }, &bt_save_anim) == .released) {
+            if (animatedButton("save", ImVec2{ .x = imgui.igGetColumnWidth(2), .y = 38 }, &bt_save_anim) == .released) {
                 cmdSave();
             }
         }
