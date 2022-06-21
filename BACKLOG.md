@@ -1,9 +1,13 @@
 # Backlog
 
-- check out what went wrong with win build after 2022-06-03
-- cleanup any messes from prev commits, i.e. getPositions()
 - use zlib to create zip files in pptx exports
   - minizip.c
+- check out what went wrong with win build after 2022-06-03
+  - gh action for zig build wonky?
+  - gh win builds just stopped working - "illegal instruction"
+    - even when we build for sandylake cpus
+  - but on my win laptop, zig build produces valid .exe files
+- cleanup any messes from prev commits, i.e. getPositions()
 
 ## BUGS
 

@@ -5,6 +5,7 @@ const std = @import("std");
 const relpathToAbspath = @import("utils.zig").relpathToAbspath;
 const gl = @import("gl");
 
+const defaultGuiFontSize = 24;
 pub const FontStyle = enum {
     normal,
     bold,
@@ -131,7 +132,7 @@ fn castaway_const(ptr: *const anyopaque) *anyopaque {
 pub fn loadDefaultFonts(gui_font_size: ?i32) !void {
     var io = imgui.igGetIO();
     imgui.ImFontAtlas_Clear(io.*.Fonts);
-    const gfs = gui_font_size orelse 16;
+    const gfs = gui_font_size orelse defaultGuiFontSize;
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
         io.*.Fonts,
         castaway_const(fontdata_gui),
@@ -215,7 +216,7 @@ pub fn loadCustomFonts(fontConfig: FontConfig, slideshow_filp: []const u8) !void
     // then, create a new font atlas
     io.*.Fonts = imgui.ImFontAtlas_ImFontAtlas();
 
-    const gfs = fontConfig.gui_font_size orelse 16;
+    const gfs = fontConfig.gui_font_size orelse defaultGuiFontSize;
     gui_font = imgui.ImFontAtlas_AddFontFromMemoryTTF(
         io.*.Fonts,
         castaway_const(fontdata_gui),
