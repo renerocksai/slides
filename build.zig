@@ -5,6 +5,8 @@ const Builder = std.build.Builder;
 
 pub const filedlgPkg = std.build.Pkg{ .name = "filedialog", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/filedialog.zig" }, .dependencies = &[_]std.build.Pkg{ztBuild.imguiPkg} };
 
+pub const myMiniZipPkg = std.build.Pkg{ .name = "myminizip", .path = std.build.FileSource{ .path = getRelativePath() ++ "src/pkg/myminizip.zig" }, .dependencies = &[_]std.build.Pkg{} };
+
 fn getRelativePath() []const u8 {
     comptime var src: std.builtin.SourceLocation = @src();
     return std.fs.path.dirname(src.file).? ++ std.fs.path.sep_str;
@@ -42,11 +44,16 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
 
     exe.linkLibrary(addZlib(exe));
 
+    // to be able to include the libPng headers:
     exe.addIncludeDir(path ++ "./src/dep/libpng-1.6.37");
     const libPng = try addLibPng(exe);
     exe.linkLibrary(libPng);
 
+    const libMyMiniZip = try addLibMyMiniZip(exe);
+    exe.linkLibrary(libMyMiniZip);
+
     exe.addPackage(filedlgPkg);
+    exe.addPackage(myMiniZipPkg);
     ztBuild.link(exe);
 
     const run_cmd = exe.run();
@@ -193,6 +200,42 @@ pub fn addLibPng(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep {
     }, flagContainer.items);
 
     return libPng;
+}
+pub fn addLibMyMiniZip(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep {
+    comptime var path = getRelativePath();
+    var b = exe.builder;
+    var target = exe.target;
+    var libMyMiniZip = b.addStaticLibrary("myminizip", null);
+    libMyMiniZip.linkLibC();
+
+    // Generate flags.
+    var flagContainer = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    if (b.is_release) flagContainer.append("-Os") catch unreachable;
+    flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
+    flagContainer.append("-fno-sanitize=undefined") catch unreachable;
+
+    // Link libraries.
+    if (target.isWindows()) {
+        // TODO
+    }
+
+    if (target.isDarwin()) {
+        // !! Mac TODO
+        // Here we need to add the include the system libs needed for mac libMyMiniZip
+    }
+
+    // Include dirs.
+    libMyMiniZip.addIncludeDir(path ++ "src/dep/zlib-1.2.12");
+    libMyMiniZip.addIncludeDir(path ++ "src/dep/zlib-1.2.12/contrib/minizip");
+
+    // Add C
+    libMyMiniZip.addCSourceFiles(&.{
+        path ++ "./src/dep/zlib-1.2.12/contrib/minizip/zip.c",
+        path ++ "./src/dep/zlib-1.2.12/contrib/minizip/ioapi.c",
+        path ++ "./src/pkg/myminizip/myminizip.c",
+    }, flagContainer.items);
+
+    return libMyMiniZip;
 }
 
 fn copy(from: []const u8, to: []const u8, filename: []const u8, destfilename: []const u8) !void {

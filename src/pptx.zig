@@ -1,5 +1,6 @@
 const std = @import("std");
 const embeds = @import("pptx_embeds.zig");
+const minizip = @import("myminizip");
 
 fn ensureDestPaths(destpath: []const u8, allocator: std.mem.Allocator) !void {
     var cwd = std.fs.cwd();
@@ -183,6 +184,27 @@ fn copy(from: []const u8, to: []const u8, filename: []const u8) !void {
 }
 
 pub fn zipIt(destpath: []const u8, zipPath: []const u8, allocator: std.mem.Allocator) !void {
+    // open and walk dir, add file name pair as we go along
+    _ = zipPath;
+    const dir = try std.fs.cwd().openDir(destpath, .{ .iterate = true });
+    var walker = try dir.walk(allocator);
+    defer walker.deinit();
+
+    var fnPairs = std.ArrayList(minizip.ZipFnPair).init(allocator);
+    while (try walker.next()) |entry| {
+        if (entry.kind == .File) {
+            std.log.debug("zip: {s}", .{entry.path});
+            try fnPairs.append(.{
+                .fnOnDisk = try std.fmt.allocPrintZ(allocator, "{s}/{s}", .{ destpath, entry.path }),
+                .fnInZip = try std.fmt.allocPrintZ(allocator, "{s}", .{entry.path}),
+            });
+        }
+    }
+    const ret = minizip.zipIt(zipPath.ptr, fnPairs.items[0..].ptr, @intCast(i16, fnPairs.items.len));
+    std.log.debug("minizip returned {}", .{ret});
+}
+
+pub fn zipItOldStyle(destpath: []const u8, zipPath: []const u8, allocator: std.mem.Allocator) !void {
     const args = [_][]const u8{
         "zip",
         // "-b",
