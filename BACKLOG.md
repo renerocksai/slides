@@ -5,7 +5,6 @@
   - gh win builds just stopped working - "illegal instruction"
     - even when we build for sandylake cpus
   - but on my win laptop, zig build produces valid .exe files
-- cleanup any messes from prev commits, i.e. getPositions()
 
 ## BUGS
 

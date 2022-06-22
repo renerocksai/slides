@@ -385,10 +385,6 @@ const posbufferSize: usize = 15;
 const PosBuffer = struct {
     posArray: [posbufferSize]?imgui.ImVec2 = .{ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null },
 
-    fn getPositions(self: *PosBuffer) []?imgui.ImVec2 {
-        return &self.posArray;
-    }
-
     fn addPosition(self: *PosBuffer, pos: imgui.ImVec2) void {
         var i: usize = self.posArray.len - 1;
         while (i >= 1) : (i -= 1) {
@@ -465,7 +461,7 @@ const LaserpointerAnim = struct {
             imgui.igSetCursorPos(mousepos);
             self.posbuffer.addPosition(mousepos);
             // TODO: sapp_show_mouse(false);
-            for (self.posbuffer.getPositions()) |pos, i| {
+            for (self.posbuffer.posArray) |pos, i| {
                 if (pos) |p| {
                     var scale: f32 = 1.0;
                     if (i > 1) scale = 0.8;
