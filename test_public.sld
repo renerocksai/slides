@@ -80,8 +80,8 @@
 
 # -------------------------------------------------------------
 @popslide intro
-@pop intro_title_shadow text=!Slideshows in ZIG!
-@pop intro_title text=!Slideshows in <#F7A41DFF>ZIG</>!
+@pop intro_title_shadow text=`Slideshows in ZIG`
+@pop intro_title text=`Slideshows in <#F7A41DFF>ZIG</>`
 @pop intro_subtitle text=_**Easy, text-based slideshows for Hackers**_
 @pop intro_authors text=_@renerocksai_
 
@@ -95,17 +95,17 @@
 @pop bigbox bullet_symbol=- color=#202020FF
 - **Presentations are created in a simple, markdown-based text format**
         - <#808080FF>_makes your slides totally GitHub-friendly_</>
-_
+`
 - **One single (mostly static) executable** _- no install required._
         - <#808080FF>_for Windows, Linux (and Mac, if you build it yourself)_</>
-_
-_
+`
+`
 - **Built-in editor:** _create, edit, present, ..., make changes while presenting_
         - <#808080FF>_press [E] key to try it out_</>
-_
+`
 - **Support for clickers**
-_
-_
+`
+`
 - **Virtual laser pointer in different sizes**
         - <#808080FF>_press [L] key and [SHIFT] + [L] to try it out_</>
 
@@ -120,35 +120,35 @@ here come the sources
 
 @pop leftbox 
 This is Markdown _**ta-dah**_, **tah**, _dah_!
-_
-empty lines are marked with just an _ underscore
-_
+`
+empty lines are marked with just a ` backtick or an _ underscore
+`
 - here comes the text
     - even more
         - and let's wrap one more time into a nicely aligned textbox
-_
-- and so on
-_
+`
+- use  `special` font with backticks
+`
 - now let us create a text that is very likely to need to be wrapped since it is too long to be rendered on a single line of text in the left box 
-_
+`
 - **and so on**, _and on_
 
 @pop rightbox bullet_symbol=•
-_
-_
-_
+`
+`
+`
 - here is text in the right box
-_
+`
 - we changed the **~~bullet symbol~~**!
-_
+`
 - and so on
-_
+`
 - here comes more text
-_
+`
 - and so on
-_
+`
 - here comes more text
-_
+`
 - and ~~**so on**~~
 
 # -------------------------------------------------------------
@@ -159,13 +159,13 @@ _
 
 @pop leftbox w=260 h=800
 - single executable for presenting and editing 
-_
+`
 - text based slide format. 
-_
+`
 - no need to drag, click, and find and edit properties
-_
+`
 - compare ------->
-_
+`
 - however, simpler:
     - no complex animationse
     - no scripting
@@ -187,13 +187,13 @@ _
        **it works in combination, too**
 
 @pop leftbox w=1000 h=800
-_
+`
 - with _@box img=..._ you place images
-_
-_
-_
-_
-_
+`
+`
+`
+`
+`
 - with _@box color=..._ and no text, you place colored boxes
     > ... with ALPHA!
 
@@ -203,8 +203,8 @@ _
 
 # -------------------------------------------------------------
 @popslide thankyou
-@pop thankyou_title_shadow color=#000000FF text=!Slideshows in ZIG!
-@pop thankyou_title color=#7A7A7AFF text=!Slideshows in ZIG!
+@pop thankyou_title_shadow color=#000000FF text=`Slideshows in ZIG`
+@pop thankyou_title color=#7A7A7AFF text=`Slideshows in ZIG`
 @pop thankyou_subtitle color=#202020FF text=_Slideshows for Hackers_
 @pop thankyou_authors text=_@renerocksai_
 

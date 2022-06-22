@@ -190,7 +190,7 @@ Normal text.
 _italic_ text.
 _**Bold italic**_ text.
 ~~Underlined~~ text.
-!rendered with "font_extra" (e.g. "zig showtime" font)!
+`rendered with "font_extra" (e.g. "zig showtime" font)`
 <#rrggbbaa>Colored with alpha</> text. E.g. <#ff0000ff>red full opacity</>
 ```
 
@@ -248,6 +248,15 @@ Example of the current text format - see [test_public.sld](./test_public.sld) fo
 
 @box x=100 y=100 w=1720 h=880
 Here come the bullets:
+`
+Text in a box can span multiple lines and will be wrapped
+according to width
+`
+`
+`
+Empty lines are consist of a single backtick (see above)
+`
+`Bullet list:
 - first
     - some details
 - second

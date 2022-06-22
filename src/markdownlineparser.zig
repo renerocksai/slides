@@ -213,7 +213,7 @@ pub const MdLineParser = struct {
                     }
                 },
 
-                '!' => {
+                '!', '`' => {
                     if (self.currentSpan.styleflags & StyleFlags.zig > 0) {
                         // try to terminate zig
                         // make sure we weren't preceded by a space
@@ -229,21 +229,25 @@ pub const MdLineParser = struct {
                             }
                         }
                     } else {
-                        // try to start italic:
-                        if (std.mem.indexOf(u8, line[pos + 1 ..], "!")) |term_pos_relative| {
-                            // how many chars after the character (pos+1) after the initial ! (pos)
-                            if (term_pos_relative >= 1) {
-                                // check if terminator is preceded by space
-                                if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
-                                    if (nospace != ' ') {
-                                        self.currentSpan.endpos = pos;
-                                        try self.emitCurrentSpan(line);
+                        // try to start special:
+                        // TODO use the switched over thing for looking for end
+                        var term_pos_relative: usize = 0;
+                        if (std.mem.indexOf(u8, line[pos + 1 ..], line[pos .. pos + 1])) |rel_pos| {
+                            term_pos_relative = rel_pos;
+                        }
 
-                                        // change style of new span
-                                        self.currentSpan.styleflags |= StyleFlags.zig;
-                                        self.currentSpan.startpos = pos + 1;
-                                        self.currentSpan.endpos = 0;
-                                    }
+                        // how many chars after the character (pos+1) after the initial ! (pos)
+                        if (term_pos_relative >= 1) {
+                            // check if terminator is preceded by space
+                            if (peekBack(line, pos + 1 + term_pos_relative, 1)) |nospace| {
+                                if (nospace != ' ') {
+                                    self.currentSpan.endpos = pos;
+                                    try self.emitCurrentSpan(line);
+
+                                    // change style of new span
+                                    self.currentSpan.styleflags |= StyleFlags.zig;
+                                    self.currentSpan.startpos = pos + 1;
+                                    self.currentSpan.endpos = 0;
                                 }
                             }
                         }
