@@ -281,7 +281,7 @@ git clone https://github.com/renerocksai/slides.git
 ### Linux / Ubuntu
 
 ```console
-sudo apt-get install -y libpng-dev xorg-dev
+sudo apt-get install -y xorg-dev
 ```
 
 ### NixOS
