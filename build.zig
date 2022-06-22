@@ -61,7 +61,7 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
     exe_step.dependOn(&run_cmd.step);
     b.default_step.dependOn(&exe.step);
     b.installArtifact(exe);
-    ztBuild.addBinaryContent("ZT/example/assets") catch unreachable;
+    addBinaryContent("assets") catch unreachable;
 }
 
 // Filedialog
@@ -178,7 +178,7 @@ pub fn addLibPng(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep {
     libPng.addIncludeDir(path ++ "src/dep/zlib-1.2.12");
 
     // generate pnglibconf.h from pnglibconf.h.prebuilt
-    try copy("src/dep/libpng-1.6.37/scripts", "src/dep/libpng-1.6.37", "pnglibconf.h.prebuilt", "pnglibconf.h");
+    try ensureCopied("src/dep/libpng-1.6.37/scripts", "src/dep/libpng-1.6.37", "pnglibconf.h.prebuilt", "pnglibconf.h");
 
     // Add C
     libPng.addCSourceFiles(&.{
@@ -238,7 +238,80 @@ pub fn addLibMyMiniZip(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep 
     return libMyMiniZip;
 }
 
-fn copy(from: []const u8, to: []const u8, filename: []const u8, destfilename: []const u8) !void {
+// adaption from the ztBuild version: keep dirname of asset folder
+pub fn addBinaryContent(comptime baseContentPath: []const u8) ztBuild.AddContentErrors!void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+    const zigBin: []const u8 = std.fs.path.join(gpa.allocator(), &[_][]const u8{ "zig-out", "bin" }) catch return error.FolderError;
+    defer gpa.allocator().free(zigBin);
+    fs.cwd().makePath(zigBin) catch return error.FolderError;
+
+    var sourceFolder: fs.Dir = fs.cwd().openDir(baseContentPath, .{ .iterate = true }) catch return error.FolderError;
+    defer sourceFolder.close();
+    var iterator: fs.Dir.Iterator = sourceFolder.iterate();
+    while (iterator.next() catch return error.FolderError) |target| {
+        var x: fs.Dir.Entry = target;
+        if (x.kind == .Directory) {
+            const source: []const u8 = std.fs.path.join(gpa.allocator(), &[_][]const u8{ baseContentPath, x.name }) catch return error.RecursionError;
+            const targetFolder: []const u8 = std.fs.path.join(gpa.allocator(), &[_][]const u8{ zigBin, baseContentPath, x.name }) catch return error.RecursionError;
+            defer gpa.allocator().free(source);
+            defer gpa.allocator().free(targetFolder);
+            try innerAddContent(gpa.allocator(), source, targetFolder);
+        }
+        if (x.kind == .File) {
+            const targetFolder: []const u8 = std.fs.path.join(gpa.allocator(), &[_][]const u8{ zigBin, baseContentPath }) catch return error.RecursionError;
+            try copy(baseContentPath, targetFolder, x.name);
+        }
+    }
+}
+fn innerAddContent(allocator: std.mem.Allocator, folder: []const u8, dest: []const u8) ztBuild.AddContentErrors!void {
+    var sourceFolder: fs.Dir = fs.cwd().openDir(folder, .{ .iterate = true }) catch return error.FolderError;
+    defer sourceFolder.close();
+
+    var iterator: fs.Dir.Iterator = sourceFolder.iterate();
+    while (iterator.next() catch return error.FolderError) |target| {
+        var x: fs.Dir.Entry = target;
+        if (x.kind == .Directory) {
+            const source: []const u8 = std.fs.path.join(allocator, &[_][]const u8{ folder, x.name }) catch return error.RecursionError;
+            const targetFolder: []const u8 = std.fs.path.join(allocator, &[_][]const u8{ dest, x.name }) catch return error.RecursionError;
+            defer allocator.free(source);
+            defer allocator.free(targetFolder);
+            try innerAddContent(allocator, source, targetFolder);
+        }
+        if (x.kind == .File) {
+            try copy(folder, dest, x.name);
+        }
+    }
+}
+fn copy(from: []const u8, to: []const u8, filename: []const u8) ztBuild.AddContentErrors!void {
+    fs.cwd().makePath(to) catch return error.FolderError;
+    var source = fs.cwd().openDir(from, .{}) catch return error.FileError;
+    var dest = fs.cwd().openDir(to, .{}) catch return error.FileError;
+
+    var sfile = source.openFile(filename, .{}) catch return error.FileError;
+    defer sfile.close();
+    var dfile = dest.openFile(filename, .{}) catch {
+        source.copyFile(filename, dest, filename, .{}) catch return error.PermissionError;
+        std.debug.print("COPY: {s}/{s} to {s}/{s}\n", .{ from, filename, to, filename });
+        return;
+    };
+
+    var sstat = sfile.stat() catch return error.FileError;
+    var dstat = dfile.stat() catch return error.FileError;
+
+    if (sstat.mtime > dstat.mtime) {
+        dfile.close();
+        dest.deleteFile(filename) catch return error.PermissionError;
+        source.copyFile(filename, dest, filename, .{}) catch return error.PermissionError;
+        std.debug.print("OVERWRITE: {s}/{s} to {s}/{s}\n", .{ from, filename, to, filename });
+    } else {
+        defer dfile.close();
+        std.debug.print("SKIP: {s}/{s}\n", .{ from, filename });
+    }
+}
+
+// this is just for a header file of libpng.
+fn ensureCopied(from: []const u8, to: []const u8, filename: []const u8, destfilename: []const u8) !void {
     fs.cwd().makePath(to) catch return error.FolderError;
     var source = fs.cwd().openDir(from, .{}) catch return error.FileError;
     var dest = fs.cwd().openDir(to, .{}) catch return error.FileError;
@@ -252,22 +325,4 @@ fn copy(from: []const u8, to: []const u8, filename: []const u8, destfilename: []
         std.debug.print("COPY: {s}/{s} to {s}/{s}\n", .{ from, filename, to, filename });
         return;
     };
-
-    // else: the file exists, so we're happy. Since we checked it in, it always exists. TODO: maybe delete the
-    //       from the repository, add it to .gitignore
-
-    return;
-
-    // var sstat = sfile.stat() catch return error.FileError;
-    // var dstat = dfile.stat() catch return error.FileError;
-    //
-    // if (sstat.mtime > dstat.mtime) {
-    //     dfile.close();
-    //     dest.deleteFile(filename) catch return error.PermissionError;
-    //     source.copyFile(filename, dest, destfilename, .{}) catch return error.PermissionError;
-    //     std.debug.print("OVERWRITE: {s}\\{s} to {s}\\{s}\n", .{ from, filename, to, filename });
-    // } else {
-    //     defer dfile.close();
-    //     std.debug.print("SKIP: {s}\\{s}\n", .{ from, filename });
-    // }
 }
