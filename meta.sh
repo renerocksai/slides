@@ -5,10 +5,11 @@ echo
 echo "const PptxEmbed = struct { filename : [] const u8, content : [] const u8 };"
 echo "pub const toCopy = std.ArrayList(*PptxEmbed);"
 echo
-for i in $(find assets/pptx -type f) ; do
+for i in $(find pptx_template/const -type f) ; do
     fn=cpy_$(basename $i)
     varname=const_$(echo $fn | sed s/\\./_/g)
-    echo "const $varname  = PptxEmbed { .filename = \"$i\", .content = @embedFile(\"$i\")};"
+    destname=$(echo $i | sed 's/pptx_template\/const\///')
+    echo "const $varname  = PptxEmbed { .filename = \"$destname\", .content = @embedFile(\"../$i\")};"
 done
 echo
 echo "pub fn initToCopy() !*std.ArrayList(*PptxEmbed) {"
@@ -21,10 +22,11 @@ done
 echo "}"
 echo
 echo
-for i in $(find pptx_template -type f) ; do
+for i in $(find pptx_template/variable -type f) ; do
     fn=cpy_$(basename $i)
     varname=mod_$(echo $fn | sed s/\\./_/g | sed s/\\[// | sed s/\\]//)
-    echo "const $varname  = PptxEmbed { .filename = \"$i\", .content = @embedFile(\"$i\")};"
+    destname=$(echo $i | sed 's/pptx_template\/variable\///')
+    echo "const $varname  = PptxEmbed { .filename = \"$destname\", .content = @embedFile(\"../$i\")};"
 done
 
 # for i in $(find pptx_template -type f) ; do
