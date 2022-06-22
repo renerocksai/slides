@@ -255,7 +255,7 @@ pub fn constructSlidesFromBuf(input: []const u8, slideshow: *slides.SlideShow, a
                 var text: []const u8 = undefined;
                 var the_line = line;
                 // make _ line an empty line
-                if (line.len == 1 and line[0] == '_') {
+                if (line.len == 1 and line[0] == '_' or line[0] == '`') {
                     the_line = " ";
                 }
                 if (parsing_item_context.text) |txt| {
