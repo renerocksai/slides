@@ -254,9 +254,11 @@ according to width
 `
 `
 `
-Empty lines consist of a single backtick (see above)
+Empty lines consist of a single backtick (see above and below)
 `
-`Bullet list:
+`
+`
+Bullet list:
 - first
     - some details
 - second
