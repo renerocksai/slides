@@ -119,7 +119,7 @@ fn elementInspector() !void {
 
     // var io = ig.igGetIO();
     const flags = 0 | ig.ImGuiWindowFlags_NoSavedSettings;
-    const height = 600;
+    const height = 720;
     const width = 300;
     const startposx = 500;
     const startposy = 40;
@@ -234,7 +234,7 @@ fn inspectContext(ctx: *SampleApplication.Context) void {
 
     const flags = ig.ImGuiWindowFlags_NoResize | ig.ImGuiWindowFlags_NoSavedSettings;
 
-    const height = 280;
+    const height = 368;
     const width = 300;
     ig.igSetNextWindowPos(zt.math.vec2(40, 40), ig.ImGuiCond_Once, .{});
     ig.igSetNextWindowSize(zt.math.vec2(
