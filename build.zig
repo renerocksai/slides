@@ -40,20 +40,24 @@ fn createExe(b: *Builder, target: std.zig.CrossTarget, name: []const u8, source:
     exe.setOutputDir(std.fs.path.join(b.allocator, &[_][]const u8{ b.cache_root, "bin" }) catch unreachable);
     exe.setTarget(target);
 
+    // libfiledialog
     exe.linkLibrary(filedialogLibrary(exe));
+    exe.addPackage(filedlgPkg);
 
+    // zlib - for libpng
     exe.linkLibrary(addZlib(exe));
 
-    // to be able to include the libPng headers:
+    // libpng
+    // add include dir to be able to include the libPng headers in the package's zig file:
     exe.addIncludeDir(path ++ "./src/dep/libpng-1.6.37");
     const libPng = try addLibPng(exe);
     exe.linkLibrary(libPng);
 
+    // my minizip
     const libMyMiniZip = try addLibMyMiniZip(exe);
     exe.linkLibrary(libMyMiniZip);
-
-    exe.addPackage(filedlgPkg);
     exe.addPackage(myMiniZipPkg);
+
     ztBuild.link(exe);
 
     const run_cmd = exe.run();
@@ -90,6 +94,7 @@ pub fn filedialogLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep
     if (target.isDarwin()) {
         // !! Mac TODO
         // Here we need to add the include the system libs needed for mac filedialog
+        // probably none
     }
 
     // Include dirs.
@@ -121,14 +126,9 @@ pub fn addZlib(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
     flagContainer.append("-fno-sanitize=undefined") catch unreachable;
 
-    // Link libraries.
-    if (target.isWindows()) {
-        // TODO
-    }
-
     if (target.isDarwin()) {
         // !! Mac TODO
-        // Here we need to add the include the system libs needed for mac libz
+        // probably nothing
     }
 
     // Include dirs.
@@ -163,14 +163,9 @@ pub fn addLibPng(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep {
     flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
     flagContainer.append("-fno-sanitize=undefined") catch unreachable;
 
-    // Link libraries.
-    if (target.isWindows()) {
-        // TODO
-    }
-
     if (target.isDarwin()) {
         // !! Mac TODO
-        // Here we need to add the include the system libs needed for mac libPng
+        // probably nothing
     }
 
     // Include dirs.
@@ -214,14 +209,9 @@ pub fn addLibMyMiniZip(exe: *std.build.LibExeObjStep) !*std.build.LibExeObjStep 
     flagContainer.append("-Wno-return-type-c-linkage") catch unreachable;
     flagContainer.append("-fno-sanitize=undefined") catch unreachable;
 
-    // Link libraries.
-    if (target.isWindows()) {
-        // TODO
-    }
-
     if (target.isDarwin()) {
         // !! Mac TODO
-        // Here we need to add the include the system libs needed for mac libMyMiniZip
+        // probably nothing
     }
 
     // Include dirs.
