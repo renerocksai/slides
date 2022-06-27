@@ -295,7 +295,7 @@ nix-shell
 
 ### Windows
 
-To be done. Need to figure out how to automate download of libpng sources. Might vendor them in and let zig build them. This takes time...
+No further dependencies. `zig build` works out-of-the-box.
 
 ## build and run
 
