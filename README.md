@@ -56,7 +56,7 @@ Opening slideshows, text-search, editing: [here](https://user-images.githubuserc
 
 Apart from all the reasons for ditching Powerpoint that also applied to my previous slideshow project, [Bûllets](https://github.com/renerocksai/bullets), which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
 
-In addition, this project also serves as a case study for myself where I test out how feasible it is to develop cross-platform GUI apps in zig, using OpenGL, SDL, and an immediate mode GUI like dear imgui.
+In addition, this project also serves as a case study for myself where I test out how feasible it is to develop cross-platform GUI apps in zig, using OpenGL and an immediate mode GUI like dear imgui.
 
 This project achieves what I set out for in the following ways:
 
