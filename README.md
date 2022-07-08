@@ -49,11 +49,7 @@ With the `key repeat` setting, accessible by the settings widget, you can set th
 
 See it in action [here](https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4)
 
-<video src="https://user-images.githubusercontent.com/30892199/172054559-dccfe611-be60-4dbe-a9ff-f5312fb575a6.mp4"/>
-
 Opening slideshows, text-search, editing: [here](https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4):
-
-<https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4>
 
 # Motivation
 
@@ -137,8 +133,6 @@ Please note that render elements do necessarily correspond 1:1 with slide elemen
 The idea of the inspector gadget is to play around with the slides in a visual manner, and then copy the color codes, coordinates into the text editor.
 
 Little video demo: [here](https://user-images.githubusercontent.com/30892199/172055396-2ee2b7b6-7048-478b-84a0-e968dab8da4a.mp4)
-
-<https://user-images.githubusercontent.com/30892199/172287106-c9323eac-c9d8-4d48-87e0-d069d6649f37.mp4>
 
 ## Presentation and Slide Navigation
 
