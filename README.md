@@ -24,7 +24,7 @@ This app is supposed to be much simpler and quicker to use (for people like me) 
 ## Contributing
 
 If you want to contribute, with your opinion or patches, please use the mailing list
-[~renerocksai/slides@lists.sr.ht](mailto:~renerocksai/slides@lists.sr.ht).
+[~renerocksai/slides@lists.sr.ht](https://lists.sr.ht/~renerocksai/slides).
 
 ### Rendering Slideshows at 10 000 FPS
 
@@ -315,4 +315,4 @@ To just build: `zig build`. This will create the executable `slides` in `./zig-o
 # Contributing patches
 
 If you want to contribute patches, please use the mailing list
-[~renerocksai/slides@lists.sr.ht](mailto:~renerocksai/slides@lists.sr.ht).
+[~renerocksai/slides@lists.sr.ht](https://lists.sr.ht/~renerocksai/slides).
