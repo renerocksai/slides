@@ -8,12 +8,10 @@ This project is both a case study and also marks my first steps in the programmi
 
 This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
 
-If you want to play with _slides_ you can download the current release from the [releases section](https://github.com/renerocksai/slides/releases) on GitHub. I will release versions as I see fit.
-
 ## Highlights
 
 - Presentations are created in a simple text format, see below.
-  - makes your slides totally GitHub-friendly
+  - makes your slides totally Git-friendly
 - One single (mostly static) executable - no install required.
   - for Windows, Linux (and Mac, if you build it yourself)
 - Built-in editor: create, edit, and present with one small program - or make last-minute changes while presenting
@@ -278,7 +276,7 @@ Bullet list:
 Clone this repository
 
 ```console
-git clone https://github.com/renerocksai/slides.git
+git clone https://git.sr.ht/~renerocksai/slides
 ```
 
 ## dependencies
@@ -313,3 +311,8 @@ To just build: `zig build`. This will create the executable `slides` in `./zig-o
 ## Tested with
 
 - zig `0.9.1` (release)
+
+# Contributing patches
+
+If you want to contribute patches, please use the mailing list
+[~renerocksai/slides@lists.sr.ht](mailto:~renerocksai/slides@lists.sr.ht).
