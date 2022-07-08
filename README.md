@@ -6,7 +6,7 @@ This project is both a case study and also marks my first steps in the programmi
 
 **Danger - this is alpha stuff**. I have used it to give quite a few presentations in online meetings though and nobody seemed to have noticed that I hadn't used Powerpoint. It is my zig programming toy - please don't be disappointed if it doesn't do everything you expect.
 
-This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://github.com/renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
+This app is supposed to be much simpler and quicker to use (for people like me) than my more powerful take on the whole slideshow matter, [Bûllets](https://git.sr.ht/~renerocksai/bullets), while still being totally functional. The reason for increased ease of use and speed is that, with slides, entire slideshows can be expressed in an easy text format, and it can also be used in tandem with an external text editor such as [neovim](https://neovim.io/).
 
 ## Highlights
 
@@ -57,7 +57,7 @@ Opening slideshows, text-search, editing: [here](https://user-images.githubuserc
 
 # Motivation
 
-Apart from all the reasons for ditching Powerpoint that also applied to my previous slideshow project, [Bûllets](https://github.com/renerocksai/bullets), which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
+Apart from all the reasons for ditching Powerpoint that also applied to my previous slideshow project, [Bûllets](https://git.sr.ht/~renerocksai/bullets), which I already outlined there, this time I wanted to create something more portable, easier to get started with, without external dependencies, that also allows for super quick slide creation using a simple text format.
 
 In addition, this project also serves as a case study for myself where I test out how feasible it is to develop cross-platform GUI apps in zig, using OpenGL and an immediate mode GUI like dear imgui.
 
