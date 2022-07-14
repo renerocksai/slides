@@ -1,4 +1,11 @@
-{ pkgs ? import <nixpkgs> { } }:
+let
+  nixpkgs = builtins.fetchTarball {
+    # nixpkgs 
+    url = "https://github.com/NixOS/nixpkgs/archive/53578062a472fdd322492cf59f3699ab1231f6f2.tar.gz";
+    sha256 = "05f5mxkh6mfpnf9809mqg312jqfdcmi2a0wqvsqfvm3cwlh2n35v";
+  };
+in
+{ pkgs ? import nixpkgs { } }:
 
 pkgs.mkShell {
   # for building
@@ -12,6 +19,7 @@ pkgs.mkShell {
     pkgs.gtk3
     libGL
     glew
+    zig
   ];
 
   # for running tools in the shell
