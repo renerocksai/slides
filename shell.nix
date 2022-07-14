@@ -11,7 +11,6 @@ pkgs.mkShell {
     xorg.libXrandr
     pkgs.gtk3
     libGL
-    glew
   ];
 
   # for running tools in the shell
