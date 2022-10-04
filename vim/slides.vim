@@ -51,6 +51,7 @@ syn region dummy  matchgroup=Globals start="@fontsize"  skip="=" end="/\@!" disp
 syn region dummy  matchgroup=Globals start="@font_bold"  skip="=" end="/\@!" display oneline 
 syn region dummy  matchgroup=Globals start="@font_italic"  skip="=" end="/\@!" display oneline 
 syn region dummy  matchgroup=Globals start="@font_bold_italic"  skip="=" end="/\@!" display oneline 
+syn region dummy  matchgroup=Globals start="@font_extra"  skip="=" end="/\@!" display oneline 
 syn region dummy  matchgroup=Globals start="@underline_width"  skip="=" end="/\@!" display oneline 
 syn region dummy  matchgroup=Globals start="@color"  skip="=" end="/\@!" display oneline 
 syn region dummy  matchgroup=Globals start="@bullet_color"  skip="=" end="/\@!" display oneline 
