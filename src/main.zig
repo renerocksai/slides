@@ -883,6 +883,11 @@ fn handleKeyboard() void {
         return;
     }
 
+    if (keyPressed(glfw.GLFW_KEY_D) and ctrl) {
+        render.renderDistortionAnimation.running = !render.renderDistortionAnimation.running;
+        return;
+    }
+
     if (keyPressed(glfw.GLFW_KEY_T) and ctrl) {
         cmdExportPowerpoint();
     }
@@ -1564,7 +1569,7 @@ fn showMenu() void {
             if (imgui.igMenuItem_Bool("Toggle inspector gadget", "Ctrl + I", false, true)) {
                 G.showElementInspector = !G.showElementInspector;
             }
-            if (imgui.igMenuItem_Bool("Toggle Distortion", null, false, true)) {
+            if (imgui.igMenuItem_Bool("Toggle Distortion", "Ctrl + D", false, true)) {
                 render.renderDistortionAnimation.running = !render.renderDistortionAnimation.running;
             }
             imgui.igEndMenu();
