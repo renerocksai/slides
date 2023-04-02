@@ -8,6 +8,8 @@
     # required for latest zig
     zig.url = "github:mitchellh/zig-overlay";
 
+    # for chromeos etc
+    nixgl.url = "github:guibou/nixGL";
 
     # Used for shell.nix
     flake-compat = {
@@ -20,14 +22,10 @@
     self,
     nixpkgs,
     flake-utils,
+    nixgl,
     ...
   } @ inputs: let
-    overlays = [
-      # Other overlays
-      (final: prev: {
-        zigpkgs = inputs.zig.packages.${prev.system};
-      })
-    ];
+    overlays = [ nixgl.overlay ];
 
     # Our supported systems are the same supported systems as the Zig binaries
     systems = builtins.attrNames inputs.zig.packages;
@@ -61,6 +59,39 @@
             # once we set SHELL to point to the interactive bash, neovim will 
             # launch the correct $SHELL in its :terminal 
             export SHELL=${pkgs.bashInteractive}/bin/bash
+          '';
+        };
+
+        # this shell needs to be run with
+        # nix develop --impure .#nixgl 
+        devShells.nixgl = pkgs.mkShell {
+          nativeBuildInputs = with pkgs; [
+            # zigpkgs.master
+            xorg.libX11 
+            xorg.libX11.dev
+            xorg.libXcursor
+            xorg.libXinerama
+            xorg.xinput
+            xorg.libXrandr
+            pkgs.gtk3
+            libGL
+            zig
+            pkgs.nixgl.auto.nixGLDefault
+          ];
+
+          buildInputs = with pkgs; [
+            # we need a version of bash capable of being interactive
+            # as opposed to a bash just used for building this flake 
+            # in non-interactive mode
+            bashInteractive 
+          ];
+
+          shellHook = ''
+            # once we set SHELL to point to the interactive bash, neovim will 
+            # launch the correct $SHELL in its :terminal 
+            export SHELL=${pkgs.bashInteractive}/bin/bash
+            echo "run with:"
+            echo "nixGL zig-out/bin/slides"
           '';
         };
 
