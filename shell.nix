@@ -11,21 +11,22 @@ pkgs.mkShell {
     xorg.libXrandr
     pkgs.gtk3
     libGL
+    zig
   ];
 
   # for running tools in the shell
-  nativeBuildInputs = with pkgs; [
-    cmake
-    gdb
-    ninja
-    qemu
-    glew
-  ] ++ (with llvmPackages_13; [
-    clang
-    clang-unwrapped
-    lld
-    llvm
-  ]);
+  # nativeBuildInputs = with pkgs; [
+  #   cmake
+  #   gdb
+  #   ninja
+  #   qemu
+  #   glew
+  # ] ++ (with llvmPackages_13; [
+  #   clang
+  #   clang-unwrapped
+  #   lld
+  #   llvm
+  # ]);
 
   hardeningDisable = [ "all" ];
   LD_LIBRARY_PATH = with pkgs ; "${libGL}/lib:${xorg.libX11}/lib";
