@@ -46,6 +46,7 @@
             pkgs.gtk3
             libGL
             zig
+            neovim
           ];
 
           buildInputs = with pkgs; [
@@ -76,6 +77,7 @@
             pkgs.gtk3
             libGL
             zig
+            neovim
             pkgs.nixgl.auto.nixGLDefault
           ];
 

@@ -275,20 +275,39 @@ git clone https://git.sr.ht/~renerocksai/slides
 
 ## dependencies
 
+As of now, slides still depends on the relatively old Zig 0.9.1 release. You can
+download it from [ziglang.org/download/](https://ziglang.org/download/) unless
+you run NixOS or installed the Nix package manager on your system.
+
+**Using Nix/NixOS is strongly recommended!**
+
 ### Linux / Ubuntu
 
 ```console
 sudo apt-get install -y xorg-dev
 ```
 
-### NixOS
+### NixOS / Ubuntu + Nix 
 
-This applies to NixOS only. To make sure all dependencies are met, I highly recommend using the provided nix shell (via
-`shell.nix`). Start it in the slides directory:
+This applies to NixOS or other Linux distros like Ubuntu with the Nix package
+manager installed. To make sure all dependencies are met, I highly recommend
+using the provided nix shell (via `flake.nix`). Start it in the slides
+directory:
 
 ```console
-nix-shell
+$ nix develop
 ```
+
+**On systems like ChromeOS**, I need [nixGL](https://github.com/guibou/nixGL) to
+run the compiled program in the dev shell. Use the flake's `nixgl` shell to gain
+access to the `nixGL` command:
+
+```console
+$ nix develop --impure .#nixgl
+$ zig build slides
+$ nixGL ./zig-out/bin/slides 
+```
+
 
 ### Windows
 
