@@ -22,10 +22,16 @@
     self,
     nixpkgs,
     flake-utils,
+    zig,
     nixgl,
     ...
   } @ inputs: let
-    overlays = [ nixgl.overlay ];
+    overlays = [ 
+      nixgl.overlay 
+            (final: prev: {
+        zigpkgs = inputs.zig.packages.${prev.system};
+      })
+    ];
 
     # Our supported systems are the same supported systems as the Zig binaries
     systems = builtins.attrNames inputs.zig.packages;
@@ -36,7 +42,7 @@
       in rec {
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            # zigpkgs.master
+            zigpkgs."0.9.1"
             xorg.libX11 
             xorg.libX11.dev
             xorg.libXcursor
@@ -45,7 +51,6 @@
             xorg.libXrandr
             pkgs.gtk3
             libGL
-            zig
             neovim
           ];
 
@@ -67,7 +72,7 @@
         # nix develop --impure .#nixgl 
         devShells.nixgl = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            # zigpkgs.master
+            zigpkgs."0.9.1"
             xorg.libX11 
             xorg.libX11.dev
             xorg.libXcursor
@@ -76,7 +81,6 @@
             xorg.libXrandr
             pkgs.gtk3
             libGL
-            zig
             neovim
             pkgs.nixgl.auto.nixGLDefault
           ];
