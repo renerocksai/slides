@@ -42,7 +42,7 @@ jobs:
           sudo apt-get install -y libglew-dev libsdl2-dev libpng-dev xorg-dev
 
       - name: Build executable
-        run: zig build -Drelease-fast --verbose
+        run: zig build -Drelease-fast -Dtarget=x86_64-linux-gnu --verbose
 
       - name: Copy data files
         run: cp -pr *.sld assets ./zig-out/bin/
@@ -86,8 +86,7 @@ jobs:
       - name: Build executable
         # run: zig build -Drelease-fast --verbose
         # let's try with a debug build first
-        # for try to pin the build to an old sandybridge cpu
-        run: zig build --verbose -Dtarget=x86_64-native -Dcpu=sandybridge
+        run: zig build --verbose -Dtarget=x86_64-windows
 
       - name: Copy data files
         shell: powershell
