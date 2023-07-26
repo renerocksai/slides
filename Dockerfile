@@ -37,4 +37,4 @@ COPY ZT/ slides/ZT
 RUN cd slides && ~/zig-linux-x86_64-0.9.1/zig build 
 
 # run slides
-ENTRYPOINT /home/$USER/slides/zig-out/bin/slides
+ENTRYPOINT ["./slides/zig-out/bin/slides"]
