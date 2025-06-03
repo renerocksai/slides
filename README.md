@@ -1,5 +1,7 @@
 # Slides - Slideshows for Hackers
 
+## ARCHIVED: -> goto { [rayslides](https://github.com/renerocksai/rayslides) } for an updated version
+
 This project is both a case study and also marks my first steps in the programming language [Zig](https://ziglang.org), towards creating a simple but powerful [imgui](https://github.com/ocornut/imgui/wiki#about-the-imgui-paradigm) based, OpenGL-rendered slideshow app in Zig.
 
 ![image](./screenshots/slides.png)
